@@ -15,5 +15,20 @@ Los cuerpos de Modo Incógnito son obra de su equipo (César, Manu y Fran). De
 Estado Decepción se usan solo personajes genéricos: los periodistas de su
 redacción no salen aquí.
 
+## Las parejas
+
+Ningún personaje tiene modelo propio: todos son uno de los dos cuerpos base,
+pintado por vértice, con piezas hechas en código y enganchadas a un hueso
+(`PIEZA` en `coches.js`): el capirote del cucurucho, el sombrero de Cantuña,
+los cuernos y la cola del diablo, la cresta, el pico y las plumas del gallo,
+el tricornio, la nariz y la botella de Don Ramón, el fusil y la trenza de
+las guarichas, el tocado y la muñeca de la Mamá Negra, las alas y la
+estrella del Ángel. Se colocan en reposo, midiendo la cabeza con los huesos
+`Head`, `head_end` y `headfront`, y desde ahí siguen cualquier pose.
+
+La Mamá Negra va con la piel de la misma paleta que el resto: se la
+reconoce por el traje, el tocado de cintas y la muñeca, no por la cara
+pintada de negro.
+
 Si uno de los dos juegos retoca un modelo, aquí no cambia solo: hay que volver
 a copiarlo.

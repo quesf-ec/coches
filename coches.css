@@ -102,6 +102,29 @@ body.coches{
 }
 .coches-record:empty{display:none}
 
+/* ─── elegir pareja ───────────────────────────────────────────
+   En pantalla ancha el panel se va a la izquierda: a la derecha la
+   cámara gira alrededor de la pareja elegida, como en la selección de
+   un kart. */
+.coches-elige{display:grid;gap:var(--mal-e2)}
+.coches-parejas{display:flex;flex-wrap:wrap;gap:var(--mal-e2)}
+.coches-parejas .chip{cursor:pointer}
+.coches-parejas .chip[aria-checked="true"]{background:var(--mal-primary);border-color:var(--mal-primary);color:var(--mal-on-primary)}
+.coches-pareja-nombre{margin:var(--mal-e1) 0 0;font-family:var(--mal-display);font-weight:800;font-size:1.25rem;line-height:1.1}
+.coches-stats{display:grid;gap:4px;margin:0;font-size:var(--mal-t-micro)}
+.coches-stats > div{display:grid;grid-template-columns:6.5em 1fr;gap:var(--mal-e2);align-items:center}
+.coches-stats dt{font-family:var(--mal-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--mal-on-surface-2)}
+.coches-stats dd{margin:0}
+.coches-stats .medidor{height:8px}
+@media (min-width:900px){
+  #portada{justify-items:start;padding-left:clamp(24px, 5vw, 72px);background:linear-gradient(to right, rgba(20,16,24,.35), transparent 55%)}
+}
+/* En el teléfono el panel deja ver la pareja arriba. */
+@media (max-width:899px){
+  #portada{align-items:end}
+  #portada .coches-panel{max-height:68dvh}
+}
+
 /* ─── la llegada ──────────────────────────────────────────── */
 .coches-premio{position:fixed;inset:0;z-index:40}
 .coches-premio[hidden]{display:none}
