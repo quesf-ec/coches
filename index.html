@@ -18,7 +18,10 @@
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="../img/icono-180.png">
 <link rel="stylesheet" href="../ds/mal/mal.css?v=1.0.17">
-<link rel="stylesheet" href="coches.css">
+<!-- El sello ?v= se sube a mano en cada cambio del juego (CSS, JS y, con el
+     JS, los modelos, que heredan su sello): así el navegador no se queda con
+     la versión anterior. -->
+<link rel="stylesheet" href="coches.css?v=3d-2">
 <script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js", "three/addons/": "./vendor/addons/" } }</script>
 </head>
 <body class="coches">
@@ -146,6 +149,6 @@
 </div>
 
 <script src="../ds/mal/mal.js?v=1.0.17" defer></script>
-<script type="module" src="coches.js"></script>
+<script type="module" src="coches.js?v=3d-2"></script>
 </body>
 </html>
