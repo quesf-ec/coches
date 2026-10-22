@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es" data-marca="juegos">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Coches de madera · La bajada del Panecillo</title>
+<meta name="description" content="Una carrera de coches de madera desde la cima del Panecillo hasta la Plaza Grande: curvas, la bajada empinada, La Ronda empedrada y la subida de la García Moreno a pura patada.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#8FB8D8">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../img/icono-180.png">
+<link rel="stylesheet" href="../ds/mal/mal.css?v=1.0.17">
+<link rel="stylesheet" href="coches.css">
+</head>
+<body class="coches">
+
+<canvas id="pista" role="img" aria-label="La carrera, vista desde atrás de tu coche de madera"></canvas>
+
+<!-- El HUD: la pausa arriba a la izquierda, las cifras arriba a la derecha,
+     lo que está activo abajo y nada en el centro, que por ahí se baja. -->
+<div class="hud-juego" id="hud" hidden>
+  <div class="hud-juego__arriba">
+    <div class="fila coches-botones">
+      <button class="btn btn--icono" id="b-pausa" type="button" aria-label="Pausa">
+        <svg class="icono" aria-hidden="true"><use href="#i-pausa"/></svg></button>
+      <button class="btn btn--icono" id="b-sonido" type="button" aria-label="Silenciar" aria-pressed="false">
+        <svg class="icono" aria-hidden="true"><use href="#i-altavoz"/></svg></button>
+    </div>
+    <div class="hud-juego__cifras">
+      <p class="marcador" aria-live="polite"><span id="h-puesto">6</span><span class="coches-de">/6</span><small>puesto</small></p>
+      <p class="coches-tiempo tabular" id="h-tiempo">0:00.0</p>
+      <span class="badge" id="h-zona">El Panecillo</span>
+    </div>
+  </div>
+
+  <div class="hud-juego__abajo">
+    <div class="coches-tablero">
+      <p class="marcador coches-vel"><span id="h-vel">0</span><small>km/h</small></p>
+      <span class="micro">Aliento</span>
+      <div class="medidor medidor--continuo" id="h-aliento"><i style="width:100%"></i></div>
+      <span class="micro">Hasta la meta</span>
+      <div class="medidor medidor--continuo medidor--fino" id="h-ruta" style="--mal-relleno-medidor:var(--mal-verde)"><i></i></div>
+      <span class="chip coches-turbo" id="h-turbo" hidden>
+        <svg class="icono icono--s" aria-hidden="true"><use href="#i-rayo"/></svg> Colada</span>
+    </div>
+  </div>
+</div>
+
+<!-- Los mandos táctiles: van aparte del HUD porque ocupan las dos esquinas
+     de abajo enteras, que es donde caen los pulgares. -->
+<div class="coches-mandos" id="mandos" hidden>
+  <div class="coches-mandos__lado">
+    <button class="coches-mando" data-tecla="izq" type="button" aria-label="Izquierda">
+      <svg class="icono icono--l" aria-hidden="true"><use href="#i-chevron-izq"/></svg></button>
+    <button class="coches-mando" data-tecla="der" type="button" aria-label="Derecha">
+      <svg class="icono icono--l" aria-hidden="true"><use href="#i-chevron-der"/></svg></button>
+  </div>
+  <div class="coches-mandos__lado">
+    <button class="coches-mando coches-mando--freno" data-tecla="freno" type="button" aria-label="Frenar">Freno</button>
+    <button class="coches-mando coches-mando--patada" data-tecla="patada" type="button" aria-label="Patear">Patada</button>
+  </div>
+</div>
+
+<p class="coches-cuenta" id="cuenta" aria-live="assertive"></p>
+<p class="coches-aviso" id="aviso" aria-live="polite"></p>
+
+<!-- La portada -->
+<div class="coches-capa" id="portada">
+  <div class="vidrio pila coches-panel">
+    <p class="kicker">Fiestas de Quito · boceto</p>
+    <h1 class="coches-titulo">Coches de madera</h1>
+    <p class="caption">Seis coches, cero motores. Se sale de la cima del Panecillo, se bajan
+    las curvas, la Ambato, el bulevar de la 24 de Mayo y La Ronda empedrada, y se sube la
+    García Moreno a pura patada hasta la Plaza Grande.</p>
+    <dl class="coches-teclas">
+      <div><dt>← →</dt><dd>girar</dd></div>
+      <div><dt>↑ o espacio</dt><dd>patear el suelo: empuja en las subidas y gasta aliento</dd></div>
+      <div><dt>↓</dt><dd>frenar con la suela</dd></div>
+    </dl>
+    <p class="caption coches-solo-tactil">Abajo a la izquierda se gira; a la derecha, la patada
+    para empujar en las subidas y el freno para las curvas.</p>
+    <p class="caption">Las coladas moradas dan turbo. Los huecos, ya sabes.</p>
+    <button class="btn btn--rojo boton-juego btn-block" id="b-empezar" type="button">
+      <svg class="icono" aria-hidden="true"><use href="#i-play"/></svg> A bajar</button>
+    <p class="micro coches-record" id="record"></p>
+  </div>
+</div>
+
+<!-- La pausa -->
+<div class="coches-capa" id="pausa" hidden>
+  <div class="vidrio pila coches-panel">
+    <p class="kicker">Pausa</p>
+    <h2>¿Seguimos bajando?</h2>
+    <button class="btn btn--rojo boton-juego btn-block" id="b-seguir" type="button">
+      <svg class="icono" aria-hidden="true"><use href="#i-play"/></svg> Seguir</button>
+    <button class="btn boton-juego btn-block" id="b-reintentar" type="button">
+      <svg class="icono" aria-hidden="true"><use href="#i-reiniciar"/></svg> Otra vez desde arriba</button>
+  </div>
+</div>
+
+<!-- La llegada: el premio del sistema, con el coche en el disco -->
+<div class="premio coches-premio" id="llegada" hidden role="button" tabindex="0" aria-label="Otra bajada">
+  <div class="premio__rayos" aria-hidden="true"></div>
+  <div class="premio__escena">
+    <div class="premio__pieza premio__pieza--entra">
+      <div class="premio__disco">
+        <svg width="150" height="150" viewBox="0 0 150 150" aria-hidden="true">
+          <g id="disco-trofeo">
+            <path d="M52 30h46v18c0 16-10 28-23 28S52 64 52 48z" fill="#E2B13C" stroke="#2A2118" stroke-width="3"/>
+            <path d="M52 36H40c0 12 6 20 14 22M98 36h12c0 12-6 20-14 22" fill="none" stroke="#2A2118" stroke-width="3"/>
+            <path d="M68 76h14v10H68zM60 86h30v8H60z" fill="#B88A2A" stroke="#2A2118" stroke-width="3"/>
+          </g>
+          <g id="disco-coche">
+          <rect x="22" y="104" width="106" height="16" rx="3" fill="#C8955A" stroke="#2A2118" stroke-width="3"/>
+          <path d="M30 108h90M30 115h90" stroke="#9E6D3A" stroke-width="1.5"/>
+          <circle cx="36" cy="126" r="9" fill="#8C9096" stroke="#2A2118" stroke-width="3"/>
+          <circle cx="114" cy="126" r="9" fill="#8C9096" stroke="#2A2118" stroke-width="3"/>
+          <circle cx="36" cy="126" r="3" fill="#2A2118"/><circle cx="114" cy="126" r="3" fill="#2A2118"/>
+          </g>
+        </svg>
+      </div>
+    </div>
+    <div class="premio__texto">
+      <p class="kicker" id="l-kicker">Plaza Grande</p>
+      <p class="premio__nombre" id="l-puesto">Primer puesto</p>
+      <p class="premio__desc" id="l-desc">Bajaste en 1:12.4.</p>
+      <ol class="coches-podio" id="l-podio"></ol>
+    </div>
+  </div>
+  <p class="premio__pie">Toca para otra bajada</p>
+</div>
+
+<script src="../ds/mal/mal.js?v=1.0.17" defer></script>
+<script src="coches.js" defer></script>
+</body>
+</html>

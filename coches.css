@@ -1,0 +1,110 @@
+/* Coches de madera · la pantalla. Lo que va encima del lienzo son piezas del
+   sistema —.hud-juego, .marcador, .medidor, .badge, .chip, .vidrio, .premio—;
+   aquí solo se colocan, más los mandos táctiles, que no son un componente:
+   son la forma de esta pantalla en concreto. */
+
+html,body.coches{height:100%;margin:0;overflow:hidden;overscroll-behavior:none}
+body.coches{
+  background:#8FB8D8;            /* el cielo, para que no parpadee blanco al cargar */
+  -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;
+  touch-action:none;
+}
+
+#pista{position:fixed;inset:0;width:100%;height:100%;display:block}
+
+/* Sobre el cielo y el empedrado las cifras sueltas no se leen: van sobre
+   el vidrio del sistema, en una tarjeta pequeña. */
+.coches .hud-juego__cifras,.coches-tablero{
+  padding:var(--mal-e3) var(--mal-e4);border-radius:var(--mal-r);
+  background:color-mix(in srgb, var(--mal-surface) 82%, transparent);
+  border:var(--mal-borde);box-shadow:var(--mal-elev-1);
+  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+}
+.coches .hud-juego__cifras{gap:var(--mal-e1)}
+.coches-de{font-size:.5em;color:var(--mal-on-surface-3)}
+.coches-tiempo{margin:0;font-family:var(--mal-mono);font-weight:700;font-size:var(--mal-t-caption)}
+.coches-botones{gap:var(--mal-e2)}
+.coches-botones .btn{background:var(--mal-surface)}
+
+.coches-tablero{display:flex;flex-direction:column;gap:var(--mal-e1);width:min(220px, 44vw)}
+.coches-vel{font-size:clamp(1.6rem, 1.1rem + 2vw, 2.4rem)}
+.coches-vel small{display:inline;margin-left:.35em}
+.coches-turbo{align-self:flex-start;margin-top:var(--mal-e1);
+  background:#6B2D7B;border-color:#6B2D7B;color:#fff;animation:coches-latir .5s ease-in-out infinite alternate}
+@keyframes coches-latir{to{transform:scale(1.06)}}
+
+/* ─── los mandos táctiles ──────────────────────────────────────
+   Dirección a la izquierda, pies a la derecha, como un mando. Cada
+   botón responde a pointerdown/up, no a click: hay que poder mantener
+   «derecha» y «patada» a la vez con dos pulgares. */
+.coches-mandos{
+  position:fixed;left:0;right:0;bottom:0;z-index:25;pointer-events:none;
+  display:flex;justify-content:space-between;align-items:flex-end;
+  padding:0 calc(env(safe-area-inset-right, 0px) + var(--mal-e4))
+          calc(env(safe-area-inset-bottom, 0px) + var(--mal-e4))
+          calc(env(safe-area-inset-left, 0px) + var(--mal-e4));
+}
+.coches-mandos__lado{display:flex;gap:var(--mal-e3);pointer-events:auto}
+.coches-mando{
+  width:clamp(64px, 18vw, 84px);height:clamp(64px, 18vw, 84px);border-radius:50%;
+  display:grid;place-items:center;padding:0;
+  font:700 var(--mal-t-micro)/1 var(--mal-mono);letter-spacing:.06em;text-transform:uppercase;
+  color:var(--mal-on-surface);background:color-mix(in srgb, var(--mal-surface) 70%, transparent);
+  border:2px solid var(--mal-on-surface);box-shadow:0 4px 0 rgba(var(--ref-borde-rgb), .55);
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  touch-action:none;-webkit-tap-highlight-color:transparent;
+}
+.coches-mando.is-on{transform:translateY(3px);box-shadow:0 1px 0 rgba(var(--ref-borde-rgb), .55);
+  background:var(--mal-surface)}
+.coches-mando--patada{background:var(--mal-primary);color:var(--mal-on-primary);border-color:var(--mal-primary-hover)}
+.coches-mando--patada.is-on{background:var(--mal-primary-hover)}
+/* Con mandos, el tablero sube para no quedar debajo de los pulgares. */
+.coches.con-mandos .hud-juego__abajo{padding-bottom:calc(clamp(64px, 18vw, 84px) + var(--mal-e4))}
+
+/* ─── la cuenta atrás y los avisos ─────────────────────────────
+   Lo único que sale en el centro, y solo un segundo: es lo que hay
+   que mirar en ese momento. */
+.coches-cuenta,.coches-aviso{
+  position:fixed;left:0;right:0;z-index:22;margin:0;text-align:center;pointer-events:none;
+  font-family:var(--mal-display);font-weight:800;color:#fff;
+  -webkit-text-stroke:2px #2b2129;paint-order:stroke fill;
+  text-shadow:0 5px 0 #2b2129;
+}
+.coches-cuenta{top:28%;font-size:clamp(4rem, 18vw, 9rem);line-height:1}
+.coches-cuenta.is-sale{animation:coches-sale .9s var(--mal-ease) both}
+.coches-aviso{top:16%;font-size:clamp(1.3rem, 5vw, 2.2rem);opacity:0;transition:opacity .25s}
+.coches-aviso.is-on{opacity:1}
+@keyframes coches-sale{0%{transform:scale(.4);opacity:0}25%{transform:scale(1.08);opacity:1}70%{transform:scale(1);opacity:1}100%{transform:scale(1.25);opacity:0}}
+
+/* ─── portada y pausa ─────────────────────────────────────── */
+.coches-capa{position:fixed;inset:0;z-index:30;display:grid;place-items:center;padding:var(--mal-e4);
+  background:linear-gradient(to bottom, rgba(20,16,24,.05), rgba(20,16,24,.45))}
+.coches-capa[hidden]{display:none}
+.coches-panel{width:min(100%, 400px);padding:var(--mal-e5);max-height:calc(100dvh - 2rem);overflow:auto}
+.coches-titulo{font-size:clamp(2rem, 1.4rem + 3vw, 2.8rem);line-height:1.02;margin:0}
+.coches-teclas{display:grid;gap:var(--mal-e1);margin:0;font-size:var(--mal-t-caption)}
+.coches-teclas div{display:grid;grid-template-columns:7.5em 1fr;gap:var(--mal-e2);align-items:baseline}
+.coches-teclas dt{font-family:var(--mal-mono);font-weight:700}
+.coches-teclas dd{margin:0;color:var(--mal-on-surface-2)}
+.coches.tactil .coches-teclas{display:none}
+.coches-solo-tactil{display:none}
+.coches.tactil .coches-solo-tactil{display:block}
+@media (max-width:480px){
+  .coches-tablero{width:150px;padding:var(--mal-e2) var(--mal-e3)}
+  .coches .hud-juego__cifras{padding:var(--mal-e2) var(--mal-e3)}
+}
+.coches-record:empty{display:none}
+
+/* ─── la llegada ──────────────────────────────────────────── */
+.coches-premio{position:fixed;inset:0;z-index:40}
+.coches-premio[hidden]{display:none}
+.coches-podio{list-style:none;margin:var(--mal-e3) 0 0;padding:0;display:grid;gap:2px;
+  font-family:var(--mal-mono);font-size:var(--mal-t-caption);color:var(--mal-on-surface-2);
+  min-width:min(260px, 80vw)}
+.coches-podio li{display:flex;justify-content:space-between;gap:var(--mal-e4)}
+.coches-podio li.es-tu{color:var(--mal-on-surface);font-weight:700}
+
+@media (prefers-reduced-motion:reduce){
+  .coches-turbo{animation:none}
+  .coches-cuenta.is-sale{animation:none}
+}
