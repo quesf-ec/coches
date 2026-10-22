@@ -1,10 +1,10 @@
 /* Coches de madera · la bajada del Panecillo, en 3D.
 
    Lo gracioso de un coche de madera no es la velocidad: es que van dos. Uno
-   maneja con los pies y la soga; el otro empuja, se trepa atrás cuando la
-   cosa ya rueda y se baja a empujar en las subidas. Si se baja cuando no
-   debe, se queda corriendo detrás. Y en las rampas, en los huecos y contra
-   los puestos de la vereda, se caen los dos.
+   maneja con los pies y la soga; el otro empuja a pie, pegado al coche, y
+   se sube solo cuando la cosa ya rueda. En las subidas hay que bajarlo a
+   empujar. Y en las rampas y contra los puestos de la vereda, se caen los
+   dos.
 
    El mundo: una calle que sigue una línea central muestreada cada metro,
    con su rumbo, su curvatura, su altura y su ancho. Todo lo demás —el
@@ -43,7 +43,8 @@ const AIRE = 0.0032;
 const TOPE = 22;              // ~80 km/h, lo más que da una cuesta
 const TOPE_TURBO = 25;
 const EMPUJE = 3.6;           // lo que empuja el que va atrás…
-const CORRE = 7.5;            // …y lo más rápido que corre: más allá, no alcanza
+const CORRE = 7.5;            // …y lo más rápido que corre
+const ENGANCHE = CORRE + 0.8; // a esta velocidad, el de atrás se sube solo
 const FRENO = 7;
 const FUERA = 4;              // la vereda frena
 const GIRO = 0.42;            // el volante: metros de lado por cada m/s
@@ -316,11 +317,11 @@ function construyePista() {
   tramo(12, 20, 12, 0, -5);
   tramo(14, 22, 14, -5, -6);
   tramo(14, 22, 14, 6, -6);
-  tramo(16, 30, 16, 7, -7);       // la horquilla: se frena antes o se sale
+  tramo(16, 30, 16, 7, -10);      // la horquilla: se frena antes o se sale
   tramo(14, 20, 14, -5, -5);
   tramo(10, 14, 10, 2, -3);
   nueva('ambato');
-  tramo(18, 80, 18, 0, -22);      // la empinada
+  tramo(18, 56, 18, 0, -26);      // la empinada: casi 30 % de bajada
   tramo(10, 10, 10, 0, 1.2);      // el lomo del final
   tramo(15, 24, 15, 3, -3);
   nueva('bulevar');
@@ -391,7 +392,7 @@ render.shadowMap.type = THREE.PCFSoftShadowMap;
 const escena = new THREE.Scene();
 const NIEBLA = 0xD6E6EE;
 escena.background = new THREE.Color(0xB4D5EC);
-escena.fog = new THREE.Fog(NIEBLA, 80, 360);
+escena.fog = new THREE.Fog(NIEBLA, 55, 300);
 escena.environment = new THREE.PMREMGenerator(render).fromScene(new RoomEnvironment(), 0.04).texture;
 escena.environmentIntensity = 0.55;
 const camara = new THREE.PerspectiveCamera(60, 1, 0.1, 900);
@@ -478,36 +479,53 @@ function construyePanorama() {
   const r = azar(99);
   const W = 4096, H = 1024, LW = W;
   const onda = (x, ks) => ks.reduce((t, [k, a, f]) => t + a * Math.sin((x / LW) * Math.PI * 2 * k + f), 0);
-  const c = lienzo(W, H, (c) => {
-    const cielo = c.createLinearGradient(0, 0, 0, H * 0.62);
-    cielo.addColorStop(0, '#5E9BD0'); cielo.addColorStop(0.75, '#A9CBE2'); cielo.addColorStop(1, '#DCE9EF');
-    c.fillStyle = cielo; c.fillRect(0, 0, W, H);
-    c.fillStyle = 'rgba(255,255,255,.85)';
+  // Un fondo de foto desenfocada. Cada capa (nubes, montes, laderas con sus
+  // casitas) se dibuja sin filtro en su propio lienzo y se desenfoca UNA vez
+  // al componerla: un filtro por cada casita tarda minutos. Donde el
+  // navegador no tiene filtro, queda igual de suave.
+  const base = H * 0.62;
+  const borde = (x) => base - 10 - onda(x, [[2, 50, 0.9], [5, 22, 2.4], [11, 9, 0.2]]) - 40;
+  const c = lienzo(W, H, (ctx, w, h) => {
+    const cielo = ctx.createLinearGradient(0, 0, 0, H * 0.62);
+    cielo.addColorStop(0, '#7FB4DE'); cielo.addColorStop(0.7, '#CFE3F0'); cielo.addColorStop(1, '#EEF4F6');
+    ctx.fillStyle = cielo; ctx.fillRect(0, 0, w, h);
+  });
+  const ctx2 = c.getContext('2d');
+  const capa = (pinta, px) => {
+    const o = lienzo(W, H, (oc) => pinta(oc));
+    ctx2.filter = `blur(${px}px)`;
+    ctx2.drawImage(o, 0, 0);
+    ctx2.filter = 'none';
+  };
+  capa((oc) => {
+    oc.fillStyle = 'rgba(255,255,255,.8)';
     for (let k = 0; k < 14; k++) {
-      const x = r() * W, y = 90 + r() * 220, s = 40 + r() * 50;
-      for (let b = 0; b < 5; b++) { c.beginPath(); c.ellipse(x + b * s * 0.7, y + Math.sin(b) * 10, s, s * 0.5, 0, 0, 7); c.fill(); }
+      const x = r() * W, y = 80 + r() * 200, sz = 60 + r() * 60;
+      oc.beginPath(); oc.ellipse(x, y, sz * 1.6, sz * 0.5, 0, 0, 7); oc.fill();
     }
-    const base = H * 0.62;
-    const g = c.createLinearGradient(0, base - 300, 0, base);
-    g.addColorStop(0, '#7E98AC'); g.addColorStop(1, '#9DB3BF');
-    c.fillStyle = g; c.beginPath(); c.moveTo(0, H);
+  }, 36);
+  capa((oc) => {
+    oc.fillStyle = '#9DB7C8'; oc.beginPath(); oc.moveTo(0, H);
     for (let x = 0; x <= W; x += 8) {
       const pico = 230 * Math.exp(-(((x - 1300) / 420) ** 2)) + 140 * Math.exp(-(((x - 1800) / 300) ** 2)) + 120 * Math.exp(-(((x - 3300) / 500) ** 2));
-      c.lineTo(x, base - 40 - pico - onda(x, [[3, 30, 0.4], [7, 14, 1.3], [13, 6, 2.1]]));
+      oc.lineTo(x, base - 40 - pico - onda(x, [[3, 30, 0.4], [7, 14, 1.3], [13, 6, 2.1]]));
     }
-    c.lineTo(W, H); c.fill();
-    const borde = (x) => base - 10 - onda(x, [[2, 50, 0.9], [5, 22, 2.4], [11, 9, 0.2]]) - 40;
-    c.fillStyle = '#8FA675'; c.beginPath(); c.moveTo(0, H);
-    for (let x = 0; x <= W; x += 8) c.lineTo(x, borde(x));
-    c.lineTo(W, H); c.fill();
+    oc.lineTo(W, H); oc.fill();
+  }, 22);
+  capa((oc) => {
+    oc.fillStyle = '#9AB08A'; oc.beginPath(); oc.moveTo(0, H);
+    for (let x = 0; x <= W; x += 8) oc.lineTo(x, borde(x));
+    oc.lineTo(W, H); oc.fill();
     const tonos = ['#F2EEE5', '#EAD9B0', '#E8C9C0', '#C9DCE6', '#F3E3D3', '#D8D2C2', '#E6B98F'];
-    for (let k = 0; k < 2600; k++) {
+    for (let k = 0; k < 900; k++) {
       const x = r() * W, y0 = borde(x) + 8, y = y0 + r() ** 0.7 * (H - y0);
-      const s = 3 + ((y - y0) / (H - y0)) * 7;
-      c.fillStyle = elige(r, tonos); c.fillRect(x, y, s * 1.4, s);
-      c.fillStyle = '#A8442C'; c.fillRect(x - 1, y - 2, s * 1.4 + 2, 2.5);
+      const sz = 4 + ((y - y0) / (H - y0)) * 8;
+      oc.fillStyle = elige(r, tonos); oc.fillRect(x, y, sz * 1.4, sz);
     }
-  });
+  }, 10);
+  const bruma = ctx2.createLinearGradient(0, base - 240, 0, base + 60);
+  bruma.addColorStop(0, 'rgba(226,238,244,0)'); bruma.addColorStop(1, 'rgba(226,238,244,.9)');
+  ctx2.fillStyle = bruma; ctx2.fillRect(0, base - 240, W, 300);
   const g = new THREE.CylinderGeometry(780, 780, 520, 48, 1, true);
   const m = new THREE.MeshBasicMaterial({ map: textura(c), side: THREE.BackSide, fog: false, depthWrite: false });
   panorama = new THREE.Mesh(g, m);
@@ -793,7 +811,7 @@ function construyeDecorado(quito) {
     escena.add(grupo);
   }
 
-  // En la calle: rampas de tabla, huecos y coladas.
+  // En la calle: rampas de tabla y coladas.
   const rampa = (() => {
     const forma = new THREE.Shape();
     forma.moveTo(-1.2, 0); forma.lineTo(1.2, 0); forma.lineTo(1.2, 0.45); forma.closePath();
@@ -807,15 +825,6 @@ function construyeDecorado(quito) {
     m.applyMatrix4(matrizEn(s, x, 0, 0));
     escena.add(m);
     obstaculos.push({ s, x, r: 0.9, largo: 1.2, tipo: 'rampa' });
-  }
-  const matHueco = new THREE.MeshBasicMaterial({ color: 0x2A241E });
-  const geoHueco = new THREE.CircleGeometry(0.5, 14).rotateX(-Math.PI / 2).scale(1, 1, 0.7);
-  for (let s = p0 + 120; s < META - 20; s += 38 + r() * 40) {
-    const hw = muestra(s).hw, x = (r() - 0.5) * (hw - 0.8) * 2;
-    const m = new THREE.Mesh(geoHueco, matHueco);
-    m.applyMatrix4(matrizEn(s, x, 0.02, 0));
-    escena.add(m);
-    obstaculos.push({ s, x, r: 0.45, largo: 0.4, tipo: 'hueco' });
   }
   const matColada = new THREE.SpriteMaterial({ map: textura(colada()) });
   for (const s0 of [p0 + 150, p0 + 262, c0 + 110, b0 + 80, zonaDe('ronda')[0] + 90, g0 + 15, g0 + 75]) {
@@ -1340,7 +1349,7 @@ function avisa(texto, dur) {
 const PERDONES = ['¡Perdón, vecino!', '¡Cuidado, mijo!', '¡Ay, mi espalda!', '¡Guambras atrevidos!', '¡Fíjense, pues!'];
 
 // ─── la simulación ─────────────────────────────────────────────────
-const stats = { vuelcos: 0, atropellos: 0, huecos: 0, saltos: 0, choques: 0, quedado: 0 };
+const stats = { vuelcos: 0, atropellos: 0, saltos: 0, choques: 0 };
 function volcar(motivo) {
   if (j.volcado > 0) return;
   stats.vuelcos++;
@@ -1366,45 +1375,33 @@ function endereza() {
   cocheJ.conductor.pon('montado', { fundido: 0.2 });
 }
 
-function sueltaEmpujador(texto) {
-  stats.quedado++;
-  Object.assign(e, { estado: 'corriendo', s: j.s - 1.3, x: j.x });
-  cocheJ.empujador.pon('correr');
-  avisa(texto || '¡Se quedó el empujador!', 1400);
-}
-
+// El que empuja nunca se queda atrás: va pegado al coche a pie. Empuja mientras
+// se mantiene el mando y, en cuanto el coche va lo bastante rápido, se sube
+// solo. Si va a bordo y en una subida hace falta empujar, se baja con el mando.
 function actualizaEmpujador(dt) {
   const quiere = teclas.empuja && estado === 'carrera';
   switch (e.estado) {
     case 'a_bordo':
-      if (quiere && !j.aire && j.volcado <= 0) {
-        if (j.v < CORRE) {
-          e.estado = 'empujando'; cocheJ.empujador.pon('correr');
-          tono(320, 0.08, 'triangle', 0.15);
-        } else if (reloj - (e.tAviso || -9) > 2) { e.tAviso = reloj; avisa('¡Muy rápido para bajarse!', 1100); }
+      if (quiere && j.v < CORRE && !j.aire && j.volcado <= 0) {
+        e.estado = 'empujando'; cocheJ.empujador.pon('correr');
+        tono(320, 0.08, 'triangle', 0.15);
       }
       break;
     case 'empujando':
       if (j.aire || j.volcado > 0) break;
-      if (!quiere) {
-        if (j.v < CORRE + 0.8) { e.estado = 'a_bordo'; cocheJ.empujador.pon('montado'); tono(520, 0.1, 'triangle', 0.15); }
-        else sueltaEmpujador();
-      } else if (j.v > CORRE + 0.6) sueltaEmpujador('¡No alcanza! ¡Se quedó!');
-      break;
-    case 'corriendo':
-      e.s += (CORRE + 0.8) * dt;     // corre a todo lo que da para alcanzarlo
-      e.x = mezcla(e.x, j.x, Math.min(1, dt * 3));
-      if (e.s >= j.s - 1.35 && j.volcado <= 0 && !j.aire) {
-        e.estado = quiere ? 'empujando' : 'a_bordo';
-        cocheJ.empujador.pon(quiere ? 'correr' : 'montado');
-        if (!quiere) avisa('¡Se trepó!', 900);
+      if (j.v >= ENGANCHE) {
+        e.estado = 'a_bordo'; cocheJ.empujador.pon('montado');
+        tono(520, 0.1, 'triangle', 0.15); avisa('¡Se trepó!', 900);
       }
       break;
     case 'piso':
       e.t -= dt;
       e.v = Math.max(0, (e.v || 0) - 12 * dt);
       e.s += e.v * dt;
-      if (e.t <= 0) { e.estado = 'corriendo'; cocheJ.empujador.pon('correr'); }
+      if (e.t <= 0) {
+        Object.assign(e, { estado: 'empujando', s: j.s - 1.3, x: j.x });
+        cocheJ.empujador.pon('correr');
+      }
       break;
   }
 }
@@ -1502,9 +1499,6 @@ function actualiza(dt) {
       } else if (o.tipo === 'rampa' && dx < o.r && !j.aire && j.v > 3) {
         j.aire = true; j.h = 0.45; j.vh = Math.min(6, j.v * 0.32);
         o.golpe = reloj; tono(200, 0.2, 'sine', 0.2, 400); stats.saltos++;
-      } else if (o.tipo === 'hueco' && dx < o.r + 0.2 && !j.aire && reloj - o.golpe > 1) {
-        stats.huecos++; o.golpe = reloj; j.v *= 0.78; j.aire = true; j.h = 0.05; j.vh = 1.6; sacudida = 1.1;
-        golpe(0.7, 380); avisa('¡Hueco!', 700);
       } else if ((o.tipo === 'farol' || o.tipo === 'puesto' || o.tipo === 'cajon') && dx < o.r + 0.35 && j.h < 0.5 && reloj - o.golpe > 1) {
         o.golpe = reloj;
         if (j.v > 5) volcar(o.tipo === 'puesto' ? '¡Al puesto de la señora!' : o.tipo === 'cajon' ? '¡El cajón!' : '¡Contra el farol!');
@@ -1652,7 +1646,7 @@ function enCoche(persona, coche, z, pose) {
 }
 
 function colocaCoche(cc, s, x, h, giro, vuelco, v, dt) {
-  colocaEnCalle(cc.g, s, x, h, giro * 0.18, vuelco);
+  colocaEnCalle(cc.g, s, x, h, -giro * 0.18, vuelco);
   cc.g.updateMatrixWorld(true);
   cc.delante.rotation.y = -giro * 0.35;
   for (const w of cc.ruedas) w.rotation.x += (v * dt) / 0.09;
@@ -1672,13 +1666,11 @@ function dibujaMundo(dt) {
   colocaCoche(cocheJ, j.s, j.x, j.h + salto + temblor + enAcera, j.giro, alabeo, j.v, dt);
   if (c.suelto) colocaEnCalle(cocheJ.conductor.obj, c.s + 1, c.x + 0.4, 0, 0.3);
   else enCoche(cocheJ.conductor, cocheJ.g, 0.32, 'montado');
-  if (e.estado === 'a_bordo') enCoche(cocheJ.empujador, cocheJ.g, -0.5, 'montado');
-  else if (e.estado === 'empujando') {
+  if (e.estado === 'piso') colocaEnCalle(cocheJ.empujador.obj, e.s, e.x, 0, 0);
+  else if (e.estado === 'a_bordo') enCoche(cocheJ.empujador, cocheJ.g, -0.5, 'montado');
+  else {
     enCoche(cocheJ.empujador, cocheJ.g, -1.3, 'correr');
     cocheJ.empujador.acciones.correr.timeScale = 0.6 + j.v / CORRE * 0.8;
-  } else {
-    colocaEnCalle(cocheJ.empujador.obj, e.s, e.x, 0, 0, cocheJ.empujador.tambalea && e.estado === 'corriendo' ? Math.sin(performance.now() / 200) * 0.2 : 0);
-    if (e.estado === 'corriendo') cocheJ.empujador.acciones.correr.timeScale = 1.3;
   }
 
   // Los rivales.
@@ -1734,7 +1726,7 @@ function dibujaPortada(t) {
   // Que la pareja quede fuera del panel: a la derecha en pantalla ancha,
   // arriba en el teléfono.
   const W = innerWidth, H = innerHeight;
-  if (W >= 900) camara.setViewOffset(W, H, -W * 0.2, 0, W, H);
+  if (W >= H) camara.setViewOffset(W, H, -W * 0.2, 0, W, H);
   else camara.setViewOffset(W, H, 0, H * 0.3, W, H);
   camara.fov = 50; camara.updateProjectionMatrix();
   panorama.position.set(camara.position.x, camara.position.y + 30, camara.position.z);
@@ -1751,7 +1743,7 @@ const formato = (t) => {
   const m = Math.floor(t / 60), s = t - m * 60;
   return `${m}:${s < 10 ? '0' : ''}${s.toFixed(1)}`;
 };
-const ESTADOS_EMPUJADOR = { a_bordo: 'A bordo', empujando: 'Empujando', corriendo: 'Se quedó atrás', piso: 'En el piso' };
+const ESTADOS_EMPUJADOR = { a_bordo: 'A bordo', empujando: 'Empujando', piso: 'En el piso' };
 let ultimoHud = {};
 function pintaHud() {
   const puesto = estado === 'llegada' ? j.puesto : 1 + rivales.filter((rv) => rv.s > j.s).length;
@@ -1780,7 +1772,7 @@ const FRASES = [
   'Llegaste primero a la Plaza Grande. Ni el Chulla te vio pasar.',
   'Segundo, por una tabla. La próxima, que el empujador se baje antes en la García Moreno.',
   'Al podio. La horquilla del Panecillo se puede bajar más rápido, y con los dos arriba.',
-  'Cuarto. Los huecos de la Ambato no perdonan.',
+  'Cuarto. Los cajones de la García Moreno no perdonan.',
   'Último, pero enteros los dos, que en coche de madera ya es bastante.',
 ];
 function muestraLlegada() {
@@ -1939,6 +1931,8 @@ function mide() {
   camara.updateProjectionMatrix();
 }
 addEventListener('resize', mide);
+// En el teléfono se juega de lado: donde el navegador deja, se bloquea.
+addEventListener('pointerdown', () => { try { screen.orientation?.lock?.('landscape').catch(() => {}); } catch (err) { /* sin orientación */ } }, { once: true });
 
 let previo = performance.now(), acum = 0;
 const PASO = 1 / 60;
@@ -2009,6 +2003,8 @@ carga().catch((err) => {
 // Para probar desde la consola sin jugar entero.
 window.coches = {
   estado: () => ({ estado, reloj, v: j.v, s: j.s, x: j.x, h: j.h, aire: j.aire, volcado: j.volcado, empujador: e.estado, puesto: j.puesto, zona: zonaEn(j.s), meta: META }),
+  // Dibuja un fotograma y devuelve el giro del coche, para las pruebas.
+  yaw: () => { dibujaMundo(0.02); return cocheJ.g.rotation.y; },
   curva: (s) => P.k[limita(Math.floor(s), 0, N - 1)], tope: (k) => GIRO / (CENTRIFUGA * Math.max(k, 1e-4)), hw: (s) => muestra(s).hw, teclas, empieza,
   // Avanza la simulación sin dibujar, para las pruebas automáticas.
   volcar: () => volcar(),

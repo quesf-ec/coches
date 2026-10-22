@@ -16,7 +16,7 @@ body.coches{
    rojo si se quedó o se cayó. */
 .coches-empujador{align-self:flex-start}
 .coches-empujador[data-estado="empujando"]{background:var(--mal-verde);border-color:var(--mal-verde);color:#fff}
-.coches-empujador[data-estado="corriendo"],.coches-empujador[data-estado="piso"]{background:var(--mal-primary);border-color:var(--mal-primary);color:var(--mal-on-primary)}
+.coches-empujador[data-estado="piso"]{background:var(--mal-primary);border-color:var(--mal-primary);color:var(--mal-on-primary)}
 .boton-juego:disabled{opacity:.6;cursor:progress}
 
 /* Sobre el cielo y el empedrado las cifras sueltas no se leen: van sobre
@@ -137,4 +137,18 @@ body.coches{
 @media (prefers-reduced-motion:reduce){
   .coches-turbo{animation:none}
   .coches-cuenta.is-sale{animation:none}
+}
+
+/* ─── de lado, en el teléfono ─────────────────────────────────
+   De pie se pide girarlo: la carrera se ve y se maneja de lado. */
+.coches-gira{display:none;position:fixed;inset:0;z-index:60;place-content:center;justify-items:center;gap:var(--mal-e2);
+  padding:var(--mal-e5);text-align:center;background:#1D1822;color:#F3F1EC;font-family:var(--mal-display);font-weight:800;font-size:1.6rem}
+.coches-gira .micro{color:#CBC5B8;font-family:var(--mal-texto);font-weight:500}
+@media (orientation:portrait) and (pointer:coarse){.coches-gira{display:grid}}
+/* De lado: el panel a la izquierda y la pareja a la derecha. */
+@media (orientation:landscape) and (max-height:600px){
+  #portada{align-items:center;justify-items:start;padding:var(--mal-e3) var(--mal-e4);background:linear-gradient(to right, rgba(20,16,24,.4), transparent 60%)}
+  #portada .coches-panel{width:min(52vw, 420px);max-height:calc(100dvh - 1.5rem);overflow:auto;padding:var(--mal-e4)}
+  .coches-titulo{font-size:1.6rem}
+  .coches-teclas{font-size:var(--mal-t-micro)}
 }
