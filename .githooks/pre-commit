@@ -1,0 +1,5 @@
+#!/bin/sh
+# Antes de cada commit, el juego de coches/ pide sus archivos con un sello
+# nuevo si cambió. Ver tools/sella-coches.py.
+python3 tools/sella-coches.py || exit 1
+git add coches/index.html
