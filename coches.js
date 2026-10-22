@@ -1,1424 +1,1699 @@
-/* Coches de madera · la bajada del Panecillo. Un kart de los de antes, sin
-   motor: el coche corre lo que le da la cuesta, y en las subidas se empuja
-   pateando el suelo.
+/* Coches de madera · la bajada del Panecillo, en 3D.
 
-   El motor es el pseudo-3D de los juegos de carreras de 16 bits: la calle es
-   una tira de segmentos de SEG unidades, cada uno con su curva y su altura, y
-   cada fotograma se proyectan los VISTA siguientes desde la cámara. La curva
-   no mueve la calle, desplaza la proyección; la altura sí está en el mundo,
-   y por eso las crestas tapan lo que viene detrás.
+   Lo gracioso de un coche de madera no es la velocidad: es que van dos. Uno
+   maneja con los pies y la soga; el otro empuja, se trepa atrás cuando la
+   cosa ya rueda y se baja a empujar en las subidas. Si se baja cuando no
+   debe, se queda corriendo detrás. Y en las rampas, en los huecos y contra
+   los puestos de la vereda, se caen los dos.
 
-   Todo lo que se ve —casas, iglesias, coches, la Virgen— se pinta una vez al
-   cargar en lienzos pequeños y se dibuja escalado. No se pide ni una imagen.
-   De mal.js solo hace falta el sprite de iconos para el HUD. */
-(() => {
-  'use strict';
+   El mundo: una calle que sigue una línea central muestreada cada metro,
+   con su rumbo, su curvatura, su altura y su ancho. Todo lo demás —el
+   asfalto, las veredas, las casas, los faroles, los coches y la gente— se
+   coloca en coordenadas de calle: `s` (metros recorridos) y `x` (metros a
+   la derecha del centro). No hay motor de física: la cuesta empuja, el
+   roce y el aire frenan, y las caídas son tumbos animados a mano.
 
-  // ─── la física ──────────────────────────────────────────────────
-  const SEG = 200;              // largo de un segmento
-  const ANCHO = 1700;           // medio ancho de la calle
-  const CAM_ALTO = 820;         // la cámara va bajita: es un coche de niño
-  const VISTA = 260;            // segmentos que se dibujan hacia delante
-  const FRANJA = 3;             // segmentos por franja de bordillo
-  const VMAX = SEG * 60;        // la velocidad de referencia: 72 km/h
-  const KMH = 72 / VMAX;
-  const TOPE = VMAX * 1.16;     // lo más que da una cuesta
-  const TOPE_TURBO = VMAX * 1.32;
-  const G = 10500;              // lo que tira la cuesta por unidad de pendiente
-  const ROCE = 260;             // rulimanes contra el asfalto
-  const AIRE = 2.6e-5;          // y el aire, que crece con el cuadrado
-  const PATADA = 3000;          // empujón al patear el suelo…
-  const PATADA_HASTA = VMAX * 0.5;  // …que no sirve de nada pasada esta velocidad
-  const FRENO = 9000;
-  const FUERA = 5200;           // la vereda y el pasto frenan
-  const FUERA_HASTA = VMAX * 0.22;
-  const CENTRIFUGA = 0.3;
-  const GIRO = 2.1;
-  const TURBO = 7000, TURBO_T = 1.7;
-  const COCHE_W = 0.34;         // el ancho de un coche, en medios anchos de calle
-  const NIEBLA = '#C9DCE6';
+   Los modelos:
+   · la tripulación, con los dos cuerpos base de Modo Incógnito (cabezones,
+     sin textura, se pintan por vértice con los colores de cada coche);
+   · la gente que se cruza, con el genérico, el policía y el ministro de
+     Estado Decepción;
+   · las animaciones (montado, correr, rol, golpe, salto), de Estado
+     Decepción, que comparte esqueleto con los de Modo Incógnito;
+   · las casas coloniales y los puestos, de la maqueta de Quito de Estado
+     Decepción (quito.glb). */
 
-  const raiz = document.documentElement;
-  const $ = (s) => document.querySelector(s);
-  const limita = (v, a, b) => Math.min(Math.max(v, a), b);
-  const mezcla = (a, b, p) => a + (b - a) * p;
-  const suave = (a, b, p) => a + (b - a) * (-Math.cos(p * Math.PI) / 2 + 0.5);
-  const quieto = matchMedia('(prefers-reduced-motion: reduce)');
-  const tactilMQ = matchMedia('(pointer: coarse)');
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { clone as clonaEsqueleto } from 'three/addons/utils/SkeletonUtils.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
-  // Un azar con semilla: la pista y sus casas salen iguales en cada carga.
-  function azar(semilla) {
-    let a = semilla >>> 0;
-    return () => {
-      a = (a + 0x6D2B79F5) >>> 0;
-      let t = a;
-      t = Math.imul(t ^ (t >>> 15), t | 1);
-      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
+// Los modelos se piden con el mismo sello que trae este módulo: si la página
+// estrena versión, estrenan URL también ellos.
+const SELLO = new URL(import.meta.url).search;
+const modeloUrl = (n) => new URL(`modelos/${n}.glb${SELLO}`, import.meta.url).href;
+
+// ─── la física, en metros y segundos ───────────────────────────────
+const G = 9.8;
+const CUESTA = 1.25;          // la cuesta tira un poco más que en la vida: es un juego
+const ROCE = 0.15;            // rulimanes contra el asfalto…
+const ROCE_PIEDRA = 0.22;     // …y contra el empedrado, que frena y traquetea
+const AIRE = 0.0032;
+const TOPE = 22;              // ~80 km/h, lo más que da una cuesta
+const TOPE_TURBO = 25;
+const EMPUJE = 3.6;           // lo que empuja el que va atrás…
+const CORRE = 7.5;            // …y lo más rápido que corre: más allá, no alcanza
+const FRENO = 7;
+const FUERA = 4;              // la vereda frena
+const GIRO = 0.42;            // el volante: metros de lado por cada m/s
+const CENTRIFUGA = 0.62;      // la curva te saca a v² · curvatura
+const KAPPA = 0.008;          // de «curva 7» a curvatura en 1/m
+const ACERA = 1.6;
+const BORDILLO = 0.13;
+const TABLA = 0.24;           // altura de la tabla sobre la calle
+const NIÑO = 1.2;             // la tripulación es de guaguas
+const ADULTO = 1.68;
+
+const $ = (s) => document.querySelector(s);
+const limita = (v, a, b) => Math.min(Math.max(v, a), b);
+const mezcla = (a, b, p) => a + (b - a) * p;
+const suave = (a, b, p) => a + (b - a) * (-Math.cos(p * Math.PI) / 2 + 0.5);
+const quieto = matchMedia('(prefers-reduced-motion: reduce)');
+const tactilMQ = matchMedia('(pointer: coarse)');
+
+function azar(semilla) {
+  let a = semilla >>> 0;
+  return () => {
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const elige = (r, lista) => lista[Math.floor(r() * lista.length)];
+
+// ─── los pintores de lienzo (fachadas, carteles, la Virgen) ────────
+function lienzo(w, h, pinta) {
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  pinta(c.getContext('2d'), w, h);
+  return c;
+}
+const TINTA = '#2A2118';
+function cupula(c, x, y, r, color, linterna) {
+  c.fillStyle = color; c.beginPath(); c.arc(x, y, r, Math.PI, 0); c.fill();
+  c.strokeStyle = 'rgba(0,0,0,.25)'; c.lineWidth = 2;
+  for (let k = -2; k <= 2; k++) { c.beginPath(); c.ellipse(x, y, Math.abs(k) * r / 3, r, 0, Math.PI, 0); c.stroke(); }
+  c.fillStyle = 'rgba(255,255,255,.25)'; c.beginPath(); c.ellipse(x - r * 0.35, y - r * 0.55, r * 0.18, r * 0.3, -0.5, 0, 7); c.fill();
+  c.fillStyle = linterna; c.fillRect(x - r * 0.14, y - r - r * 0.32, r * 0.28, r * 0.34);
+  c.beginPath(); c.arc(x, y - r - r * 0.32, r * 0.16, Math.PI, 0); c.fill();
+  c.strokeStyle = TINTA; c.lineWidth = 3;
+  c.beginPath(); c.moveTo(x, y - r - r * 0.5); c.lineTo(x, y - r - r * 0.85); c.moveTo(x - r * 0.1, y - r - r * 0.72); c.lineTo(x + r * 0.1, y - r - r * 0.72); c.stroke();
+}
+
+function arcos(c, x0, y, ancho, alto, n, fondo) {
+  const paso = ancho / n;
+  c.fillStyle = fondo;
+  for (let k = 0; k < n; k++) {
+    const cx = x0 + paso * k + paso / 2, rw = paso * 0.34;
+    c.beginPath(); c.moveTo(cx - rw, y); c.lineTo(cx - rw, y - alto + rw); c.arc(cx, y - alto + rw, rw, Math.PI, 0); c.lineTo(cx + rw, y); c.fill();
   }
-  const elige = (r, lista) => lista[Math.floor(r() * lista.length)];
+}
 
-  // ─── los sprites, pintados a mano ───────────────────────────────
-  function lienzo(w, h, pinta) {
-    const c = document.createElement('canvas');
-    c.width = w; c.height = h;
-    pinta(c.getContext('2d'), w, h);
-    return c;
+// La Compañía: fachada de piedra labrada y la cúpula dorada detrás.
+const compania = () => lienzo(440, 560, (c, w, h) => {
+  cupula(c, w / 2, 190, 112, '#D9A93A', '#C8952A');
+  cupula(c, 70, 250, 40, '#C8952A', '#B07E22');
+  cupula(c, w - 70, 250, 40, '#C8952A', '#B07E22');
+  c.fillStyle = '#A8977A'; c.fillRect(20, 230, w - 40, h - 230);
+  c.fillStyle = '#B9A88A'; c.beginPath(); c.moveTo(60, 230); c.lineTo(w / 2, 168); c.lineTo(w - 60, 230); c.fill();
+  // las columnas salomónicas, con su vuelta dorada
+  for (const x of [60, 120, w - 120, w - 60]) {
+    c.fillStyle = '#8E7D60'; c.fillRect(x - 11, 270, 22, h - 300);
+    c.strokeStyle = '#D9A93A'; c.lineWidth = 3;
+    for (let y = 274; y < h - 34; y += 16) { c.beginPath(); c.moveTo(x - 11, y); c.lineTo(x + 11, y + 10); c.stroke(); }
   }
-  const TINTA = '#2A2118';
+  c.fillStyle = '#5A3A1E'; c.beginPath(); c.moveTo(w / 2 - 44, h); c.lineTo(w / 2 - 44, h - 120); c.arc(w / 2, h - 120, 44, Math.PI, 0); c.lineTo(w / 2 + 44, h); c.fill();
+  c.strokeStyle = '#D9A93A'; c.lineWidth = 4; c.stroke();
+  c.fillStyle = '#6E5E44'; c.beginPath(); c.arc(w / 2, 300, 26, 0, 7); c.fill();
+  c.strokeStyle = '#D9A93A'; c.stroke();
+  c.fillStyle = 'rgba(0,0,0,.18)'; c.fillRect(20, h - 18, w - 40, 18);
+});
 
-  function casa(pared, marco, pisos, r) {
-    const hp = 92, alero = 44, w = 260, h = pisos * hp + alero;
-    return lienzo(w, h, (c) => {
-      // el tejado de teja
-      c.fillStyle = '#A8442C';
-      c.beginPath(); c.moveTo(0, alero); c.lineTo(16, 8); c.lineTo(w - 16, 8); c.lineTo(w, alero); c.closePath(); c.fill();
-      c.save(); c.clip();
-      c.strokeStyle = 'rgba(60,20,10,.35)'; c.lineWidth = 3;
-      for (let x = 4; x < w; x += 11) { c.beginPath(); c.moveTo(x, 8); c.lineTo(x + (x - w / 2) * 0.08, alero); c.stroke(); }
-      c.restore();
-      c.fillStyle = 'rgba(255,255,255,.18)'; c.fillRect(16, 8, w - 32, 5);
-      // la pared
-      c.fillStyle = pared; c.fillRect(6, alero, w - 12, h - alero);
-      c.fillStyle = 'rgba(0,0,0,.22)'; c.fillRect(6, alero, w - 12, 9);
-      // el zócalo de piedra
-      c.fillStyle = '#9C9488'; c.fillRect(6, h - 20, w - 12, 20);
-      c.fillStyle = 'rgba(0,0,0,.15)'; c.fillRect(6, h - 20, w - 12, 3);
-      for (let k = 0; k < pisos; k++) {
-        const y0 = alero + k * hp;
-        const abajo = k === pisos - 1;
-        if (abajo) {
-          // la puerta de madera, con arco
-          const pw = 50, px = w / 2 - pw / 2, py = y0 + 22;
-          c.fillStyle = marco; c.beginPath();
-          c.moveTo(px - 6, h - 20); c.lineTo(px - 6, py + 18); c.arc(w / 2, py + 18, pw / 2 + 6, Math.PI, 0); c.lineTo(px + pw + 6, h - 20); c.fill();
-          c.fillStyle = '#6B4423'; c.beginPath();
-          c.moveTo(px, h - 20); c.lineTo(px, py + 18); c.arc(w / 2, py + 18, pw / 2, Math.PI, 0); c.lineTo(px + pw, h - 20); c.fill();
-          c.strokeStyle = '#4A2E17'; c.lineWidth = 2; c.beginPath(); c.moveTo(w / 2, py); c.lineTo(w / 2, h - 20); c.stroke();
-          // dos ventanas con reja
-          for (const vx of [34, w - 34 - 36]) {
-            c.fillStyle = marco; c.fillRect(vx - 4, y0 + 22, 44, 50);
-            c.fillStyle = '#2E3A44'; c.fillRect(vx, y0 + 26, 36, 42);
-            c.strokeStyle = '#1C1C1C'; c.lineWidth = 2;
-            for (let b = vx + 6; b < vx + 36; b += 8) { c.beginPath(); c.moveTo(b, y0 + 26); c.lineTo(b, y0 + 68); c.stroke(); }
-          }
-        } else {
-          // tres balcones con su baranda
-          for (let v = 0; v < 3; v++) {
-            const vx = 26 + v * 76, vw = 56;
-            c.fillStyle = marco; c.fillRect(vx - 4, y0 + 16, vw + 8, 62);
-            c.fillStyle = '#3A4A57'; c.fillRect(vx, y0 + 20, vw, 54);
-            c.fillStyle = 'rgba(190,220,240,.35)'; c.fillRect(vx + 4, y0 + 24, vw / 2 - 6, 22);
-            c.strokeStyle = marco; c.lineWidth = 3; c.beginPath(); c.moveTo(vx + vw / 2, y0 + 20); c.lineTo(vx + vw / 2, y0 + 74); c.stroke();
-            // la baranda sale de la pared
-            c.fillStyle = 'rgba(0,0,0,.2)'; c.fillRect(vx - 8, y0 + 80, vw + 16, 6);
-            c.fillStyle = marco; c.fillRect(vx - 10, y0 + 54, vw + 20, 4); c.fillRect(vx - 10, y0 + 76, vw + 20, 5);
-            c.lineWidth = 2; c.strokeStyle = marco;
-            for (let b = vx - 6; b <= vx + vw + 8; b += 7) { c.beginPath(); c.moveTo(b, y0 + 56); c.lineTo(b, y0 + 77); c.stroke(); }
-          }
+// Las dos torres blancas, como las de San Francisco.
+const torres = () => lienzo(460, 600, (c, w, h) => {
+  const torre = (x) => {
+    c.fillStyle = '#F1EEE6'; c.fillRect(x, 120, 110, h - 120);
+    c.fillStyle = 'rgba(0,0,0,.08)'; c.fillRect(x + 84, 120, 26, h - 120);
+    arcos(c, x + 12, 220, 86, 70, 2, '#3B3633');
+    arcos(c, x + 12, 340, 86, 58, 2, '#3B3633');
+    c.fillStyle = '#E9E4D8'; c.beginPath(); c.moveTo(x - 6, 124); c.lineTo(x + 55, 40); c.lineTo(x + 116, 124); c.fill();
+    c.fillStyle = '#3F6F8F'; c.beginPath(); c.arc(x + 55, 60, 18, Math.PI, 0); c.fill();
+    c.strokeStyle = TINTA; c.lineWidth = 3; c.beginPath(); c.moveTo(x + 55, 42); c.lineTo(x + 55, 14); c.moveTo(x + 46, 24); c.lineTo(x + 64, 24); c.stroke();
+  };
+  torre(10); torre(w - 120);
+  c.fillStyle = '#F6F3EC'; c.fillRect(120, 230, w - 240, h - 230);
+  c.fillStyle = '#E9E4D8'; c.beginPath(); c.moveTo(114, 234); c.lineTo(w / 2, 170); c.lineTo(w - 114, 234); c.fill();
+  c.fillStyle = '#C9C2B4'; c.beginPath(); c.arc(w / 2, 300, 30, 0, 7); c.fill();
+  c.fillStyle = '#3F6F8F'; c.beginPath(); c.arc(w / 2, 300, 20, 0, 7); c.fill();
+  c.fillStyle = '#5A3A1E'; c.beginPath(); c.moveTo(w / 2 - 50, h); c.lineTo(w / 2 - 50, h - 130); c.arc(w / 2, h - 130, 50, Math.PI, 0); c.lineTo(w / 2 + 50, h); c.fill();
+  c.fillStyle = '#B5AE9F'; c.fillRect(0, h - 26, w, 26);
+  c.fillStyle = 'rgba(0,0,0,.15)'; for (let y = h - 26; y < h; y += 7) c.fillRect(0, y, w, 2);
+});
+
+// La Catedral: muro blanco largo, cúpulas de azulejo verde y el campanario.
+const catedral = () => lienzo(560, 420, (c, w, h) => {
+  cupula(c, 330, 150, 70, '#2F7D5B', '#D9A93A');
+  cupula(c, 200, 170, 44, '#2F7D5B', '#D9A93A');
+  c.fillStyle = '#F4F1EA'; c.fillRect(440, 30, 90, h - 30);
+  arcos(c, 450, 120, 70, 60, 1, '#3B3633');
+  c.fillStyle = '#A8442C'; c.beginPath(); c.moveTo(434, 34); c.lineTo(485, 0); c.lineTo(536, 34); c.fill();
+  c.fillStyle = '#F7F4ED'; c.fillRect(0, 170, 450, h - 170);
+  c.fillStyle = '#A8442C'; c.fillRect(0, 160, 450, 14);
+  arcos(c, 10, h - 30, 430, 120, 6, '#4A403A');
+  c.fillStyle = 'rgba(0,0,0,.06)'; c.fillRect(0, 170, 450, 10);
+  c.fillStyle = '#B5AE9F'; c.fillRect(0, h - 30, w, 30);
+});
+
+// Carondelet: la arquería blanca y la bandera arriba.
+const palacio = () => lienzo(600, 380, (c, w, h) => {
+  c.fillStyle = '#F7F5F0'; c.fillRect(0, 90, w, h - 90);
+  c.fillStyle = '#E5E0D4'; c.fillRect(0, 84, w, 14);
+  c.strokeStyle = TINTA; c.lineWidth = 4; c.beginPath(); c.moveTo(w / 2, 90); c.lineTo(w / 2, 0); c.stroke();
+  c.fillStyle = '#F5C518'; c.fillRect(w / 2 + 2, 4, 64, 22);
+  c.fillStyle = '#1F4E9E'; c.fillRect(w / 2 + 2, 26, 64, 11);
+  c.fillStyle = '#D6382B'; c.fillRect(w / 2 + 2, 37, 64, 11);
+  for (let k = 0; k < 9; k++) {
+    const x = 22 + k * 64;
+    c.fillStyle = '#3A4A57'; c.fillRect(x, 120, 40, 60);
+    c.fillStyle = '#F7F5F0'; c.fillRect(x - 6, 182, 52, 5);
+    c.strokeStyle = '#4A4A4A'; c.lineWidth = 2;
+    for (let b = x - 4; b < x + 46; b += 6) { c.beginPath(); c.moveTo(b, 168); c.lineTo(b, 182); c.stroke(); }
+  }
+  arcos(c, 0, h - 10, w, 150, 9, '#5C524A');
+  c.fillStyle = '#C9C2B4'; c.fillRect(0, h - 12, w, 12);
+});
+
+
+
+
+// La Virgen del Panecillo: aluminio, alas abiertas, sobre el mundo.
+const virgen = () => lienzo(360, 640, (c, w, h) => {
+  c.fillStyle = '#8D8A85'; c.fillRect(70, h - 120, 220, 120);
+  c.fillStyle = '#9E9B95'; c.fillRect(100, h - 170, 160, 54);
+  c.fillStyle = '#7C7974'; for (let y = h - 120; y < h; y += 20) c.fillRect(70, y, 220, 3);
+  c.fillStyle = '#AEB7BE'; c.beginPath(); c.arc(180, h - 205, 46, 0, 7); c.fill();
+  c.strokeStyle = '#87929B'; c.lineWidth = 3; c.beginPath(); c.ellipse(180, h - 205, 46, 14, 0, 0, 7); c.stroke();
+  c.beginPath(); c.ellipse(180, h - 205, 16, 46, 0, 0, 7); c.stroke();
+  const plata = c.createLinearGradient(80, 0, 280, 0);
+  plata.addColorStop(0, '#9FAAB2'); plata.addColorStop(0.5, '#E2E7EA'); plata.addColorStop(1, '#8E99A1');
+  // las alas
+  c.fillStyle = plata;
+  for (const s of [-1, 1]) {
+    c.beginPath(); c.moveTo(180, 240);
+    c.quadraticCurveTo(180 + s * 150, 120, 180 + s * 170, 30);
+    c.quadraticCurveTo(180 + s * 120, 170, 180 + s * 40, 330); c.closePath(); c.fill();
+    c.strokeStyle = 'rgba(80,90,100,.5)'; c.lineWidth = 2;
+    for (let k = 1; k < 5; k++) { c.beginPath(); c.moveTo(180 + s * 30, 250 + k * 10); c.lineTo(180 + s * (60 + k * 22), 80 + k * 30); c.stroke(); }
+  }
+  // el manto
+  c.beginPath(); c.moveTo(150, 200); c.quadraticCurveTo(120, 330, 128, h - 248); c.lineTo(232, h - 248); c.quadraticCurveTo(240, 330, 210, 200); c.closePath(); c.fill();
+  c.strokeStyle = 'rgba(80,90,100,.35)';
+  for (let k = 0; k < 5; k++) { c.beginPath(); c.moveTo(160 + k * 10, 220); c.lineTo(140 + k * 20, h - 252); c.stroke(); }
+  c.beginPath(); c.arc(180, 182, 24, 0, 7); c.fill();
+  c.fillStyle = '#C9D1D6'; c.beginPath(); c.moveTo(170, 160); c.lineTo(180, 136); c.lineTo(190, 160); c.fill();
+  // la corona de estrellas
+  c.fillStyle = '#E2E7EA';
+  for (let k = 0; k < 9; k++) { const a = Math.PI + k * Math.PI / 8; c.beginPath(); c.arc(180 + Math.cos(a) * 46, 170 + Math.sin(a) * 46, 4, 0, 7); c.fill(); }
+});
+
+// La gente que mira: cuatro o cinco con un cartel, que esto es fiesta.
+const ROPA = ['#D6382B', '#1B5FAA', '#F5A623', '#2E7D4F', '#6B2D7B', '#E9E4D8', '#3B4A6B', '#C2185B'];
+const PIEL = ['#8D5A3B', '#A86E48', '#C68B5E', '#7A4A2E'];
+const CARTELES = ['¡DALE!', 'GUAMBRA', '¡VAMOS!', 'QUITO', '¡ÑAÑO!', 'A TODO'];
+const publico = (r) => lienzo(220, 150, (c, w, h) => {
+  const n = 4 + Math.floor(r() * 2);
+  const cartel = Math.floor(r() * n);
+  for (let k = 0; k < n; k++) {
+    const x = 22 + k * (w - 44) / (n - 1) + (r() - 0.5) * 8, alto = 70 + r() * 30;
+    c.fillStyle = elige(r, ROPA);
+    c.beginPath(); c.moveTo(x - 18, h); c.lineTo(x - 15, h - alto + 18); c.quadraticCurveTo(x, h - alto + 8, x + 15, h - alto + 18); c.lineTo(x + 18, h); c.fill();
+    c.fillStyle = elige(r, PIEL); c.beginPath(); c.arc(x, h - alto, 12, 0, 7); c.fill();
+    if (r() < 0.4) { c.fillStyle = TINTA; c.fillRect(x - 16, h - alto - 10, 32, 4); c.fillRect(x - 10, h - alto - 20, 20, 11); }
+    else { c.fillStyle = '#2A2420'; c.beginPath(); c.arc(x, h - alto - 4, 12, Math.PI, 0); c.fill(); }
+    if (k === cartel) {
+      c.strokeStyle = '#6B4423'; c.lineWidth = 3; c.beginPath(); c.moveTo(x + 14, h - alto + 20); c.lineTo(x + 14, h - alto - 30); c.stroke();
+      c.fillStyle = '#FFF8E6'; c.fillRect(x - 20, h - alto - 64, 76, 36);
+      c.strokeStyle = TINTA; c.lineWidth = 2; c.strokeRect(x - 20, h - alto - 64, 76, 36);
+      c.fillStyle = '#D6382B'; c.font = '800 15px system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText(elige(r, CARTELES), x + 18, h - alto - 46);
+    } else if (r() < 0.5) {
+      c.strokeStyle = c.fillStyle = elige(r, PIEL); c.lineWidth = 6; c.lineCap = 'round';
+      c.beginPath(); c.moveTo(x + 12, h - alto + 24); c.lineTo(x + 22, h - alto - 14); c.stroke();
+    }
+  }
+});
+
+
+
+
+// La colada morada: el turbo de la casa.
+const colada = () => lienzo(110, 140, (c, w, h) => {
+  const halo = c.createRadialGradient(w / 2, 80, 6, w / 2, 80, 56);
+  halo.addColorStop(0, 'rgba(255,240,255,.9)'); halo.addColorStop(1, 'rgba(200,120,230,0)');
+  c.fillStyle = halo; c.fillRect(0, 20, w, h - 20);
+  c.fillStyle = 'rgba(255,255,255,.75)'; c.beginPath(); c.moveTo(30, 48); c.lineTo(80, 48); c.lineTo(72, 128); c.lineTo(38, 128); c.closePath(); c.fill();
+  c.fillStyle = '#5B1F6B'; c.beginPath(); c.moveTo(32, 62); c.lineTo(78, 62); c.lineTo(72, 124); c.lineTo(38, 124); c.closePath(); c.fill();
+  c.fillStyle = '#7E3593'; c.fillRect(33, 62, 44, 6);
+  c.fillStyle = '#D6382B'; c.beginPath(); c.arc(46, 66, 5, 0, 7); c.arc(62, 64, 4, 0, 7); c.fill();
+  c.strokeStyle = TINTA; c.lineWidth = 3; c.beginPath(); c.moveTo(30, 48); c.lineTo(38, 128); c.lineTo(72, 128); c.lineTo(80, 48); c.stroke();
+  c.strokeStyle = 'rgba(255,255,255,.9)'; c.lineWidth = 3; c.lineCap = 'round';
+  for (const x of [44, 56, 68]) { c.beginPath(); c.moveTo(x, 40); c.quadraticCurveTo(x - 6, 28, x, 18); c.stroke(); }
+});
+
+function textura(canvas, repite) {
+  const t = new THREE.CanvasTexture(canvas);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 4;
+  if (repite) t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  return t;
+}
+
+// Las superficies de la calle, pintadas una vez.
+function texturasSuelo() {
+  const r = azar(5);
+  const ruido = (c, w, h, base, n, tonos) => {
+    c.fillStyle = base; c.fillRect(0, 0, w, h);
+    for (let k = 0; k < n; k++) { c.fillStyle = elige(r, tonos); c.fillRect(r() * w, r() * h, 2 + r() * 3, 2 + r() * 3); }
+  };
+  return {
+    // 10 m de ancho por 8 de largo: la raya del centro, cuatro metros sí y cuatro no.
+    asfalto: textura(lienzo(256, 256, (c, w, h) => {
+      ruido(c, w, h, '#6C6863', 1600, ['#625E59', '#77736D', '#5B5752', '#807B74']);
+      c.fillStyle = '#F2C744'; c.fillRect(w / 2 - 3, 0, 6, h / 2);
+    }), true),
+    // El empedrado: 2 × 2 m, piedras de 25 cm en hileras trabadas.
+    adoquin: textura(lienzo(256, 256, (c, w, h) => {
+      c.fillStyle = '#4E4237'; c.fillRect(0, 0, w, h);
+      const tonos = ['#8E7E6B', '#857563', '#97887A', '#7C6D5D', '#A09080', '#8A7B6B'];
+      for (let fila = 0; fila < 8; fila++) {
+        const off = fila % 2 ? 16 : 0;
+        for (let col = -1; col < 9; col++) {
+          c.fillStyle = elige(r, tonos);
+          const x = col * 32 + off + 2, y = fila * 32 + 2;
+          c.beginPath(); c.roundRect(x, y, 28, 28, 7); c.fill();
+          c.fillStyle = 'rgba(255,255,255,.08)'; c.fillRect(x + 4, y + 4, 12, 5);
         }
       }
-      // macetas en algún balcón
-      if (pisos > 1 && r() < 0.6) {
-        c.fillStyle = '#D6382B';
-        for (let k = 0; k < 4; k++) { c.beginPath(); c.arc(30 + r() * 200, alero + 52 + 5, 5, 0, 7); c.fill(); }
-      }
-      c.strokeStyle = 'rgba(0,0,0,.25)'; c.lineWidth = 2; c.strokeRect(6, alero, w - 12, h - alero);
-    });
-  }
-
-  function cupula(c, x, y, r, color, linterna) {
-    c.fillStyle = color; c.beginPath(); c.arc(x, y, r, Math.PI, 0); c.fill();
-    c.strokeStyle = 'rgba(0,0,0,.25)'; c.lineWidth = 2;
-    for (let k = -2; k <= 2; k++) { c.beginPath(); c.ellipse(x, y, Math.abs(k) * r / 3, r, 0, Math.PI, 0); c.stroke(); }
-    c.fillStyle = 'rgba(255,255,255,.25)'; c.beginPath(); c.ellipse(x - r * 0.35, y - r * 0.55, r * 0.18, r * 0.3, -0.5, 0, 7); c.fill();
-    c.fillStyle = linterna; c.fillRect(x - r * 0.14, y - r - r * 0.32, r * 0.28, r * 0.34);
-    c.beginPath(); c.arc(x, y - r - r * 0.32, r * 0.16, Math.PI, 0); c.fill();
-    c.strokeStyle = TINTA; c.lineWidth = 3;
-    c.beginPath(); c.moveTo(x, y - r - r * 0.5); c.lineTo(x, y - r - r * 0.85); c.moveTo(x - r * 0.1, y - r - r * 0.72); c.lineTo(x + r * 0.1, y - r - r * 0.72); c.stroke();
-  }
-
-  function arcos(c, x0, y, ancho, alto, n, fondo) {
-    const paso = ancho / n;
-    c.fillStyle = fondo;
-    for (let k = 0; k < n; k++) {
-      const cx = x0 + paso * k + paso / 2, rw = paso * 0.34;
-      c.beginPath(); c.moveTo(cx - rw, y); c.lineTo(cx - rw, y - alto + rw); c.arc(cx, y - alto + rw, rw, Math.PI, 0); c.lineTo(cx + rw, y); c.fill();
-    }
-  }
-
-  // La Compañía: fachada de piedra labrada y la cúpula dorada detrás.
-  const compania = () => lienzo(440, 560, (c, w, h) => {
-    cupula(c, w / 2, 190, 112, '#D9A93A', '#C8952A');
-    cupula(c, 70, 250, 40, '#C8952A', '#B07E22');
-    cupula(c, w - 70, 250, 40, '#C8952A', '#B07E22');
-    c.fillStyle = '#A8977A'; c.fillRect(20, 230, w - 40, h - 230);
-    c.fillStyle = '#B9A88A'; c.beginPath(); c.moveTo(60, 230); c.lineTo(w / 2, 168); c.lineTo(w - 60, 230); c.fill();
-    // las columnas salomónicas, con su vuelta dorada
-    for (const x of [60, 120, w - 120, w - 60]) {
-      c.fillStyle = '#8E7D60'; c.fillRect(x - 11, 270, 22, h - 300);
-      c.strokeStyle = '#D9A93A'; c.lineWidth = 3;
-      for (let y = 274; y < h - 34; y += 16) { c.beginPath(); c.moveTo(x - 11, y); c.lineTo(x + 11, y + 10); c.stroke(); }
-    }
-    c.fillStyle = '#5A3A1E'; c.beginPath(); c.moveTo(w / 2 - 44, h); c.lineTo(w / 2 - 44, h - 120); c.arc(w / 2, h - 120, 44, Math.PI, 0); c.lineTo(w / 2 + 44, h); c.fill();
-    c.strokeStyle = '#D9A93A'; c.lineWidth = 4; c.stroke();
-    c.fillStyle = '#6E5E44'; c.beginPath(); c.arc(w / 2, 300, 26, 0, 7); c.fill();
-    c.strokeStyle = '#D9A93A'; c.stroke();
-    c.fillStyle = 'rgba(0,0,0,.18)'; c.fillRect(20, h - 18, w - 40, 18);
-  });
-
-  // Las dos torres blancas, como las de San Francisco.
-  const torres = () => lienzo(460, 600, (c, w, h) => {
-    const torre = (x) => {
-      c.fillStyle = '#F1EEE6'; c.fillRect(x, 120, 110, h - 120);
-      c.fillStyle = 'rgba(0,0,0,.08)'; c.fillRect(x + 84, 120, 26, h - 120);
-      arcos(c, x + 12, 220, 86, 70, 2, '#3B3633');
-      arcos(c, x + 12, 340, 86, 58, 2, '#3B3633');
-      c.fillStyle = '#E9E4D8'; c.beginPath(); c.moveTo(x - 6, 124); c.lineTo(x + 55, 40); c.lineTo(x + 116, 124); c.fill();
-      c.fillStyle = '#3F6F8F'; c.beginPath(); c.arc(x + 55, 60, 18, Math.PI, 0); c.fill();
-      c.strokeStyle = TINTA; c.lineWidth = 3; c.beginPath(); c.moveTo(x + 55, 42); c.lineTo(x + 55, 14); c.moveTo(x + 46, 24); c.lineTo(x + 64, 24); c.stroke();
-    };
-    torre(10); torre(w - 120);
-    c.fillStyle = '#F6F3EC'; c.fillRect(120, 230, w - 240, h - 230);
-    c.fillStyle = '#E9E4D8'; c.beginPath(); c.moveTo(114, 234); c.lineTo(w / 2, 170); c.lineTo(w - 114, 234); c.fill();
-    c.fillStyle = '#C9C2B4'; c.beginPath(); c.arc(w / 2, 300, 30, 0, 7); c.fill();
-    c.fillStyle = '#3F6F8F'; c.beginPath(); c.arc(w / 2, 300, 20, 0, 7); c.fill();
-    c.fillStyle = '#5A3A1E'; c.beginPath(); c.moveTo(w / 2 - 50, h); c.lineTo(w / 2 - 50, h - 130); c.arc(w / 2, h - 130, 50, Math.PI, 0); c.lineTo(w / 2 + 50, h); c.fill();
-    c.fillStyle = '#B5AE9F'; c.fillRect(0, h - 26, w, 26);
-    c.fillStyle = 'rgba(0,0,0,.15)'; for (let y = h - 26; y < h; y += 7) c.fillRect(0, y, w, 2);
-  });
-
-  // La Catedral: muro blanco largo, cúpulas de azulejo verde y el campanario.
-  const catedral = () => lienzo(560, 420, (c, w, h) => {
-    cupula(c, 330, 150, 70, '#2F7D5B', '#D9A93A');
-    cupula(c, 200, 170, 44, '#2F7D5B', '#D9A93A');
-    c.fillStyle = '#F4F1EA'; c.fillRect(440, 30, 90, h - 30);
-    arcos(c, 450, 120, 70, 60, 1, '#3B3633');
-    c.fillStyle = '#A8442C'; c.beginPath(); c.moveTo(434, 34); c.lineTo(485, 0); c.lineTo(536, 34); c.fill();
-    c.fillStyle = '#F7F4ED'; c.fillRect(0, 170, 450, h - 170);
-    c.fillStyle = '#A8442C'; c.fillRect(0, 160, 450, 14);
-    arcos(c, 10, h - 30, 430, 120, 6, '#4A403A');
-    c.fillStyle = 'rgba(0,0,0,.06)'; c.fillRect(0, 170, 450, 10);
-    c.fillStyle = '#B5AE9F'; c.fillRect(0, h - 30, w, 30);
-  });
-
-  // Carondelet: la arquería blanca y la bandera arriba.
-  const palacio = () => lienzo(600, 380, (c, w, h) => {
-    c.fillStyle = '#F7F5F0'; c.fillRect(0, 90, w, h - 90);
-    c.fillStyle = '#E5E0D4'; c.fillRect(0, 84, w, 14);
-    c.strokeStyle = TINTA; c.lineWidth = 4; c.beginPath(); c.moveTo(w / 2, 90); c.lineTo(w / 2, 0); c.stroke();
-    c.fillStyle = '#F5C518'; c.fillRect(w / 2 + 2, 4, 64, 22);
-    c.fillStyle = '#1F4E9E'; c.fillRect(w / 2 + 2, 26, 64, 11);
-    c.fillStyle = '#D6382B'; c.fillRect(w / 2 + 2, 37, 64, 11);
-    for (let k = 0; k < 9; k++) {
-      const x = 22 + k * 64;
-      c.fillStyle = '#3A4A57'; c.fillRect(x, 120, 40, 60);
-      c.fillStyle = '#F7F5F0'; c.fillRect(x - 6, 182, 52, 5);
-      c.strokeStyle = '#4A4A4A'; c.lineWidth = 2;
-      for (let b = x - 4; b < x + 46; b += 6) { c.beginPath(); c.moveTo(b, 168); c.lineTo(b, 182); c.stroke(); }
-    }
-    arcos(c, 0, h - 10, w, 150, 9, '#5C524A');
-    c.fillStyle = '#C9C2B4'; c.fillRect(0, h - 12, w, 12);
-  });
-
-  const farol = () => lienzo(60, 260, (c) => {
-    c.fillStyle = '#1E1E22';
-    c.fillRect(26, 70, 8, 180); c.fillRect(18, 236, 24, 24); c.fillRect(22, 226, 16, 12);
-    c.strokeStyle = '#1E1E22'; c.lineWidth = 4; c.beginPath(); c.moveTo(30, 90); c.quadraticCurveTo(10, 80, 18, 64); c.stroke();
-    c.beginPath(); c.moveTo(14, 26); c.lineTo(46, 26); c.lineTo(40, 66); c.lineTo(20, 66); c.closePath(); c.fill();
-    c.fillStyle = '#FFE08A'; c.beginPath(); c.moveTo(19, 31); c.lineTo(41, 31); c.lineTo(37, 61); c.lineTo(23, 61); c.closePath(); c.fill();
-    c.fillStyle = '#1E1E22'; c.beginPath(); c.moveTo(10, 28); c.lineTo(30, 8); c.lineTo(50, 28); c.fill();
-  });
-
-  const eucalipto = (r) => lienzo(240, 420, (c, w, h) => {
-    c.fillStyle = '#BFAE96'; c.beginPath(); c.moveTo(108, h); c.lineTo(114, 120); c.lineTo(126, 120); c.lineTo(134, h); c.fill();
-    c.strokeStyle = 'rgba(90,70,50,.4)'; c.lineWidth = 2;
-    for (let y = 150; y < h; y += 26) { c.beginPath(); c.moveTo(112, y); c.lineTo(130, y + 10); c.stroke(); }
-    const verdes = ['#55745A', '#5F7F62', '#6E8F6C', '#7FA07A', '#8BA88A'];
-    for (let k = 0; k < 26; k++) {
-      c.fillStyle = verdes[k % verdes.length];
-      const x = 120 + (r() - 0.5) * 170, y = 40 + r() * 230;
-      c.beginPath(); c.ellipse(x, y, 26 + r() * 22, 34 + r() * 30, 0, 0, 7); c.fill();
-    }
-  });
-
-  const palmera = () => lienzo(200, 380, (c, w, h) => {
-    c.strokeStyle = '#8E7656'; c.lineWidth = 14; c.beginPath(); c.moveTo(100, h); c.quadraticCurveTo(90, 200, 104, 80); c.stroke();
-    c.strokeStyle = '#6F5B40'; c.lineWidth = 2;
-    for (let y = h - 10; y > 90; y -= 12) { c.beginPath(); c.moveTo(92, y); c.lineTo(108, y - 4); c.stroke(); }
-    c.strokeStyle = '#4E7A3E'; c.lineCap = 'round';
-    for (let k = 0; k < 9; k++) {
-      const a = Math.PI + k * Math.PI / 8;
-      c.lineWidth = 12; c.beginPath(); c.moveTo(104, 80);
-      c.quadraticCurveTo(104 + Math.cos(a) * 60, 80 + Math.sin(a) * 60 - 20, 104 + Math.cos(a) * 95, 80 + Math.sin(a) * 40 + 40);
-      c.stroke();
-    }
-  });
-
-  // La Virgen del Panecillo: aluminio, alas abiertas, sobre el mundo.
-  const virgen = () => lienzo(360, 640, (c, w, h) => {
-    c.fillStyle = '#8D8A85'; c.fillRect(70, h - 120, 220, 120);
-    c.fillStyle = '#9E9B95'; c.fillRect(100, h - 170, 160, 54);
-    c.fillStyle = '#7C7974'; for (let y = h - 120; y < h; y += 20) c.fillRect(70, y, 220, 3);
-    c.fillStyle = '#AEB7BE'; c.beginPath(); c.arc(180, h - 205, 46, 0, 7); c.fill();
-    c.strokeStyle = '#87929B'; c.lineWidth = 3; c.beginPath(); c.ellipse(180, h - 205, 46, 14, 0, 0, 7); c.stroke();
-    c.beginPath(); c.ellipse(180, h - 205, 16, 46, 0, 0, 7); c.stroke();
-    const plata = c.createLinearGradient(80, 0, 280, 0);
-    plata.addColorStop(0, '#9FAAB2'); plata.addColorStop(0.5, '#E2E7EA'); plata.addColorStop(1, '#8E99A1');
-    // las alas
-    c.fillStyle = plata;
-    for (const s of [-1, 1]) {
-      c.beginPath(); c.moveTo(180, 240);
-      c.quadraticCurveTo(180 + s * 150, 120, 180 + s * 170, 30);
-      c.quadraticCurveTo(180 + s * 120, 170, 180 + s * 40, 330); c.closePath(); c.fill();
-      c.strokeStyle = 'rgba(80,90,100,.5)'; c.lineWidth = 2;
-      for (let k = 1; k < 5; k++) { c.beginPath(); c.moveTo(180 + s * 30, 250 + k * 10); c.lineTo(180 + s * (60 + k * 22), 80 + k * 30); c.stroke(); }
-    }
-    // el manto
-    c.beginPath(); c.moveTo(150, 200); c.quadraticCurveTo(120, 330, 128, h - 248); c.lineTo(232, h - 248); c.quadraticCurveTo(240, 330, 210, 200); c.closePath(); c.fill();
-    c.strokeStyle = 'rgba(80,90,100,.35)';
-    for (let k = 0; k < 5; k++) { c.beginPath(); c.moveTo(160 + k * 10, 220); c.lineTo(140 + k * 20, h - 252); c.stroke(); }
-    c.beginPath(); c.arc(180, 182, 24, 0, 7); c.fill();
-    c.fillStyle = '#C9D1D6'; c.beginPath(); c.moveTo(170, 160); c.lineTo(180, 136); c.lineTo(190, 160); c.fill();
-    // la corona de estrellas
-    c.fillStyle = '#E2E7EA';
-    for (let k = 0; k < 9; k++) { const a = Math.PI + k * Math.PI / 8; c.beginPath(); c.arc(180 + Math.cos(a) * 46, 170 + Math.sin(a) * 46, 4, 0, 7); c.fill(); }
-  });
-
-  // La gente que mira: cuatro o cinco con un cartel, que esto es fiesta.
-  const ROPA = ['#D6382B', '#1B5FAA', '#F5A623', '#2E7D4F', '#6B2D7B', '#E9E4D8', '#3B4A6B', '#C2185B'];
-  const PIEL = ['#8D5A3B', '#A86E48', '#C68B5E', '#7A4A2E'];
-  const CARTELES = ['¡DALE!', 'GUAMBRA', '¡VAMOS!', 'QUITO', '¡ÑAÑO!', 'A TODO'];
-  const publico = (r) => lienzo(220, 150, (c, w, h) => {
-    const n = 4 + Math.floor(r() * 2);
-    const cartel = Math.floor(r() * n);
-    for (let k = 0; k < n; k++) {
-      const x = 22 + k * (w - 44) / (n - 1) + (r() - 0.5) * 8, alto = 70 + r() * 30;
-      c.fillStyle = elige(r, ROPA);
-      c.beginPath(); c.moveTo(x - 18, h); c.lineTo(x - 15, h - alto + 18); c.quadraticCurveTo(x, h - alto + 8, x + 15, h - alto + 18); c.lineTo(x + 18, h); c.fill();
-      c.fillStyle = elige(r, PIEL); c.beginPath(); c.arc(x, h - alto, 12, 0, 7); c.fill();
-      if (r() < 0.4) { c.fillStyle = TINTA; c.fillRect(x - 16, h - alto - 10, 32, 4); c.fillRect(x - 10, h - alto - 20, 20, 11); }
-      else { c.fillStyle = '#2A2420'; c.beginPath(); c.arc(x, h - alto - 4, 12, Math.PI, 0); c.fill(); }
-      if (k === cartel) {
-        c.strokeStyle = '#6B4423'; c.lineWidth = 3; c.beginPath(); c.moveTo(x + 14, h - alto + 20); c.lineTo(x + 14, h - alto - 30); c.stroke();
-        c.fillStyle = '#FFF8E6'; c.fillRect(x - 20, h - alto - 64, 76, 36);
-        c.strokeStyle = TINTA; c.lineWidth = 2; c.strokeRect(x - 20, h - alto - 64, 76, 36);
-        c.fillStyle = '#D6382B'; c.font = '800 15px system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
-        c.fillText(elige(r, CARTELES), x + 18, h - alto - 46);
-      } else if (r() < 0.5) {
-        c.strokeStyle = c.fillStyle = elige(r, PIEL); c.lineWidth = 6; c.lineCap = 'round';
-        c.beginPath(); c.moveTo(x + 12, h - alto + 24); c.lineTo(x + 22, h - alto - 14); c.stroke();
-      }
-    }
-  });
-
-  const senal = (lado) => lienzo(100, 190, (c) => {
-    c.fillStyle = '#8A8F94'; c.fillRect(46, 80, 8, 110);
-    c.save(); c.translate(50, 52); c.rotate(Math.PI / 4);
-    c.fillStyle = '#F5C518'; c.fillRect(-32, -32, 64, 64);
-    c.strokeStyle = TINTA; c.lineWidth = 4; c.strokeRect(-28, -28, 56, 56);
-    c.restore();
-    c.strokeStyle = TINTA; c.lineWidth = 6; c.lineCap = 'round'; c.lineJoin = 'round';
-    c.beginPath(); c.moveTo(50 - 8 * lado, 72); c.quadraticCurveTo(50 - 8 * lado, 44, 50 + 10 * lado, 40); c.stroke();
-    c.fillStyle = TINTA; c.beginPath(); c.moveTo(50 + 18 * lado, 40); c.lineTo(50 + 6 * lado, 30); c.lineTo(50 + 6 * lado, 50); c.fill();
-  });
-
-  const muro = () => lienzo(240, 60, (c, w, h) => {
-    c.fillStyle = '#9A9385'; c.fillRect(0, 10, w, h - 10);
-    c.fillStyle = '#B3AC9D'; c.fillRect(0, 6, w, 8);
-    c.strokeStyle = 'rgba(40,30,20,.35)'; c.lineWidth = 2;
-    for (let y = 22; y < h; y += 14) for (let x = (y % 28 ? 0 : 20); x < w; x += 40) c.strokeRect(x, y - 12, 40, 14);
-  });
-
-  const hueco = () => lienzo(140, 42, (c, w, h) => {
-    c.fillStyle = '#5E564C'; c.beginPath(); c.ellipse(w / 2, h / 2, w / 2 - 2, h / 2 - 2, 0, 0, 7); c.fill();
-    c.fillStyle = '#231F1B'; c.beginPath(); c.ellipse(w / 2, h / 2 + 3, w / 2 - 12, h / 2 - 7, 0, 0, 7); c.fill();
-    c.strokeStyle = '#3C3630'; c.lineWidth = 2; c.beginPath(); c.moveTo(4, h / 2); c.lineTo(-2, h / 2 - 6); c.moveTo(w - 4, h / 2); c.lineTo(w + 2, h / 2 + 6); c.stroke();
-  });
-
-  // La colada morada: el turbo de la casa.
-  const colada = () => lienzo(110, 140, (c, w, h) => {
-    const halo = c.createRadialGradient(w / 2, 80, 6, w / 2, 80, 56);
-    halo.addColorStop(0, 'rgba(255,240,255,.9)'); halo.addColorStop(1, 'rgba(200,120,230,0)');
-    c.fillStyle = halo; c.fillRect(0, 20, w, h - 20);
-    c.fillStyle = 'rgba(255,255,255,.75)'; c.beginPath(); c.moveTo(30, 48); c.lineTo(80, 48); c.lineTo(72, 128); c.lineTo(38, 128); c.closePath(); c.fill();
-    c.fillStyle = '#5B1F6B'; c.beginPath(); c.moveTo(32, 62); c.lineTo(78, 62); c.lineTo(72, 124); c.lineTo(38, 124); c.closePath(); c.fill();
-    c.fillStyle = '#7E3593'; c.fillRect(33, 62, 44, 6);
-    c.fillStyle = '#D6382B'; c.beginPath(); c.arc(46, 66, 5, 0, 7); c.arc(62, 64, 4, 0, 7); c.fill();
-    c.strokeStyle = TINTA; c.lineWidth = 3; c.beginPath(); c.moveTo(30, 48); c.lineTo(38, 128); c.lineTo(72, 128); c.lineTo(80, 48); c.stroke();
-    c.strokeStyle = 'rgba(255,255,255,.9)'; c.lineWidth = 3; c.lineCap = 'round';
-    for (const x of [44, 56, 68]) { c.beginPath(); c.moveTo(x, 40); c.quadraticCurveTo(x - 6, 28, x, 18); c.stroke(); }
-  });
-
-  // El coche de madera visto desde atrás: tabla, rulimanes y el guagua.
-  // `pie` saca una pierna a patear (−1 izquierda, 1 derecha, 2 las dos
-  // abajo, que es frenar con la suela).
-  function coche(p, pie) {
-    return lienzo(200, 190, (c, w, h) => {
-      c.fillStyle = 'rgba(0,0,0,.28)'; c.beginPath(); c.ellipse(w / 2, h - 10, 92, 10, 0, 0, 7); c.fill();
-      const pierna = (s, abajo) => {
-        const x = w / 2 + s * 40;
-        c.strokeStyle = '#2F3A4F'; c.lineWidth = 16; c.lineCap = 'round';
-        c.beginPath(); c.moveTo(x, 118); c.lineTo(x + s * 22, abajo ? 168 : 160); c.stroke();
-        c.fillStyle = '#F3F1EC'; c.beginPath(); c.ellipse(x + s * 24, abajo ? 176 : 168, 14, 9, 0, 0, 7); c.fill();
-        c.strokeStyle = TINTA; c.lineWidth = 2; c.stroke();
-      };
-      if (pie === 2) { pierna(-1, true); pierna(1, true); }
-      else if (pie) pierna(pie, false);
-      // los rulimanes de atrás
-      for (const x of [20, w - 20]) {
-        c.fillStyle = '#4A4E53'; c.fillRect(x - 13, 140, 26, 36);
-        c.fillStyle = '#A7ADB3'; c.fillRect(x - 9, 144, 18, 28);
-        c.fillStyle = '#2A2A2A'; c.fillRect(x - 3, 150, 6, 16);
-      }
-      c.fillStyle = '#3A3A3A'; c.fillRect(20, 152, w - 40, 6);
-      // la tabla
-      c.fillStyle = p.tabla; c.fillRect(12, 128, w - 24, 26);
-      c.fillStyle = 'rgba(255,255,255,.22)'; c.fillRect(12, 128, w - 24, 6);
-      c.strokeStyle = 'rgba(80,45,15,.45)'; c.lineWidth = 1.5;
-      for (let y = 138; y < 154; y += 6) { c.beginPath(); c.moveTo(14, y); c.bezierCurveTo(60, y - 3, 120, y + 3, w - 14, y); c.stroke(); }
-      c.strokeStyle = TINTA; c.lineWidth = 3; c.strokeRect(12, 128, w - 24, 26);
-      c.fillStyle = '#FFF8E6'; c.font = '800 18px system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
-      c.fillText(String(p.num), w / 2, 142);
-      // el cuerpo, de espaldas
-      c.fillStyle = p.ropa;
-      c.beginPath(); c.moveTo(56, 130); c.lineTo(60, 70); c.quadraticCurveTo(w / 2, 52, w - 60, 70); c.lineTo(w - 56, 130); c.closePath(); c.fill();
-      c.strokeStyle = TINTA; c.lineWidth = 3; c.stroke();
-      // los brazos, adelante a la soga
-      c.strokeStyle = p.ropa; c.lineWidth = 14; c.lineCap = 'round';
-      c.beginPath(); c.moveTo(62, 80); c.lineTo(44, 116); c.moveTo(w - 62, 80); c.lineTo(w - 44, 116); c.stroke();
-      c.fillStyle = 'rgba(0,0,0,.12)'; c.fillRect(64, 112, w - 128, 16);
-      if (p.bufanda) {
-        c.strokeStyle = p.bufanda; c.lineWidth = 9;
-        c.beginPath(); c.moveTo(78, 66); c.quadraticCurveTo(w / 2, 76, w - 78, 66); c.moveTo(w / 2 + 18, 70); c.lineTo(w / 2 + 32, 104); c.stroke();
-      }
-      // la cabeza y el casco
-      c.fillStyle = '#2A2420'; c.beginPath(); c.arc(w / 2, 42, 24, 0, 7); c.fill();
-      if (p.trenza) { c.strokeStyle = '#2A2420'; c.lineWidth = 9; c.beginPath(); c.moveTo(w / 2, 58); c.quadraticCurveTo(w / 2 + 6, 80, w / 2 - 4, 96); c.stroke(); }
-      if (p.sombrero) {
-        c.fillStyle = p.casco; c.beginPath(); c.ellipse(w / 2, 30, 40, 9, 0, 0, 7); c.fill();
-        c.fillRect(w / 2 - 22, 6, 44, 24); c.fillStyle = TINTA; c.fillRect(w / 2 - 22, 22, 44, 5);
-      } else {
-        c.fillStyle = p.casco; c.beginPath(); c.arc(w / 2, 40, 27, Math.PI * 1.02, Math.PI * 1.98); c.lineTo(w / 2 + 27, 50); c.lineTo(w / 2 - 27, 50); c.closePath(); c.fill();
-        c.fillStyle = 'rgba(255,255,255,.85)'; c.fillRect(w / 2 - 4, 14, 8, 36);
-        c.strokeStyle = TINTA; c.lineWidth = 3; c.stroke();
-      }
-    });
-  }
-
-  // ─── los competidores ───────────────────────────────────────────
-  const TU = { nombre: 'Tú', casco: '#D6382B', ropa: '#F3F1EC', tabla: '#C8955A', num: 1, bufanda: '#1B5FAA' };
-  const RIVALES = [
-    { nombre: 'El Chulla', casco: '#1B1B1F', ropa: '#3B4A6B', tabla: '#B98250', num: 7, hab: 0.97, sombrero: true },
-    { nombre: 'La Guambra Pao', casco: '#E01B6A', ropa: '#F5A623', tabla: '#D2A26A', num: 11, hab: 0.955, trenza: true },
-    { nombre: 'Evaristo', casco: '#5A3A22', ropa: '#8C3B2E', tabla: '#A87445', num: 3, hab: 0.94, sombrero: true, bufanda: '#F5C518' },
-    { nombre: 'La Ñaña Vicky', casco: '#1B5FAA', ropa: '#6B2D7B', tabla: '#C99358', num: 5, hab: 0.93, trenza: true },
-    { nombre: 'Don Lucho', casco: '#2E7D4F', ropa: '#D9D4C7', tabla: '#B07B48', num: 21, hab: 0.915 },
-  ];
-
-  // ─── la pista ───────────────────────────────────────────────────
-  const ZONAS = {
-    panecillo: { nombre: 'El Panecillo', calle: 'asfalto', lado: 'pasto' },
-    ambato: { nombre: 'La bajada de la Ambato', calle: 'asfalto', lado: 'vereda' },
-    bulevar: { nombre: 'Bulevar 24 de Mayo', calle: 'asfalto', lado: 'vereda' },
-    ronda: { nombre: 'La Ronda', calle: 'adoquin', lado: 'vereda' },
-    garcia: { nombre: 'La García Moreno', calle: 'adoquin', lado: 'vereda' },
-    plaza: { nombre: 'Plaza Grande', calle: 'adoquin', lado: 'plaza' },
+    }), true),
+    vereda: textura(lienzo(256, 256, (c, w, h) => {
+      ruido(c, w, h, '#D3CBBB', 900, ['#C9C0AE', '#DAD3C5', '#C4BBA9']);
+      c.strokeStyle = 'rgba(90,80,65,.45)'; c.lineWidth = 3;
+      for (let k = 0; k <= 4; k++) { c.beginPath(); c.moveTo(0, k * 64); c.lineTo(w, k * 64); c.moveTo(k * 64, 0); c.lineTo(k * 64, h); c.stroke(); }
+    }), true),
+    pasto: textura(lienzo(256, 256, (c, w, h) => ruido(c, w, h, '#76A04B', 2500, ['#6C9644', '#82AC55', '#668E40', '#8DB45E'])), true),
+    plaza: textura(lienzo(256, 256, (c, w, h) => {
+      ruido(c, w, h, '#DCD4C4', 800, ['#D2CAB9', '#E3DCCE']);
+      c.strokeStyle = 'rgba(90,80,65,.35)'; c.lineWidth = 3;
+      for (let k = 0; k <= 2; k++) { c.beginPath(); c.moveTo(0, k * 128); c.lineTo(w, k * 128); c.moveTo(k * 128, 0); c.lineTo(k * 128, h); c.stroke(); }
+    }), true),
+    madera: textura(lienzo(128, 128, (c, w, h) => {
+      c.fillStyle = '#C8955A'; c.fillRect(0, 0, w, h);
+      c.strokeStyle = 'rgba(110,65,25,.45)'; c.lineWidth = 2;
+      for (let y = 6; y < h; y += 9) { c.beginPath(); c.moveTo(0, y); c.bezierCurveTo(40, y - 4, 90, y + 4, w, y); c.stroke(); }
+    }), true),
   };
-  const COLOR = {
-    asfalto: { claro: '#6F6B67', oscuro: '#68645F', borde: ['#E6E1D6', '#A39D92'], linea: '#F2C744' },
-    adoquin: { claro: '#8E7E6B', oscuro: '#827260', borde: ['#C2B9A9', '#958D80'], junta: 'rgba(45,32,22,.38)' },
-    pasto: { claro: '#7BA44F', oscuro: '#6F9846' },
-    vereda: { claro: '#D3CBBB', oscuro: '#C8BFAD' },
-    plaza: { claro: '#DCD4C4', oscuro: '#CFC6B4' },
+}
+
+// ─── la pista ──────────────────────────────────────────────────────
+const ZONAS = {
+  panecillo: { nombre: 'El Panecillo', calle: 'asfalto', lado: 'pasto', hw: 4.0 },
+  ambato: { nombre: 'La bajada de la Ambato', calle: 'asfalto', lado: 'vereda', hw: 3.6 },
+  bulevar: { nombre: 'Bulevar 24 de Mayo', calle: 'asfalto', lado: 'vereda', hw: 4.5 },
+  ronda: { nombre: 'La Ronda', calle: 'adoquin', lado: 'vereda', hw: 3.4 },
+  garcia: { nombre: 'La García Moreno', calle: 'adoquin', lado: 'vereda', hw: 3.4 },
+  plaza: { nombre: 'Plaza Grande', calle: 'adoquin', lado: 'plaza', hw: 5.0 },
+};
+const CENTRO = new Set(['ambato', 'bulevar', 'ronda', 'garcia', 'plaza']);
+
+const P = { x: [], z: [], y: [], th: [], k: [], hw: [], zona: [], pend: [] };
+const tramos = [];
+let N = 0, SALIDA = 0, META = 0;
+
+function construyePista() {
+  let x = 0, z = 0, y = 0, th = 0, zona = 'panecillo';
+  const metro = (k, dy) => {
+    P.x.push(x); P.z.push(z); P.y.push(y); P.th.push(th); P.k.push(k); P.zona.push(zona); P.hw.push(ZONAS[zona].hw);
+    th -= k; x += Math.sin(th); z += Math.cos(th); y += dy;
   };
+  const tramo = (ent, sost, sal, c, dy) => {
+    const total = ent + sost + sal, paso = dy / total;
+    for (let n = 0; n < ent; n++) metro(suave(0, c, n / ent) * KAPPA, paso);
+    for (let n = 0; n < sost; n++) metro(c * KAPPA, paso);
+    for (let n = 0; n < sal; n++) metro(suave(c, 0, n / sal) * KAPPA, paso);
+  };
+  const nueva = (zz) => { zona = zz; tramos.push({ zona: zz, i: P.x.length }); };
 
-  const segmentos = [];
-  const tramos = [];            // dónde empieza cada zona
-  let zona = 'panecillo';
-  let salidaI = 0, metaI = 0;
+  nueva('panecillo');
+  tramo(0, 40, 0, 0, 0);
+  SALIDA = 34;
+  tramo(12, 20, 12, 0, -5);
+  tramo(14, 22, 14, -5, -6);
+  tramo(14, 22, 14, 6, -6);
+  tramo(16, 30, 16, 7, -7);       // la horquilla: se frena antes o se sale
+  tramo(14, 20, 14, -5, -5);
+  tramo(10, 14, 10, 2, -3);
+  nueva('ambato');
+  tramo(18, 80, 18, 0, -22);      // la empinada
+  tramo(10, 10, 10, 0, 1.2);      // el lomo del final
+  tramo(15, 24, 15, 3, -3);
+  nueva('bulevar');
+  tramo(18, 54, 18, -2, -3);
+  tramo(15, 24, 15, 3, -1);
+  nueva('ronda');
+  tramo(9, 15, 9, -4, 0.8);
+  tramo(9, 15, 9, 5, -2.5);
+  tramo(9, 15, 9, -4, 0.6);
+  tramo(9, 15, 9, 4, -2.5);
+  tramo(9, 12, 9, -2, 0);
+  nueva('garcia');
+  tramo(12, 36, 12, 0, 2.6);      // la subida: aquí se empuja
+  tramo(10, 14, 10, 3, 0);
+  nueva('plaza');
+  META = P.x.length + 40;
+  tramo(6, 66, 6, 0, 0);
+  tramo(0, 160, 0, 0, 0);
+  N = P.x.length;
 
-  function pon(curva, y) {
-    const n = segmentos.length;
-    const y0 = n ? segmentos[n - 1].p2.mundo.y : 0;
-    segmentos.push({
-      i: n, curva, zona, y,
-      p1: { mundo: { y: y0, z: n * SEG }, cam: {}, pant: {} },
-      p2: { mundo: { y, z: (n + 1) * SEG }, cam: {}, pant: {} },
-      claro: Math.floor(n / FRANJA) % 2 === 0,
-      sprites: [], portal: null, clip: 0,
-    });
-  }
-  function nuevaZona(z) { zona = z; tramos.push({ zona: z, i: segmentos.length }); }
-  // Un tramo entra en la curva, la sostiene y sale; la altura cambia en
-  // línea recta y luego se suaviza toda junta, para que las pendientes se
-  // encadenen sin escalones entre tramo y tramo.
-  function tramo(ent, sost, sal, curva, alto) {
-    const n0 = segmentos.length;
-    const y0 = n0 ? segmentos[n0 - 1].y : 0, total = ent + sost + sal;
-    let k = 0;
-    const y = () => y0 + alto * SEG * (++k / total);
-    for (let n = 0; n < ent; n++) pon(suave(0, curva, n / ent), y());
-    for (let n = 0; n < sost; n++) pon(curva, y());
-    for (let n = 0; n < sal; n++) pon(suave(curva, 0, n / sal), y());
-  }
-
-  function construye() {
-    nuevaZona('panecillo');
-    tramo(0, 50, 0, 0, 0);
-    salidaI = 30;
-    tramo(20, 40, 20, 0, -14);
-    tramo(25, 45, 25, -5, -22);
-    tramo(25, 45, 25, 6, -24);
-    tramo(20, 30, 20, -3, -12);
-    tramo(30, 60, 30, 7, -30);     // la horquilla: aquí se frena o se sale
-    tramo(25, 40, 25, -5, -20);
-    tramo(20, 30, 20, 2, -8);
-    nuevaZona('ambato');
-    tramo(30, 130, 30, 0, -95);    // la empinada
-    tramo(20, 20, 20, 0, 8);       // el lomo de burro del final
-    tramo(25, 40, 25, 3, -14);
-    nuevaZona('bulevar');
-    tramo(30, 90, 30, -2, -16);
-    tramo(25, 40, 25, 3, -6);
-    nuevaZona('ronda');
-    tramo(15, 25, 15, -4, 7);
-    tramo(15, 25, 15, 5, -10);
-    tramo(15, 25, 15, -4, 6);
-    tramo(15, 25, 15, 4, -9);
-    tramo(15, 20, 15, -2, 3);
-    nuevaZona('garcia');
-    tramo(30, 150, 30, 0, 36);     // la subida, a patada limpia
-    tramo(20, 30, 20, 3, 5);
-    nuevaZona('plaza');
-    metaI = segmentos.length + 70;
-    tramo(10, 110, 10, 0, 0);
-    tramo(0, VISTA + 60, 0, 0, 0);
-
-    // Suavizar las alturas: dos pasadas de media móvil.
-    let ys = segmentos.map((s) => s.y);
-    for (let pasada = 0; pasada < 2; pasada++) {
-      const R = 22, sal = new Array(ys.length);
-      for (let i = 0; i < ys.length; i++) {
+  // Las alturas y los anchos se suavizan: la pendiente cambia sin escalones
+  // y la calle se ensancha o se estrecha a lo largo de unos metros.
+  const suaviza = (arr, R, pasadas) => {
+    let a = arr.slice();
+    for (let p = 0; p < pasadas; p++) {
+      const b = new Array(a.length);
+      for (let i = 0; i < a.length; i++) {
         let t = 0, c = 0;
-        for (let k = i - R; k <= i + R; k++) { t += ys[limita(k, 0, ys.length - 1)]; c++; }
-        sal[i] = t / c;
+        for (let k = i - R; k <= i + R; k++) { t += a[limita(k, 0, a.length - 1)]; c++; }
+        b[i] = t / c;
       }
-      ys = sal;
+      a = b;
     }
-    segmentos.forEach((s, i) => {
-      s.p2.mundo.y = ys[i];
-      s.p1.mundo.y = i ? ys[i - 1] : ys[0];
-    });
-    segmentos[salidaI].portal = 'salida';
-    segmentos[metaI].portal = 'meta';
-    decora();
-  }
-
-  const SPR = {};
-  function pintaSprites() {
-    const r = azar(7);
-    const paredes = ['#F6F3EC', '#F6F3EC', '#F2EBDD', '#EAD9B0', '#E3C37A', '#BFD3E2', '#F3E3D3', '#CDE0C5'];
-    const marcos = ['#1F4E9E', '#1F4E9E', '#2E6B3A', '#7A3B26', '#1F4E9E'];
-    SPR.casas = [];
-    for (let k = 0; k < 10; k++) SPR.casas.push(casa(paredes[k % paredes.length], elige(r, marcos), 2 + (k % 3 === 0 ? 1 : 0), r));
-    SPR.compania = compania(); SPR.torres = torres(); SPR.catedral = catedral(); SPR.palacio = palacio();
-    SPR.farol = farol(); SPR.palmera = palmera(); SPR.virgen = virgen(); SPR.muro = muro();
-    SPR.eucaliptos = [eucalipto(r), eucalipto(r), eucalipto(r)];
-    SPR.publico = [publico(r), publico(r), publico(r), publico(r)];
-    SPR.senal = { '-1': senal(-1), '1': senal(1) };
-    SPR.hueco = hueco(); SPR.colada = colada();
-    for (const p of [TU, ...RIVALES]) {
-      p.spr = { quieto: coche(p, 0), izq: coche(p, -1), der: coche(p, 1), freno: coche(p, 2) };
-    }
-  }
-
-  // Lo que va a los lados y lo que hay en la calle. `w` es el ancho en
-  // medios anchos de calle; `x`, el centro; `cw`, el ancho con el que se
-  // choca, si no es todo (de un eucalipto solo choca el tronco).
-  function sprite(i, img, x, w, extra) {
-    const s = segmentos[i];
-    if (s) s.sprites.push(Object.assign({ img, x, w }, extra));
-  }
-
-  function decora() {
-    const r = azar(2024);
-    const zonaDe = (z) => {
-      const t = tramos.findIndex((q) => q.zona === z);
-      return [tramos[t].i, t + 1 < tramos.length ? tramos[t + 1].i : metaI + 40];
-    };
-    // El Panecillo: eucaliptos, muros, la Virgen y los letreros de curva.
-    const [p0, p1] = zonaDe('panecillo');
-    sprite(salidaI + 18, SPR.virgen, -3.4, 2.6, { choca: true, cw: 0.6 });
-    for (let i = p0; i < p1; i += 9) {
-      if (i > salidaI + 8 && i < salidaI + 30) continue;
-      sprite(i, elige(r, SPR.eucaliptos), -(2.1 + r() * 2.4), 1.5 + r() * 0.5, { choca: true, cw: 0.22 });
-      sprite(i + 4, elige(r, SPR.eucaliptos), 2.1 + r() * 2.4, 1.5 + r() * 0.5, { choca: true, cw: 0.22 });
-    }
-    for (let i = p0 + 60; i < p1; i += 7) { sprite(i, SPR.muro, -1.68, 1.1, { choca: true }); sprite(i + 3, SPR.muro, 1.68, 1.1, { choca: true }); }
-    for (let i = p0 + 2; i < salidaI + 6; i += 5) {
-      sprite(i, elige(r, SPR.publico), -1.78, 1.3); sprite(i + 2, elige(r, SPR.publico), 1.78, 1.3);
-    }
-    // Avisos de curva: donde una curva fuerte empieza a cerrarse.
-    for (let i = p0 + 40; i < metaI; i++) {
-      const c = segmentos[i].curva, ant = segmentos[i - 1].curva;
-      if (Math.abs(c) >= 3.5 && Math.abs(ant) < 3.5 && Math.abs(c) > Math.abs(ant)) {
-        const s = Math.sign(c);
-        for (const k of [-30, -18]) sprite(i + k, SPR.senal[String(s)], -s * 1.35, 0.55, { choca: true });
-      }
-    }
-    for (let i = p0 + 120; i < p1; i += 70) sprite(i, elige(r, SPR.publico), (r() < 0.5 ? -1 : 1) * 1.8, 1.3);
-
-    // El centro: casas seguidas a los dos lados, faroles y gente.
-    const centro0 = zonaDe('ambato')[0];
-    for (let i = centro0; i < metaI + VISTA; i += 13) {
-      const z = segmentos[i].zona;
-      if (z === 'plaza') continue;
-      for (const s of [-1, 1]) {
-        const w = 2.1 + r() * 0.4;
-        sprite(i + (s > 0 ? 6 : 0), elige(r, SPR.casas), s * (1.3 + w / 2), w, { choca: true });
-      }
-    }
-    for (let i = centro0 + 4; i < metaI + 40; i += 11) { sprite(i, SPR.farol, -1.13, 0.22, { choca: true }); sprite(i + 5, SPR.farol, 1.13, 0.22, { choca: true }); }
-    const [b0, b1] = zonaDe('bulevar');
-    for (let i = b0; i < b1; i += 6) sprite(i + 3, elige(r, SPR.publico), (r() < 0.5 ? -1 : 1) * 1.58, 0.9);
-    const [r0, r1] = zonaDe('ronda');
-    for (let i = r0; i < r1; i += 9) sprite(i + 2, elige(r, SPR.publico), (r() < 0.5 ? -1 : 1) * 1.56, 0.85);
-    // Las iglesias, en lugar de una casa.
-    const quita = (i, s) => {
-      for (let k = i - 14; k < i + 14; k++) {
-        const seg = segmentos[k];
-        if (seg) seg.sprites = seg.sprites.filter((p) => !(SPR.casas.includes(p.img) && Math.sign(p.x) === s));
-      }
-    };
-    const [b0b] = zonaDe('bulevar');
-    quita(b0b + 70, 1); sprite(b0b + 70, SPR.torres, 1.3 + 2.0, 4.0, { choca: true });
-    const [g0, g1] = zonaDe('garcia');
-    quita(g0 + 110, -1); sprite(g0 + 110, SPR.compania, -(1.3 + 1.9), 3.8, { choca: true });
-    segmentos[g0 + 60].portal = 'arco';       // el Arco de la Reina
-    // La Plaza Grande: la Catedral, Carondelet, palmeras y el gentío.
-    for (let i = g1; i < metaI + VISTA; i += 8) {
-      sprite(i, SPR.palmera, -(1.75 + r() * 0.5), 1.1, { choca: true, cw: 0.2 });
-      if (i < metaI + 20) sprite(i + 4, elige(r, SPR.publico), 1.6, 0.95);
-    }
-    for (let i = g1 + 4; i < metaI + 30; i += 5) sprite(i, elige(r, SPR.publico), -1.58, 0.9);
-    sprite(g1 + 20, SPR.catedral, 1.3 + 2.6, 5.2, { choca: true });
-    sprite(metaI + 40, SPR.palacio, 0, 6.5);
-    sprite(g1 + 10, SPR.palacio, -(1.3 + 4.2) - 1.2, 6.0, { choca: true });
-
-    // En la calle: huecos y coladas.
-    for (let i = centro0 + 40; i < metaI - 30; i += 45 + Math.floor(r() * 40)) {
-      sprite(i, SPR.hueco, (r() - 0.5) * 1.3, 0.34, { tipo: 'hueco' });
-    }
-    for (let i = p0 + 140; i < p1; i += 110) sprite(i, SPR.hueco, (r() - 0.5) * 1.2, 0.3, { tipo: 'hueco' });
-    const coladas = [p0 + 210, p0 + 470, centro0 + 260, zonaDe('bulevar')[0] + 120, r0 + 90, g0 + 20, g0 + 130];
-    for (const i of coladas) {
-      const lado = r() < 0.5 ? -1 : 1;
-      for (let k = 0; k < 3; k++) sprite(i + k * 4, SPR.colada, lado * (0.15 + k * 0.25) * (k % 2 ? -1 : 1), 0.22, { tipo: 'colada' });
-    }
-  }
-
-  // ─── el estado ──────────────────────────────────────────────────
-  const lienzoEl = $('#pista');
-  const ctx = lienzoEl.getContext('2d');
-  let W = 0, H = 0, F = 0, HOR = 0, DPR = 1;
-  const PROF = 1 / Math.tan((100 / 2) * Math.PI / 180);
-  const JUG_Z = CAM_ALTO * PROF;
-
-  const j = {};                 // el jugador
-  let coches = [];
-  let estado = 'portada';       // portada · cuenta · carrera · llegada · pausa
-  let antes = 'carrera';
-  let reloj = 0, cuenta = 0, tLlegada = 0;
-  let inclina = 0, cieloX = 0, montesX = 0, laderasX = 0;
-  let zonaActual = '';
-  let sacudida = 0;
-  const polvo = [];
-  const teclas = { izq: false, der: false, patada: false, freno: false };
-
-  function reinicia() {
-    for (const s of segmentos) for (const p of s.sprites) { p.tomada = false; p.golpe = 0; }
-    const z0 = salidaI * SEG;
-    const parrilla = (k) => ({ x: k % 2 ? 0.42 : -0.42, d: z0 - Math.floor(k / 2) * SEG * 4 - (k % 2) * SEG * 1.4 });
-    coches = RIVALES.map((p, k) => {
-      const g = parrilla(k);
-      return { p, x: g.x, carril: g.x, d: g.d, v: 0, llegada: 0, golpe: 0 };
-    });
-    const g = parrilla(5);
-    Object.assign(j, { x: g.x, d: g.d, v: 0, aliento: 1, turbo: 0, llegada: 0, pie: 0, tPie: 0, golpe: 0 });
-    reloj = 0; inclina = 0; zonaActual = ''; sacudida = 0; polvo.length = 0;
-  }
-
-  // ─── el sonido ──────────────────────────────────────────────────
-  // Ruido filtrado que rueda, con un trémolo que en el empedrado se vuelve
-  // traqueteo. Y unos pocos golpes cortos. Nada que cargar.
-  const son = { ctx: null, mudo: false };
-  function arrancaSonido() {
-    if (son.ctx) { son.ctx.resume(); return; }
-    const AC = window.AudioContext || window.webkitAudioContext;
-    if (!AC) return;
-    const a = new AC();
-    son.ctx = a;
-    son.salida = a.createGain(); son.salida.gain.value = son.mudo ? 0 : 0.8; son.salida.connect(a.destination);
-    const ruido = a.createBuffer(1, a.sampleRate * 2, a.sampleRate);
-    const d = ruido.getChannelData(0);
-    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-    son.ruido = ruido;
-    const fuente = a.createBufferSource(); fuente.buffer = ruido; fuente.loop = true;
-    son.filtro = a.createBiquadFilter(); son.filtro.type = 'bandpass'; son.filtro.frequency.value = 300; son.filtro.Q.value = 0.8;
-    son.traqueteo = a.createGain(); son.traqueteo.gain.value = 0.7;
-    son.lfo = a.createOscillator(); son.lfo.type = 'square'; son.lfo.frequency.value = 8;
-    son.lfoAmp = a.createGain(); son.lfoAmp.gain.value = 0.05;
-    son.lfo.connect(son.lfoAmp); son.lfoAmp.connect(son.traqueteo.gain);
-    son.rodar = a.createGain(); son.rodar.gain.value = 0;
-    fuente.connect(son.filtro); son.filtro.connect(son.traqueteo); son.traqueteo.connect(son.rodar); son.rodar.connect(son.salida);
-    fuente.start(); son.lfo.start();
-  }
-  function tono(f, dur, tipo, vol, f2) {
-    if (!son.ctx) return;
-    const a = son.ctx, t = a.currentTime, o = a.createOscillator(), g = a.createGain();
-    o.type = tipo || 'sine'; o.frequency.setValueAtTime(f, t);
-    if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur);
-    g.gain.setValueAtTime(vol || 0.25, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
-    o.connect(g); g.connect(son.salida); o.start(t); o.stop(t + dur + 0.02);
-  }
-  function golpe(vol, corte) {
-    if (!son.ctx) return;
-    const a = son.ctx, t = a.currentTime, s = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
-    s.buffer = son.ruido; f.type = 'lowpass'; f.frequency.value = corte || 600;
-    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
-    s.connect(f); f.connect(g); g.connect(son.salida); s.start(t, Math.random()); s.stop(t + 0.3);
-  }
-  function sonidoRodar(dt) {
-    if (!son.ctx) return;
-    const sp = estado === 'carrera' || estado === 'llegada' ? j.v / VMAX : 0;
-    const empedrado = ZONAS[segmentoEn(j.d).zona].calle === 'adoquin';
-    const t = son.ctx.currentTime;
-    son.rodar.gain.setTargetAtTime(Math.min(0.32, sp * 0.3), t, 0.05);
-    son.filtro.frequency.setTargetAtTime(180 + sp * 900, t, 0.05);
-    son.lfo.frequency.setTargetAtTime(5 + sp * 34, t, 0.05);
-    son.lfoAmp.gain.setTargetAtTime(empedrado ? 0.45 : 0.06, t, 0.1);
-  }
-
-  // ─── la simulación ──────────────────────────────────────────────
-  const segmentoEn = (z) => segmentos[limita(Math.floor(z / SEG), 0, segmentos.length - 1)];
-  const pendiente = (s) => (s.p2.mundo.y - s.p1.mundo.y) / SEG;
-  const solapa = (x1, w1, x2, w2, p) => {
-    const m = (p || 1) / 2;
-    return !((x1 + w1 * m) < (x2 - w2 * m) || (x1 - w1 * m) > (x2 + w2 * m));
+    return a;
   };
-  // Lo que aguanta una curva sin sacarte: la fuerza que te tira hacia fuera
-  // crece con la velocidad al cuadrado, y el volante solo con la velocidad,
-  // así que el giro empata con la curva justo en VMAX / (CENTRIFUGA · curva).
-  const topeCurva = (c) => (Math.abs(c) < 1 ? TOPE : Math.min(TOPE, VMAX / (CENTRIFUGA * Math.abs(c)) * 0.98));
+  P.y = suaviza(P.y, 12, 2);
+  P.hw = suaviza(P.hw, 8, 1);
+  for (let i = 0; i < N; i++) P.pend[i] = (P.y[Math.min(i + 1, N - 1)] - P.y[Math.max(i - 1, 0)]) / 2;
+}
 
-  function avisa(texto, dur) {
-    const el = $('#aviso');
-    el.textContent = texto; el.classList.add('is-on');
-    clearTimeout(avisa.t); avisa.t = setTimeout(() => el.classList.remove('is-on'), dur || 1600);
+const M = { x: 0, z: 0, y: 0, th: 0, k: 0, hw: 4, zona: 'panecillo', pend: 0 };
+function muestra(s) {
+  const i = limita(Math.floor(s), 0, N - 2), f = limita(s - i, 0, 1);
+  M.x = mezcla(P.x[i], P.x[i + 1], f); M.z = mezcla(P.z[i], P.z[i + 1], f);
+  M.y = mezcla(P.y[i], P.y[i + 1], f); M.th = mezcla(P.th[i], P.th[i + 1], f);
+  M.k = P.k[i]; M.hw = mezcla(P.hw[i], P.hw[i + 1], f); M.zona = P.zona[i]; M.pend = mezcla(P.pend[i], P.pend[i + 1], f);
+  return M;
+}
+// Un punto del mundo a partir de (s, x, altura sobre la calle). La derecha
+// del que baja es (−cos θ, 0, sin θ): con θ = 0 se mira hacia +Z.
+function punto(s, x, h, out) {
+  const m = muestra(s);
+  return (out || new THREE.Vector3()).set(m.x - Math.cos(m.th) * x, m.y + h, m.z + Math.sin(m.th) * x);
+}
+const zonaEn = (s) => P.zona[limita(Math.floor(s), 0, N - 1)];
+
+// ─── el mundo ──────────────────────────────────────────────────────
+const lienzoEl = $('#pista');
+const render = new THREE.WebGLRenderer({ canvas: lienzoEl, antialias: true, powerPreference: 'high-performance' });
+render.outputColorSpace = THREE.SRGBColorSpace;
+const escena = new THREE.Scene();
+const NIEBLA = 0xC9DCE6;
+escena.background = new THREE.Color(0xA9CBE2);
+escena.fog = new THREE.Fog(NIEBLA, 70, 340);
+const camara = new THREE.PerspectiveCamera(60, 1, 0.1, 900);
+escena.add(new THREE.HemisphereLight(0xFFF6E8, 0x7A6E5E, 2.0));
+const sol = new THREE.DirectionalLight(0xFFF1DC, 1.7);
+sol.position.set(-40, 80, 30);
+escena.add(sol);
+
+let TEX;
+const MAT = {};
+
+// Una cinta a lo largo de la calle entre dos bordes (x, altura) que dependen
+// de la muestra. Con ella salen la calzada, los bordillos, las veredas y el
+// terreno de los lados.
+function cinta(i0, i1, borde, uv, mat) {
+  const pos = [], uvs = [], idx = [];
+  const a = new THREE.Vector3();
+  for (let i = i0; i <= i1; i++) {
+    for (let lado = 0; lado < 2; lado++) {
+      const [x, h] = borde(i, lado);
+      punto(i, x, h, a);
+      pos.push(a.x, a.y, a.z);
+      const [u, v] = uv(i, x);
+      uvs.push(u, v);
+    }
+    if (i > i0) {
+      const b = (i - i0) * 2;
+      idx.push(b - 2, b, b - 1, b - 1, b, b + 1);
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  const m = new THREE.Mesh(g, mat);
+  escena.add(m);
+  return m;
+}
+
+function construyeCalle() {
+  TEX = texturasSuelo();
+  const lam = (t, extra) => new THREE.MeshLambertMaterial(Object.assign({ map: t, side: THREE.DoubleSide }, extra));
+  MAT.asfalto = lam(TEX.asfalto); MAT.adoquin = lam(TEX.adoquin); MAT.vereda = lam(TEX.vereda);
+  MAT.pasto = lam(TEX.pasto); MAT.plaza = lam(TEX.plaza);
+  MAT.bordillo = new THREE.MeshLambertMaterial({ color: 0xB9B0A0, side: THREE.DoubleSide });
+  MAT.madera = new THREE.MeshLambertMaterial({ map: TEX.madera });
+
+  // Por tramos de zona: cada una con su calzada y su lado.
+  const uvCalle = { asfalto: (i, x) => [x / 10 + 0.5, i / 8], adoquin: (i, x) => [x / 2, i / 2] };
+  let i0 = 0;
+  for (let i = 1; i <= N; i++) {
+    if (i < N && P.zona[i] === P.zona[i0]) continue;
+    const i1 = Math.min(i, N - 1), z = ZONAS[P.zona[i0]];
+    const hw = (k) => P.hw[k];
+    cinta(i0, i1, (k, l) => [l ? hw(k) : -hw(k), 0], uvCalle[z.calle], MAT[z.calle]);
+    for (const s of [-1, 1]) {
+      cinta(i0, i1, (k, l) => [s * hw(k), l ? BORDILLO : 0], (k) => [0, k], MAT.bordillo);
+      const acera = z.lado === 'pasto' ? MAT.pasto : MAT.vereda;
+      cinta(i0, i1, (k, l) => [s * (hw(k) + (l ? ACERA : 0)), BORDILLO], (k, x) => [x / 1.6, k / 1.6], acera);
+      const lejos = z.lado === 'pasto' ? 45 : 14;
+      cinta(i0, i1, (k, l) => [s * (hw(k) + ACERA + (l ? lejos : 0)), l ? (z.lado === 'pasto' ? -5 : BORDILLO) : BORDILLO],
+        (k, x) => [x / 4, k / 4], MAT[z.lado]);
+    }
+    i0 = i;
+  }
+}
+
+// El Pichincha y las laderas: un cilindro pintado que viaja con la cámara.
+let panorama;
+function construyePanorama() {
+  const r = azar(99);
+  const W = 4096, H = 1024, LW = W;
+  const onda = (x, ks) => ks.reduce((t, [k, a, f]) => t + a * Math.sin((x / LW) * Math.PI * 2 * k + f), 0);
+  const c = lienzo(W, H, (c) => {
+    const cielo = c.createLinearGradient(0, 0, 0, H * 0.62);
+    cielo.addColorStop(0, '#5E9BD0'); cielo.addColorStop(0.75, '#A9CBE2'); cielo.addColorStop(1, '#DCE9EF');
+    c.fillStyle = cielo; c.fillRect(0, 0, W, H);
+    c.fillStyle = 'rgba(255,255,255,.85)';
+    for (let k = 0; k < 14; k++) {
+      const x = r() * W, y = 90 + r() * 220, s = 40 + r() * 50;
+      for (let b = 0; b < 5; b++) { c.beginPath(); c.ellipse(x + b * s * 0.7, y + Math.sin(b) * 10, s, s * 0.5, 0, 0, 7); c.fill(); }
+    }
+    const base = H * 0.62;
+    const g = c.createLinearGradient(0, base - 300, 0, base);
+    g.addColorStop(0, '#7E98AC'); g.addColorStop(1, '#9DB3BF');
+    c.fillStyle = g; c.beginPath(); c.moveTo(0, H);
+    for (let x = 0; x <= W; x += 8) {
+      const pico = 230 * Math.exp(-(((x - 1300) / 420) ** 2)) + 140 * Math.exp(-(((x - 1800) / 300) ** 2)) + 120 * Math.exp(-(((x - 3300) / 500) ** 2));
+      c.lineTo(x, base - 40 - pico - onda(x, [[3, 30, 0.4], [7, 14, 1.3], [13, 6, 2.1]]));
+    }
+    c.lineTo(W, H); c.fill();
+    const borde = (x) => base - 10 - onda(x, [[2, 50, 0.9], [5, 22, 2.4], [11, 9, 0.2]]) - 40;
+    c.fillStyle = '#8FA675'; c.beginPath(); c.moveTo(0, H);
+    for (let x = 0; x <= W; x += 8) c.lineTo(x, borde(x));
+    c.lineTo(W, H); c.fill();
+    const tonos = ['#F2EEE5', '#EAD9B0', '#E8C9C0', '#C9DCE6', '#F3E3D3', '#D8D2C2', '#E6B98F'];
+    for (let k = 0; k < 2600; k++) {
+      const x = r() * W, y0 = borde(x) + 8, y = y0 + r() ** 0.7 * (H - y0);
+      const s = 3 + ((y - y0) / (H - y0)) * 7;
+      c.fillStyle = elige(r, tonos); c.fillRect(x, y, s * 1.4, s);
+      c.fillStyle = '#A8442C'; c.fillRect(x - 1, y - 2, s * 1.4 + 2, 2.5);
+    }
+  });
+  const g = new THREE.CylinderGeometry(780, 780, 520, 48, 1, true);
+  const m = new THREE.MeshBasicMaterial({ map: textura(c), side: THREE.BackSide, fog: false, depthWrite: false });
+  panorama = new THREE.Mesh(g, m);
+  panorama.renderOrder = -1;
+  escena.add(panorama);
+}
+
+// ─── las piezas de quito.glb, asentadas para usarlas sueltas ───────
+// Cada casa viene donde estaba en la maqueta: a un lado de la calle y con
+// la fachada mirando al centro (+X si está a la izquierda, −X si a la
+// derecha). Se gira para que la fachada mire a +Z, se apoya en y = 0, se
+// centra en x y se deja la cara de delante en z = 0. Lo mismo con los
+// puestos y los cajones, que ya vienen en el origen.
+function asienta(original, giro) {
+  const o = original.clone(true);
+  o.position.set(0, 0, 0); o.rotation.set(0, giro, 0); o.scale.set(1, 1, 1);
+  const g = new THREE.Group(); g.add(o);
+  g.updateMatrixWorld(true);
+  const b = new THREE.Box3().setFromObject(g);
+  o.position.set(-(b.min.x + b.max.x) / 2, -b.min.y, -b.max.z);
+  g.updateMatrixWorld(true);
+  const b2 = new THREE.Box3().setFromObject(g);
+  return { g, ancho: b2.max.x - b2.min.x, fondo: b2.max.z - b2.min.z, alto: b2.max.y };
+}
+
+// Todo lo que se repite cien veces se funde en una malla por material: si
+// no, cada casa son veintinueve llamadas de dibujo y el teléfono se ahoga.
+class Fundidor {
+  constructor() { this.cubos = new Map(); }
+  pon(objeto, matriz) {
+    objeto.updateMatrixWorld(true);
+    objeto.traverse((o) => {
+      if (!o.isMesh) return;
+      const mats = Array.isArray(o.material) ? o.material : [o.material];
+      let g = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
+      for (const n of Object.keys(g.attributes)) if (n !== 'position' && n !== 'normal' && n !== 'uv') g.deleteAttribute(n);
+      if (!g.attributes.uv) g.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2));
+      if (!g.attributes.normal) g.computeVertexNormals();
+      g.applyMatrix4(new THREE.Matrix4().multiplyMatrices(matriz, o.matrixWorld));
+      const mat = mats[0];
+      if (!this.cubos.has(mat)) this.cubos.set(mat, []);
+      this.cubos.get(mat).push(g);
+    });
+  }
+  funde() {
+    for (const [mat, gs] of this.cubos) {
+      for (let k = 0; k < gs.length; k += 400) {
+        const m = new THREE.Mesh(mergeGeometries(gs.slice(k, k + 400)), mat);
+        escena.add(m);
+      }
+    }
+    this.cubos.clear();
+  }
+}
+
+// Una matriz que pone un objeto de fachada en (s, x) mirando hacia `mira`
+// (−1: hacia la izquierda del que baja, 1: hacia la derecha, 0: hacia delante).
+function matrizEn(s, x, h, mira, extraGiro) {
+  const m = muestra(s);
+  const p = punto(s, x, h);
+  // Hacia delante es (sin θ, 0, cos θ); a la derecha (−cos θ, 0, sin θ).
+  let dx, dz;
+  if (mira === 0) { dx = Math.sin(m.th); dz = Math.cos(m.th); }
+  else { dx = -Math.cos(m.th) * mira; dz = Math.sin(m.th) * mira; }
+  const giro = Math.atan2(dx, dz) + (extraGiro || 0);
+  return new THREE.Matrix4().compose(p, new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), giro), new THREE.Vector3(1, 1, 1));
+}
+
+// Lo que hay en la calle y se puede chocar: { s, x, r, tipo }.
+const obstaculos = [];
+
+function construyeDecorado(quito) {
+  const r = azar(2024);
+  const casas = [];
+  const piezas = {};
+  quito.scene.updateMatrixWorld(true);
+  quito.scene.traverse((o) => {
+    if (/^casa_colonial/.test(o.name) && o.parent && /centro_historico/.test(o.parent.name)) {
+      const b = new THREE.Box3().setFromObject(o);
+      casas.push(asienta(o, (b.min.x + b.max.x) / 2 < 0 ? -Math.PI / 2 : Math.PI / 2));
+    }
+    for (const n of ['obstaculo_muro', 'obstaculo_salto']) if (!piezas[n] && o.name.startsWith(n)) piezas[n] = asienta(o, 0);
+  });
+  const f = new Fundidor();
+  const zonaDe = (z) => {
+    const t = tramos.findIndex((q) => q.zona === z);
+    return [tramos[t].i, t + 1 < tramos.length ? tramos[t + 1].i : N];
+  };
+
+  // Las fachadas grandes, pintadas en lienzo: van en cajas y dejan hueco.
+  const reservas = [];
+  const fachada = (canvas, s, lado, ancho, alto, fondo) => {
+    const mat = [new THREE.MeshLambertMaterial({ color: 0xEDE7DA }), new THREE.MeshLambertMaterial({ color: 0xEDE7DA }),
+      new THREE.MeshLambertMaterial({ color: 0xA8442C }), new THREE.MeshLambertMaterial({ color: 0xEDE7DA }),
+      new THREE.MeshLambertMaterial({ map: textura(canvas), transparent: true, alphaTest: 0.5 }), new THREE.MeshLambertMaterial({ color: 0xEDE7DA })];
+    const caja = new THREE.Mesh(new THREE.BoxGeometry(ancho, alto, fondo), mat);
+    const hw = muestra(s).hw;
+    caja.applyMatrix4(new THREE.Matrix4().makeTranslation(0, alto / 2 - 0.4, -fondo / 2));
+    caja.applyMatrix4(matrizEn(s, lado * (hw + ACERA), BORDILLO, -lado));
+    escena.add(caja);
+    reservas.push({ s0: s - ancho / 2 - 2, s1: s + ancho / 2 + 2, lado });
+  };
+  const [b0] = zonaDe('bulevar');
+  const [g0, g1] = zonaDe('garcia');
+  const [pl0] = zonaDe('plaza');
+  fachada(torres(), b0 + 70, 1, 16, 21, 12);
+  fachada(compania(), g0 + 100, -1, 15, 19, 14);
+  fachada(catedral(), pl0 + 16, 1, 26, 19.5, 14);
+  fachada(palacio(), pl0 + 20, -1, 30, 19, 14);
+
+  // Las casas, seguidas a los dos lados de todo el centro.
+  const c0 = zonaDe('ambato')[0];
+  for (const lado of [-1, 1]) {
+    let s = c0 + 2;
+    while (s < N - 5) {
+      const casa = elige(r, casas);
+      const medio = s + casa.ancho / 2;
+      if (zonaEn(medio) === 'plaza' && medio > pl0 + 50) break;
+      if (!reservas.some((q) => q.lado === lado && medio > q.s0 && medio < q.s1)) {
+        const hw = muestra(medio).hw;
+        f.pon(casa.g, matrizEn(medio, lado * (hw + ACERA), -0.4, -lado));
+      }
+      s += casa.ancho + 0.15;
+    }
   }
 
-  function actualiza(dt) {
-    if (estado === 'cuenta') {
-      cuenta -= dt;
-      const n = Math.ceil(cuenta);
-      if (n !== actualiza.n) {
-        actualiza.n = n;
-        const el = $('#cuenta');
-        el.classList.remove('is-sale'); void el.offsetWidth;
-        el.textContent = n > 0 ? String(n) : '¡A bajar!';
-        el.classList.add('is-sale');
-        tono(n > 0 ? 440 : 880, n > 0 ? 0.18 : 0.45, 'square', 0.12);
+  // Faroles de hierro en todo el centro.
+  const poste = new THREE.CylinderGeometry(0.06, 0.09, 3.6, 6).translate(0, 1.8, 0);
+  const brazo = new THREE.BoxGeometry(0.06, 0.06, 0.6).translate(0, 3.5, 0.3);
+  const farol = new THREE.BoxGeometry(0.22, 0.32, 0.22).translate(0, 3.3, 0.58);
+  const geoFarol = mergeGeometries([poste.toNonIndexed(), brazo.toNonIndexed()]);
+  const negro = new THREE.MeshLambertMaterial({ color: 0x1E1E22 });
+  const luz = new THREE.MeshBasicMaterial({ color: 0xFFE08A });
+  const fF = new Fundidor();
+  for (let s = c0 + 6; s < META + 40; s += 13) {
+    for (const lado of [-1, 1]) {
+      const ss = s + (lado > 0 ? 6 : 0);
+      const hw = muestra(ss).hw;
+      const m = matrizEn(ss, lado * (hw + 0.35), BORDILLO, -lado);
+      fF.pon(new THREE.Mesh(geoFarol, negro), m);
+      fF.pon(new THREE.Mesh(farol, luz), m);
+      obstaculos.push({ s: ss, x: lado * (hw + 0.35), r: 0.15, tipo: 'farol' });
+    }
+  }
+  fF.funde();
+
+  // Los puestos de la vereda, que se meten un poco en la calle.
+  for (const [z, paso] of [['bulevar', 34], ['ronda', 40], ['plaza', 20]]) {
+    const [z0, z1] = zonaDe(z);
+    for (let s = z0 + 12; s < Math.min(z1, META - 6); s += paso + r() * 12) {
+      const lado = r() < 0.5 ? -1 : 1, hw = muestra(s).hw;
+      const x = lado * (hw - 0.25);
+      f.pon(piezas.obstaculo_muro.g, matrizEn(s, x, 0, 0, Math.PI / 2 * lado));
+      obstaculos.push({ s, x, r: 0.6, largo: 1.0, tipo: 'puesto' });
+    }
+  }
+  // Cajones sueltos en la García Moreno. Girados, lo ancho va a lo largo de
+  // la calle: de lado ocupan 1,2 m.
+  for (const [z, n] of [['garcia', 3]]) {
+    const [z0, z1] = zonaDe(z);
+    for (let k = 0; k < n; k++) {
+      const s = z0 + 20 + (k + r() * 0.6) * (z1 - z0 - 40) / n, hw = muestra(s).hw;
+      const x = (r() - 0.5) * (hw - 1) * 2;
+      f.pon(piezas.obstaculo_salto.g, matrizEn(s, x, 0, 0, Math.PI / 2));
+      obstaculos.push({ s, x, r: 0.6, largo: 0.8, tipo: 'cajon' });
+    }
+  }
+  f.funde();
+
+  // El Panecillo: eucaliptos, muros de piedra y la Virgen.
+  const [p0, p1] = zonaDe('panecillo');
+  const tronco = new THREE.CylinderGeometry(0.18, 0.28, 9, 6).translate(0, 4.5, 0);
+  const copa = new THREE.IcosahedronGeometry(2.2, 0);
+  const matTronco = new THREE.MeshLambertMaterial({ color: 0xBFAE96 });
+  const verdes = [0x5F7F62, 0x6E8F6C, 0x55745A, 0x7FA07A].map((c) => new THREE.MeshLambertMaterial({ color: c, flatShading: true }));
+  const fP = new Fundidor();
+  for (let s = p0; s < p1 + 30; s += 7) {
+    if (s > SALIDA - 6 && s < SALIDA + 8) continue;
+    for (const lado of [-1, 1]) {
+      const hw = muestra(s).hw, x = lado * (hw + ACERA + 1.5 + r() * 9);
+      const m = matrizEn(s + r() * 4, x, BORDILLO - 0.2, 0, r() * 6);
+      fP.pon(new THREE.Mesh(tronco, matTronco), m);
+      for (let k = 0; k < 3; k++) {
+        const t = new THREE.Matrix4().makeTranslation((r() - 0.5) * 2.2, 8 + r() * 2.5, (r() - 0.5) * 2.2);
+        const e = 0.8 + r() * 0.6;
+        t.multiply(new THREE.Matrix4().makeScale(e, e * 1.25, e));
+        fP.pon(new THREE.Mesh(copa, elige(r, verdes)), m.clone().multiply(t));
       }
-      if (cuenta <= 0) { estado = 'carrera'; }
-      return;
     }
-    if (estado !== 'carrera' && estado !== 'llegada') return;
-    if (estado === 'carrera') reloj += dt;
-
-    const seg = segmentoEn(j.d);
-    const sp = j.v / VMAX;
-    const pend = pendiente(seg);
-    const z = ZONAS[seg.zona];
-
-    if (seg.zona !== zonaActual) {
-      zonaActual = seg.zona;
-      $('#h-zona').textContent = z.nombre;
-      if (reloj > 1) avisa(z.nombre);
+  }
+  const muro = new THREE.BoxGeometry(5.2, 0.7, 0.5).translate(0, 0.35, 0);
+  const matMuro = new THREE.MeshLambertMaterial({ color: 0x9A9385 });
+  for (let s = p0 + 45; s < p1; s += 6) {
+    for (const lado of [-1, 1]) {
+      const hw = muestra(s).hw;
+      fP.pon(new THREE.Mesh(muro, matMuro), matrizEn(s, lado * (hw + ACERA + 0.25), BORDILLO, 0, Math.PI / 2));
     }
+  }
+  fP.funde();
+  const v = new THREE.Sprite(new THREE.SpriteMaterial({ map: textura(virgen()), fog: false }));
+  v.scale.set(15, 26.7, 1);
+  v.position.copy(punto(SALIDA + 55, -32, 13.3));
+  escena.add(v);
 
-    // Dirección y fuerza que tira hacia fuera en la curva.
+  // La gente que mira, en cartón: el público no se mueve, y en sprites
+  // cuestan casi nada.
+  const carteles = [publico(r), publico(r), publico(r), publico(r)].map((c) => new THREE.SpriteMaterial({ map: textura(c) }));
+  const gentio = (s, lado) => {
+    const hw = muestra(s).hw;
+    const sp = new THREE.Sprite(elige(r, carteles));
+    sp.scale.set(3.1, 2.1, 1);
+    sp.position.copy(punto(s, lado * (hw + ACERA * 0.55), BORDILLO + 1.05));
+    escena.add(sp);
+  };
+  for (let s = 6; s < SALIDA + 4; s += 5) { gentio(s, -1); gentio(s + 2, 1); }
+  for (const [z, paso] of [['bulevar', 9], ['ronda', 12], ['plaza', 6]]) {
+    const [z0, z1] = zonaDe(z);
+    for (let s = z0 + 4; s < Math.min(z1, META + 25); s += paso) gentio(s + r() * 3, r() < 0.5 ? -1 : 1);
+  }
+
+  // La salida, la meta y el Arco de la Reina, de lado a lado.
+  const portal = (s, texto, meta) => {
+    const hw = muestra(s).hw, ancho = (hw + 0.6) * 2;
+    const grupo = new THREE.Group();
+    const palo = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.12, 5, 8).translate(0, 2.5, 0), new THREE.MeshLambertMaterial({ color: 0x6B4423 }));
+    const p1 = palo.clone(); p1.position.x = hw + 0.6; grupo.add(p1);
+    const p2 = palo.clone(); p2.position.x = -(hw + 0.6); grupo.add(p2);
+    const c = lienzo(1024, 128, (c, w, h) => {
+      if (meta) { for (let k = 0; k < 32; k++) for (let f2 = 0; f2 < 2; f2++) { c.fillStyle = (k + f2) % 2 ? '#fff' : TINTA; c.fillRect(k * 32, f2 * 64, 32, 64); } }
+      else { c.fillStyle = '#D6382B'; c.fillRect(0, 0, w, h); c.fillStyle = '#1F4E9E'; c.fillRect(0, h - 22, w, 22); }
+      c.font = '800 64px system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+      const tw = c.measureText(texto).width;
+      if (meta) { c.fillStyle = '#fff'; c.fillRect(w / 2 - tw / 2 - 24, 14, tw + 48, h - 28); }
+      c.fillStyle = meta ? TINTA : '#fff'; c.fillText(texto, w / 2, h / 2 + 2);
+    });
+    const tela = new THREE.Mesh(new THREE.PlaneGeometry(ancho, ancho / 8), new THREE.MeshLambertMaterial({ map: textura(c), side: THREE.DoubleSide }));
+    tela.position.y = 4.6;
+    grupo.add(tela);
+    grupo.applyMatrix4(matrizEn(s, 0, 0, 0, Math.PI));
+    escena.add(grupo);
+  };
+  portal(SALIDA, 'SALIDA · EL PANECILLO', false);
+  portal(META, 'META · PLAZA GRANDE', true);
+  {
+    const s = g0 + 55, hw = muestra(s).hw, ancho = (hw + ACERA) * 2 + 2;
+    const blanco = new THREE.MeshLambertMaterial({ color: 0xF2EEE5 });
+    const grupo = new THREE.Group();
+    const pilar = new THREE.BoxGeometry(1.4, 9, 3.4).translate(0, 4.5, 0);
+    for (const l of [-1, 1]) { const m = new THREE.Mesh(pilar, blanco); m.position.x = l * (hw + ACERA + 0.5); grupo.add(m); }
+    const cArco = lienzo(512, 160, (c, w, h) => {
+      c.fillStyle = '#F2EEE5'; c.fillRect(0, 0, w, h);
+      c.fillStyle = '#1F4E9E'; c.fillRect(w / 2 - 40, 24, 80, 46);
+      c.fillStyle = TINTA; c.font = '800 30px system-ui, sans-serif'; c.textAlign = 'center';
+      c.fillText('ARCO DE LA REINA', w / 2, 120);
+    });
+    const dintel = new THREE.Mesh(new THREE.BoxGeometry(ancho, 3, 3.4),
+      [blanco, blanco, new THREE.MeshLambertMaterial({ color: 0xA8442C }), blanco, new THREE.MeshLambertMaterial({ map: textura(cArco) }), new THREE.MeshLambertMaterial({ map: textura(cArco) })]);
+    dintel.position.y = 7.5;
+    grupo.add(dintel);
+    const techo = new THREE.Mesh(new THREE.BoxGeometry(ancho + 0.6, 0.5, 4.2), new THREE.MeshLambertMaterial({ color: 0xA8442C }));
+    techo.position.y = 9.2;
+    grupo.add(techo);
+    grupo.applyMatrix4(matrizEn(s, 0, 0, 0));
+    escena.add(grupo);
+  }
+
+  // En la calle: rampas de tabla, huecos y coladas.
+  const rampa = (() => {
+    const forma = new THREE.Shape();
+    forma.moveTo(-1.2, 0); forma.lineTo(1.2, 0); forma.lineTo(1.2, 0.45); forma.closePath();
+    const g = new THREE.ExtrudeGeometry(forma, { depth: 1.8, bevelEnabled: false });
+    g.translate(0, 0, -0.9); g.rotateY(-Math.PI / 2);
+    return g;
+  })();
+  const rampas = [[zonaDe('ambato')[0] + 150, 0], [b0 + 40, -1.6], [b0 + 120, 1.4], [zonaDe('ronda')[0] + 40, 0], [p0 + 62, 1.2]];
+  for (const [s, x] of rampas) {
+    const m = new THREE.Mesh(rampa, MAT.madera);
+    m.applyMatrix4(matrizEn(s, x, 0, 0));
+    escena.add(m);
+    obstaculos.push({ s, x, r: 0.9, largo: 1.2, tipo: 'rampa' });
+  }
+  const matHueco = new THREE.MeshBasicMaterial({ color: 0x2A241E });
+  const geoHueco = new THREE.CircleGeometry(0.5, 14).rotateX(-Math.PI / 2).scale(1, 1, 0.7);
+  for (let s = p0 + 120; s < META - 20; s += 38 + r() * 40) {
+    const hw = muestra(s).hw, x = (r() - 0.5) * (hw - 0.8) * 2;
+    const m = new THREE.Mesh(geoHueco, matHueco);
+    m.applyMatrix4(matrizEn(s, x, 0.02, 0));
+    escena.add(m);
+    obstaculos.push({ s, x, r: 0.45, largo: 0.4, tipo: 'hueco' });
+  }
+  const matColada = new THREE.SpriteMaterial({ map: textura(colada()) });
+  for (const s0 of [p0 + 150, p0 + 262, c0 + 110, b0 + 80, zonaDe('ronda')[0] + 90, g0 + 15, g0 + 75]) {
+    const lado = r() < 0.5 ? -1 : 1;
+    for (let k = 0; k < 3; k++) {
+      const s = s0 + k * 3, x = lado * (k - 1) * 1.3;
+      const sp = new THREE.Sprite(matColada);
+      sp.scale.set(0.55, 0.7, 1);
+      sp.position.copy(punto(s, x, 0.9));
+      escena.add(sp);
+      obstaculos.push({ s, x, r: 0.4, largo: 0.5, tipo: 'colada', sp, base: sp.position.y });
+    }
+  }
+  obstaculos.sort((a, b) => a.s - b.s);
+  void g1;
+}
+
+// ─── la gente ──────────────────────────────────────────────────────
+const MODELOS = {};
+const CLIPS = {};
+
+// Los clips de Estado Decepción traen posición y escala por hueso; la escala
+// pisaría la complexión y la posición de la cadera movería el cuerpo por su
+// cuenta. Aquí el cuerpo lo mueve el juego, así que solo quedan los giros.
+function limpiaClip(c) {
+  const k = c.clone();
+  k.tracks = k.tracks.filter((t) => t.name.endsWith('.quaternion'));
+  return k;
+}
+
+// Los cuerpos base de Modo Incógnito vienen sin textura: se pintan por
+// vértice según el hueso que más pesa en cada uno. En la cabeza, la mitad
+// de arriba y la nuca son pelo (o casco).
+function pintaCuerpo(malla, colores) {
+  const g = malla.geometry = malla.geometry.clone();
+  const pos = g.getAttribute('position'), si = g.getAttribute('skinIndex'), sw = g.getAttribute('skinWeight');
+  const nombres = malla.skeleton.bones.map((b) => b.name);
+  const n = pos.count, region = new Array(n);
+  let yMin = Infinity, yMax = -Infinity, zMin = Infinity, zMax = -Infinity;
+  for (let i = 0; i < n; i++) {
+    let b = 0, w = -1;
+    for (let k = 0; k < 4; k++) { const x = sw.getComponent(i, k); if (x > w) { w = x; b = si.getComponent(i, k); } }
+    const nm = nombres[b] || '';
+    region[i] = /hand/i.test(nm) ? 'piel' : /head|neck/i.test(nm) ? 'cabeza' : /foot|toe/i.test(nm) ? 'zapatos'
+      : /leg|hips/i.test(nm) ? 'pantalon' : 'ropa';
+    if (region[i] === 'cabeza') {
+      const y = pos.getY(i), z = pos.getZ(i);
+      yMin = Math.min(yMin, y); yMax = Math.max(yMax, y); zMin = Math.min(zMin, z); zMax = Math.max(zMax, z);
+    }
+  }
+  const col = new Float32Array(n * 3), c = new THREE.Color();
+  for (let i = 0; i < n; i++) {
+    let r = region[i];
+    if (r === 'cabeza') {
+      const y = (pos.getY(i) - yMin) / (yMax - yMin), z = (pos.getZ(i) - zMin) / (zMax - zMin);
+      // Estos cuerpos miran a +Z: la nuca es la z baja.
+      r = y > 0.6 || (z < 0.38 && y > 0.25) ? 'pelo' : 'piel';
+    }
+    c.set(colores[r]);
+    col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
+  }
+  g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  malla.material = new THREE.MeshLambertMaterial({ vertexColors: true });
+}
+
+class Persona {
+  constructor(base, { altura, colores, frente }) {
+    const fuente = MODELOS[base];
+    this.obj = new THREE.Group();
+    const dentro = clonaEsqueleto(fuente.scene);
+    dentro.rotation.y = frente || 0;
+    dentro.traverse((o) => {
+      if (o.isSkinnedMesh) {
+        o.frustumCulled = false;
+        if (colores) pintaCuerpo(o, colores);
+        else if (o.material) o.material = new THREE.MeshLambertMaterial({ map: o.material.map, color: o.material.color });
+      }
+    });
+    this.obj.add(dentro);
+    this.dentro = dentro;
+    this.mixer = new THREE.AnimationMixer(dentro);
+    this.acciones = {};
+    for (const [n, c] of Object.entries(CLIPS)) this.acciones[n] = this.mixer.clipAction(c);
+    if (fuente.animations[0]) this.acciones.andar = this.mixer.clipAction(limpiaClip(fuente.animations[0]));
+    // La estatura: se mide de pie, en reposo.
+    this.obj.updateMatrixWorld(true);
+    const b = new THREE.Box3().setFromObject(dentro, true);
+    const e = altura / (b.max.y - b.min.y);
+    dentro.scale.multiplyScalar(e);
+    this.pie = -b.min.y * e;
+    dentro.position.y = this.pie;
+    this.actual = null;
+    escena.add(this.obj);
+  }
+  pon(nombre, { fundido = 0.18, una = false, vel = 1 } = {}) {
+    const a = this.acciones[nombre];
+    if (!a) return;
+    a.timeScale = vel;
+    if (this.actual === nombre) return;
+    const antes = this.acciones[this.actual];
+    a.reset();
+    a.setLoop(una ? THREE.LoopOnce : THREE.LoopRepeat, Infinity);
+    a.clampWhenFinished = una;
+    a.play();
+    if (antes) a.crossFadeFrom(antes, fundido, false);
+    this.actual = nombre;
+  }
+  // Cuánto hay que subir el cuerpo para que, en una pose, lo más bajo toque
+  // el suelo: sentado, son las nalgas; corriendo, los pies.
+  apoyo(nombre) {
+    this._apoyos = this._apoyos || {};
+    if (this._apoyos[nombre] !== undefined) return this._apoyos[nombre];
+    const antes = this.actual;
+    for (const a of Object.values(this.acciones)) a.stop();
+    const a = this.acciones[nombre];
+    a.reset().play(); this.mixer.update(0.4);
+    const y0 = this.dentro.position.y;
+    this.dentro.position.y = 0;
+    this.obj.position.set(0, 0, 0); this.obj.rotation.set(0, 0, 0);
+    this.obj.updateMatrixWorld(true);
+    const b = new THREE.Box3().setFromObject(this.dentro, true);
+    this.dentro.position.y = y0;
+    a.stop();
+    this.actual = null;
+    if (antes) this.pon(antes, { fundido: 0 });
+    return (this._apoyos[nombre] = -b.min.y);
+  }
+}
+
+// ─── los coches ────────────────────────────────────────────────────
+const PIELES = ['#8D5A3B', '#A86E48', '#C68B5E', '#7A4A2E'];
+const PELOS = ['#2A2420', '#3B2A1E', '#1C1A18', '#5A3A22'];
+const EQUIPOS = [
+  { nombre: 'Tú', casco: '#D6382B', ropa: '#F3F1EC', ropa2: '#1B5FAA', tabla: '#C8955A', num: 1 },
+  { nombre: 'El Chulla', casco: '#1B1B1F', ropa: '#3B4A6B', ropa2: '#D9D4C7', tabla: '#B98250', num: 7, hab: 0.97 },
+  { nombre: 'La Guambra Pao', casco: '#E01B6A', ropa: '#F5A623', ropa2: '#6B2D7B', tabla: '#D2A26A', num: 11, hab: 0.95 },
+  { nombre: 'Evaristo', casco: '#5A3A22', ropa: '#8C3B2E', ropa2: '#F5C518', tabla: '#A87445', num: 3, hab: 0.93 },
+];
+
+function construyeCoche(eq) {
+  const g = new THREE.Group();
+  const tabla = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.06, 1.9), new THREE.MeshLambertMaterial({ map: TEX.madera, color: eq.tabla }));
+  tabla.position.y = TABLA;
+  g.add(tabla);
+  const metal = new THREE.MeshLambertMaterial({ color: 0x8C9096 });
+  const eje = new THREE.Mesh(new THREE.BoxGeometry(0.78, 0.04, 0.05), new THREE.MeshLambertMaterial({ color: 0x3A3A3A }));
+  const rueda = new THREE.CylinderGeometry(0.09, 0.09, 0.07, 12).rotateZ(Math.PI / 2);
+  const ruedas = [];
+  const delante = new THREE.Group(); delante.position.set(0, 0.1, 0.78); g.add(delante);
+  const atras = new THREE.Group(); atras.position.set(0, 0.1, -0.78); g.add(atras);
+  for (const grupo of [delante, atras]) {
+    grupo.add(eje.clone());
+    for (const l of [-1, 1]) { const w = new THREE.Mesh(rueda, metal); w.position.x = l * 0.38; grupo.add(w); ruedas.push(w); }
+  }
+  // Los tacos donde se apoyan los ejes, y el número atrás.
+  const taco = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.1, 0.12), new THREE.MeshLambertMaterial({ map: TEX.madera }));
+  for (const z of [0.78, -0.78]) { const t = taco.clone(); t.position.set(0, 0.17, z); g.add(t); }
+  const num = lienzo(128, 64, (c, w, h) => {
+    c.fillStyle = eq.casco; c.fillRect(0, 0, w, h);
+    c.fillStyle = '#fff'; c.font = '800 46px system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(String(eq.num), w / 2, h / 2 + 2);
+  });
+  const placa = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.2), new THREE.MeshBasicMaterial({ map: textura(num) }));
+  placa.position.set(0, TABLA + 0.02, -0.96); placa.rotation.y = Math.PI;
+  g.add(placa);
+  const sombra = new THREE.Mesh(new THREE.CircleGeometry(1, 20).rotateX(-Math.PI / 2).scale(0.55, 1, 1.15),
+    new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.28, depthWrite: false }));
+  sombra.position.y = 0.03;
+  g.add(sombra);
+  escena.add(g);
+  const r = azar(eq.num * 31);
+  const conductor = new Persona(eq.num % 2 ? 'base-chico' : 'base-chica', {
+    altura: NIÑO,
+    colores: { piel: elige(r, PIELES), pelo: eq.casco, ropa: eq.ropa, pantalon: '#3B4A6B', zapatos: '#F3F1EC' },
+  });
+  const empujador = new Persona(eq.num % 2 ? 'base-chica' : 'base-chico', {
+    altura: NIÑO * 1.04,
+    colores: { piel: elige(r, PIELES), pelo: elige(r, PELOS), ropa: eq.ropa2, pantalon: '#2F3A4F', zapatos: '#2A2420' },
+  });
+  conductor.pon('montado'); empujador.pon('montado');
+  return { g, ruedas, delante, sombra, conductor, empujador, eq };
+}
+
+// ─── el estado ─────────────────────────────────────────────────────
+const j = {};          // el jugador y su coche
+const e = {};          // su empujador
+const c = {};          // su conductor, cuando sale volando
+let rivales = [];
+let peatones = [];
+let estado = 'cargando';      // cargando · portada · cuenta · carrera · llegada · pausa
+let antes = 'carrera';
+let reloj = 0, cuenta = 0, tLlegada = 0, zonaActual = '', sacudida = 0, tPeaton = 0;
+const teclas = { izq: false, der: false, empuja: false, freno: false };
+let cocheJ;
+
+function reinicia() {
+  for (const o of obstaculos) { o.tomada = false; o.golpe = -9; if (o.sp) o.sp.visible = true; }
+  const grilla = (k) => ({ x: k % 2 ? 1.3 : -1.3, s: SALIDA - 2 - Math.floor(k / 2) * 4.5 - (k % 2) * 1.6 });
+  rivales.forEach((rv, k) => {
+    const p = grilla(k);
+    Object.assign(rv, { s: p.s, x: p.x, carril: p.x, v: 0, llegada: 0, empuja: true });
+  });
+  const p = grilla(3);
+  Object.assign(j, { s: p.s, x: p.x, v: 0, vx: 0, h: 0, vh: 0, aire: false, volcado: 0, turbo: 0, giro: 0, puesto: 4, llegada: 0 });
+  Object.assign(e, { estado: 'empujando', s: j.s - 1.3, x: j.x, t: 0 });
+  Object.assign(c, { suelto: false, s: 0, x: 0, v: 0 });
+  for (const pe of peatones) pe.estado = 'libre';
+  reloj = 0; zonaActual = ''; sacudida = 0; tPeaton = 1;
+  for (const k in stats) stats[k] = 0;
+}
+
+// ─── el sonido (el mismo del 2D: ruido que rueda y golpes cortos) ──
+const son = { ctx: null, mudo: false };
+function arrancaSonido() {
+  if (son.ctx) { son.ctx.resume(); return; }
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return;
+  const a = new AC();
+  son.ctx = a;
+  son.salida = a.createGain(); son.salida.gain.value = son.mudo ? 0 : 0.8; son.salida.connect(a.destination);
+  const ruido = a.createBuffer(1, a.sampleRate * 2, a.sampleRate);
+  const d = ruido.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  son.ruido = ruido;
+  const fuente = a.createBufferSource(); fuente.buffer = ruido; fuente.loop = true;
+  son.filtro = a.createBiquadFilter(); son.filtro.type = 'bandpass'; son.filtro.frequency.value = 300; son.filtro.Q.value = 0.8;
+  son.traqueteo = a.createGain(); son.traqueteo.gain.value = 0.7;
+  son.lfo = a.createOscillator(); son.lfo.type = 'square'; son.lfo.frequency.value = 8;
+  son.lfoAmp = a.createGain(); son.lfoAmp.gain.value = 0.05;
+  son.lfo.connect(son.lfoAmp); son.lfoAmp.connect(son.traqueteo.gain);
+  son.rodar = a.createGain(); son.rodar.gain.value = 0;
+  fuente.connect(son.filtro); son.filtro.connect(son.traqueteo); son.traqueteo.connect(son.rodar); son.rodar.connect(son.salida);
+  fuente.start(); son.lfo.start();
+}
+function tono(f, dur, tipo, vol, f2) {
+  if (!son.ctx) return;
+  const a = son.ctx, t = a.currentTime, o = a.createOscillator(), g = a.createGain();
+  o.type = tipo || 'sine'; o.frequency.setValueAtTime(f, t);
+  if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur);
+  g.gain.setValueAtTime(vol || 0.25, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  o.connect(g); g.connect(son.salida); o.start(t); o.stop(t + dur + 0.02);
+}
+function golpe(vol, corte) {
+  if (!son.ctx) return;
+  const a = son.ctx, t = a.currentTime, s = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+  s.buffer = son.ruido; f.type = 'lowpass'; f.frequency.value = corte || 600;
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+  s.connect(f); f.connect(g); g.connect(son.salida); s.start(t, Math.random()); s.stop(t + 0.3);
+}
+function sonidoRodar() {
+  if (!son.ctx) return;
+  const sp = (estado === 'carrera' || estado === 'llegada') && !j.aire ? j.v / TOPE : 0;
+  const empedrado = ZONAS[zonaEn(j.s)].calle === 'adoquin';
+  const t = son.ctx.currentTime;
+  son.rodar.gain.setTargetAtTime(Math.min(0.32, sp * 0.34), t, 0.05);
+  son.filtro.frequency.setTargetAtTime(180 + sp * 900, t, 0.05);
+  son.lfo.frequency.setTargetAtTime(5 + sp * 34, t, 0.05);
+  son.lfoAmp.gain.setTargetAtTime(empedrado ? 0.45 : 0.06, t, 0.1);
+}
+
+// ─── los avisos ────────────────────────────────────────────────────
+function avisa(texto, dur) {
+  const el = $('#aviso');
+  el.textContent = texto; el.classList.add('is-on');
+  clearTimeout(avisa.t); avisa.t = setTimeout(() => el.classList.remove('is-on'), dur || 1600);
+}
+const PERDONES = ['¡Perdón, vecino!', '¡Cuidado, mijo!', '¡Ay, mi espalda!', '¡Guambras atrevidos!', '¡Fíjense, pues!'];
+
+// ─── la simulación ─────────────────────────────────────────────────
+const stats = { vuelcos: 0, atropellos: 0, huecos: 0, saltos: 0, choques: 0, quedado: 0 };
+function volcar(motivo) {
+  if (j.volcado > 0) return;
+  stats.vuelcos++;
+  j.volcado = 1.8; j.giroVuelco = 0; j.aire = false; j.h = 0;
+  Object.assign(c, { suelto: true, s: j.s, x: j.x, v: j.v * 0.75 });
+  cocheJ.conductor.pon('rol', { fundido: 0.08 });
+  if (e.estado === 'a_bordo' || e.estado === 'empujando') {
+    Object.assign(e, { estado: 'piso', s: j.s - 0.6, x: j.x + (Math.random() - 0.5), t: 1.1, v: j.v * 0.6 });
+    cocheJ.empujador.pon('rol', { fundido: 0.08 });
+  }
+  j.v *= 0.3;
+  sacudida = 1.6;
+  golpe(0.95, 300); setTimeout(() => golpe(0.6, 500), 180);
+  avisa(motivo || '¡Volcaron!', 1500);
+}
+
+function endereza() {
+  const hw = muestra(j.s).hw;
+  j.s = Math.max(j.s, c.s - 0.5);
+  j.x = limita(c.x, -(hw - 0.7), hw - 0.7);
+  j.v = 0; j.volcado = 0;
+  c.suelto = false;
+  cocheJ.conductor.pon('montado', { fundido: 0.2 });
+}
+
+function sueltaEmpujador(texto) {
+  stats.quedado++;
+  Object.assign(e, { estado: 'corriendo', s: j.s - 1.3, x: j.x });
+  cocheJ.empujador.pon('correr');
+  avisa(texto || '¡Se quedó el empujador!', 1400);
+}
+
+function actualizaEmpujador(dt) {
+  const quiere = teclas.empuja && estado === 'carrera';
+  switch (e.estado) {
+    case 'a_bordo':
+      if (quiere && !j.aire && j.volcado <= 0) {
+        if (j.v < CORRE) {
+          e.estado = 'empujando'; cocheJ.empujador.pon('correr');
+          tono(320, 0.08, 'triangle', 0.15);
+        } else if (reloj - (e.tAviso || -9) > 2) { e.tAviso = reloj; avisa('¡Muy rápido para bajarse!', 1100); }
+      }
+      break;
+    case 'empujando':
+      if (j.aire || j.volcado > 0) break;
+      if (!quiere) {
+        if (j.v < CORRE + 0.8) { e.estado = 'a_bordo'; cocheJ.empujador.pon('montado'); tono(520, 0.1, 'triangle', 0.15); }
+        else sueltaEmpujador();
+      } else if (j.v > CORRE + 0.6) sueltaEmpujador('¡No alcanza! ¡Se quedó!');
+      break;
+    case 'corriendo':
+      e.s += (CORRE + 0.8) * dt;     // corre a todo lo que da para alcanzarlo
+      e.x = mezcla(e.x, j.x, Math.min(1, dt * 3));
+      if (e.s >= j.s - 1.35 && j.volcado <= 0 && !j.aire) {
+        e.estado = quiere ? 'empujando' : 'a_bordo';
+        cocheJ.empujador.pon(quiere ? 'correr' : 'montado');
+        if (!quiere) avisa('¡Se trepó!', 900);
+      }
+      break;
+    case 'piso':
+      e.t -= dt;
+      e.v = Math.max(0, (e.v || 0) - 12 * dt);
+      e.s += e.v * dt;
+      if (e.t <= 0) { e.estado = 'corriendo'; cocheJ.empujador.pon('correr'); }
+      break;
+  }
+}
+
+function actualiza(dt) {
+  if (estado === 'cuenta') {
+    cuenta -= dt;
+    const n = Math.ceil(cuenta);
+    if (n !== actualiza.n) {
+      actualiza.n = n;
+      const el = $('#cuenta');
+      el.classList.remove('is-sale'); void el.offsetWidth;
+      el.textContent = n > 0 ? String(n) : '¡A bajar!';
+      el.classList.add('is-sale');
+      tono(n > 0 ? 440 : 880, n > 0 ? 0.18 : 0.45, 'square', 0.12);
+    }
+    if (cuenta <= 0) estado = 'carrera';
+    return;
+  }
+  if (estado !== 'carrera' && estado !== 'llegada') return;
+  if (estado === 'carrera') reloj += dt;
+
+  const m = muestra(j.s);
+  const hw = m.hw, pend = m.pend, k = m.k, zona = m.zona;
+  if (zona !== zonaActual) {
+    zonaActual = zona;
+    $('#h-zona').textContent = ZONAS[zona].nombre;
+    if (reloj > 1) avisa(ZONAS[zona].nombre);
+  }
+
+  actualizaEmpujador(dt);
+
+  if (j.volcado > 0) {
+    j.volcado -= dt;
+    j.giroVuelco += dt;
+    j.v = Math.max(0, j.v - 9 * dt);
+    j.s += j.v * dt;
+    c.v = Math.max(0, c.v - 10 * dt);
+    c.s += c.v * dt;
+    if (j.volcado <= 0) endereza();
+  } else {
     const mando = estado === 'llegada' ? 0 : (teclas.izq ? -1 : 0) + (teclas.der ? 1 : 0);
-    const dx = dt * GIRO * Math.max(sp, 0.32);
-    j.x += mando * dx;
-    j.x -= dx * sp * seg.curva * CENTRIFUGA;
-    j.giro = mezcla(j.giro || 0, mando, Math.min(1, dt * 10));
-
-    // La cuesta, el roce y el aire.
-    let a = -G * pend - ROCE - AIRE * j.v * j.v;
-    const pateando = estado === 'carrera' && teclas.patada && !teclas.freno;
-    if (pateando && j.v < PATADA_HASTA) {
-      const fuerza = j.aliento > 0.02 ? 1 : 0.45;
-      a += PATADA * fuerza * (1.6 - j.v / PATADA_HASTA);
-      j.aliento = Math.max(0, j.aliento - dt * 0.12);
-      j.tPie -= dt;
-      if (j.tPie <= 0) { j.tPie = 0.2; j.pie = j.pie === -1 ? 1 : -1; tono(110, 0.08, 'sine', 0.2, 60); if (j.v > 400) echaPolvo(j.pie, 1); }
-    } else {
-      j.aliento = Math.min(1, j.aliento + dt * (j.v > PATADA_HASTA ? 0.14 : 0.09));
-      j.pie = 0;
+    j.giro = mezcla(j.giro, mando, Math.min(1, dt * 8));
+    const piedra = ZONAS[zona].calle === 'adoquin';
+    let a = -AIRE * j.v * j.v;
+    if (!j.aire) {
+      a += -G * CUESTA * pend - (piedra ? ROCE_PIEDRA : ROCE);
+      if (e.estado === 'empujando') a += EMPUJE * Math.max(0, 1 - j.v / CORRE) + (j.v < 1 ? 1.2 : 0);
+      if (teclas.freno || estado === 'llegada') a -= j.v > 0.2 ? FRENO * (estado === 'llegada' ? 0.4 : 1) : 0;
+      if (Math.abs(j.x) > hw) { a -= FUERA; sacudida = Math.max(sacudida, 0.4); }
+      j.vx = mando * GIRO * Math.max(j.v, 2.5) - CENTRIFUGA * j.v * j.v * k;
     }
-    const frena = teclas.freno || estado === 'llegada';
-    if (frena) {
-      a -= j.v > 50 ? FRENO * (estado === 'llegada' ? 0.35 : 1) : 0;
-      if (j.v > 1500 && Math.random() < 0.5) echaPolvo(0, 0.6);
-    }
-    if (j.turbo > 0) { j.turbo -= dt; a += TURBO; }
-    const fuera = Math.abs(j.x) > 1;
-    if (fuera && j.v > FUERA_HASTA) {
-      a -= FUERA;
-      sacudida = Math.max(sacudida, 0.5);
-      if (Math.random() < 0.3) echaPolvo(Math.sign(j.x), 0.8);
-    }
+    if (j.turbo > 0) { j.turbo -= dt; a += 4.5; }
     j.v = limita(j.v + a * dt, 0, j.turbo > 0 ? TOPE_TURBO : TOPE);
-    if (j.v > TOPE && j.turbo <= 0) j.v = Math.max(TOPE, j.v - 4000 * dt);
-    j.x = limita(j.x, -2.4, 2.4);
-    const dAntes = j.d;
-    j.d += j.v * dt;
+    j.x += j.vx * dt;
+    j.s += j.v * dt;
 
-    // Choques con lo que hay a los lados y con lo que hay en la calle.
-    const segN = segmentoEn(j.d);
-    for (const s of [segN, segmentos[segN.i + 1]]) {
-      if (!s) continue;
-      for (const p of s.sprites) {
-        if (p.tomada) continue;
-        if (p.tipo === 'colada' && solapa(j.x, COCHE_W, p.x, p.w * 1.6)) {
-          p.tomada = true; j.turbo = TURBO_T;
-          j.aliento = Math.min(1, j.aliento + 0.35);
-          tono(660, 0.12, 'triangle', 0.2); setTimeout(() => tono(990, 0.18, 'triangle', 0.2), 90);
-          avisa('¡Colada morada!', 900);
-        } else if (p.tipo === 'hueco' && solapa(j.x, COCHE_W, p.x, p.w, 0.8) && reloj - (p.golpe || -9) > 1) {
-          p.golpe = reloj; j.v *= 0.55; sacudida = 1.4; golpe(0.7, 400); avisa('¡Hueco!', 700);
-        } else if (p.choca && fuera && solapa(j.x, COCHE_W, p.x, p.cw || p.w, 0.9)) {
-          j.v = Math.min(j.v, VMAX * 0.12);
-          j.x -= Math.sign(j.x) * 0.2;
-          j.d = dAntes; sacudida = 1.2; golpe(0.9, 300);
+    // En el aire, la calle se va: en una bajada, el salto dura más.
+    if (j.aire) {
+      j.vh -= G * dt;
+      j.h += (j.vh - pend * j.v) * dt;
+      if (j.h <= 0) {
+        const impacto = j.vh - pend * j.v;
+        j.h = 0; j.aire = false;
+        golpe(0.6, 450);
+        if ((Math.abs(j.giro) > 0.5 && impacto < -3.2) || impacto < -7.5) volcar('¡No se gira en el aire!');
+        else {
+          sacudida = Math.max(sacudida, 0.8);
+          if (e.estado === 'a_bordo' && impacto < -3 && Math.random() < 0.55) {
+            Object.assign(e, { estado: 'piso', s: j.s - 0.8, x: j.x, t: 1.3, v: j.v * 0.4 });
+            cocheJ.empujador.pon('rol', { fundido: 0.08 });
+            avisa('¡Se cayó el empujador!', 1300);
+          }
         }
       }
     }
 
-    // Los rivales: la misma cuesta, su propia maña.
-    for (const c of coches) actualizaRival(c, dt);
-    // Con el jugador: si le alcanzas, te quedas a su velocidad; si te
-    // alcanza él, te empuja.
-    for (const c of coches) {
-      const dd = c.d - j.d;
-      if (Math.abs(dd) < SEG * 0.9 && solapa(j.x, COCHE_W, c.x, COCHE_W, 0.85)) {
-        if (dd > 0 && j.v > c.v) {
-          j.v = c.v * 0.94; j.d = c.d - SEG * 0.9; sacudida = 0.8; golpe(0.5, 900);
-        } else if (dd < 0 && c.v > j.v) {
-          c.v = j.v * 0.95; j.v += 400; c.d = j.d - SEG * 0.9;
-        }
-        c.x += (c.x > j.x ? 1 : -1) * dt * 1.5;
+    // Contra las paredes de las casas o los muros del Panecillo.
+    const pared = hw + ACERA - 0.35;
+    if (Math.abs(j.x) > pared) {
+      if (j.v > 8) volcar('¡Contra la pared!');
+      else { j.x = Math.sign(j.x) * pared; j.v *= 0.6; sacudida = 0.8; golpe(0.6, 400); }
+    }
+
+    // Lo que hay en la calle.
+    for (const o of obstaculos) {
+      if (o.s < j.s - 2) continue;
+      if (o.s > j.s + 2) break;
+      if (o.tomada || Math.abs(o.s - j.s) > (o.largo || 0.6)) continue;
+      const dx = Math.abs(o.x - j.x);
+      if (o.tipo === 'colada' && dx < 0.8 && !j.aire) {
+        o.tomada = true; o.sp.visible = false; j.turbo = 1.6;
+        tono(660, 0.12, 'triangle', 0.2); setTimeout(() => tono(990, 0.18, 'triangle', 0.2), 90);
+        avisa('¡Colada morada!', 900);
+      } else if (o.tipo === 'rampa' && dx < o.r && !j.aire && j.v > 3) {
+        j.aire = true; j.h = 0.45; j.vh = Math.min(6, j.v * 0.32);
+        o.golpe = reloj; tono(200, 0.2, 'sine', 0.2, 400); stats.saltos++;
+      } else if (o.tipo === 'hueco' && dx < o.r + 0.2 && !j.aire && reloj - o.golpe > 1) {
+        stats.huecos++; o.golpe = reloj; j.v *= 0.78; j.aire = true; j.h = 0.05; j.vh = 1.6; sacudida = 1.1;
+        golpe(0.7, 380); avisa('¡Hueco!', 700);
+      } else if ((o.tipo === 'farol' || o.tipo === 'puesto' || o.tipo === 'cajon') && dx < o.r + 0.35 && j.h < 0.5 && reloj - o.golpe > 1) {
+        o.golpe = reloj;
+        if (j.v > 5) volcar(o.tipo === 'puesto' ? '¡Al puesto de la señora!' : o.tipo === 'cajon' ? '¡El cajón!' : '¡Contra el farol!');
+        else { j.v = 0.5; j.x += Math.sign(j.x - o.x || 1) * 0.3; golpe(0.6, 400); stats.choques++; }
       }
-    }
-
-    if (j.golpe > 0) j.golpe -= dt;
-    sacudida = Math.max(0, sacudida - dt * 2.4);
-    for (let k = polvo.length - 1; k >= 0; k--) { const p = polvo[k]; p.t -= dt; p.x += p.vx * dt; p.y += p.vy * dt; if (p.t <= 0) polvo.splice(k, 1); }
-
-    const metaZ = metaI * SEG;
-    if (estado === 'carrera' && j.d >= metaZ) {
-      j.llegada = reloj; estado = 'llegada'; tLlegada = 0;
-      const delante = coches.filter((c) => c.llegada).length;
-      j.puesto = delante + 1;
-      tono(523, 0.15, 'triangle', 0.2); setTimeout(() => tono(659, 0.15, 'triangle', 0.2), 140); setTimeout(() => tono(784, 0.4, 'triangle', 0.22), 280);
-    }
-    if (estado === 'llegada') {
-      tLlegada += dt;
-      if (tLlegada > 2.2 && $('#llegada').hidden) muestraLlegada();
     }
   }
 
-  function actualizaRival(c, dt) {
-    const seg = segmentoEn(c.d);
-    if (estado === 'carrera' || estado === 'llegada') {
-      const hab = c.p.hab;
-      let a = -G * pendiente(seg) - ROCE - AIRE * c.v * c.v / hab;
-      // Patean sin cansarse, pero más flojo que tú: tú tienes el aliento.
-      if (c.v < PATADA_HASTA) a += PATADA * 0.72 * hab * (1.6 - c.v / PATADA_HASTA);
-      // Un poco de goma: nadie se escapa del todo ni se queda solo atrás.
-      const ventaja = c.d - j.d;
-      if (estado === 'carrera') {
-        if (ventaja > SEG * 30) a -= 900;
-        else if (ventaja < -SEG * 30) a += 350;
-      }
-      // Mira la curva que viene y frena para no salirse.
-      let peor = 0;
-      for (let k = 0; k < 30; k += 3) { const s = segmentos[seg.i + k]; if (s) peor = Math.max(peor, Math.abs(s.curva)); }
-      const tope = topeCurva(peor) * (0.86 + 0.08 * hab);
-      c.v += a * dt;
-      if (c.v > tope) c.v = Math.max(tope, c.v - FRENO * 0.7 * dt);
-      c.v = limita(c.v, 0, TOPE);
-    }
-    // El carril: esquiva al que va delante más lento, y si no, vuelve al suyo.
-    let esquiva = 0;
-    for (const o of [j, ...coches]) {
-      if (o === c) continue;
-      const dd = o.d - c.d;
-      if (dd > 0 && dd < SEG * 14 && c.v > o.v && Math.abs(o.x - c.x) < COCHE_W * 1.1) {
-        esquiva = o.x > c.x || c.x > 0.6 ? -1 : 1;
-        if (c.x < -0.6) esquiva = 1;
-        break;
-      }
-    }
-    if (esquiva) c.x += esquiva * dt * 1.4;
-    else {
-      if (Math.random() < dt * 0.15) c.carril = (Math.random() - 0.5) * 1.2;
-      c.x += limita(c.carril - c.x, -dt * 0.4, dt * 0.4);
-    }
-    c.x = limita(c.x, -0.8, 0.8);
-    // Entre rivales, el de atrás se queda a la velocidad del de delante.
-    for (const o of coches) {
-      if (o === c) continue;
-      const dd = o.d - c.d;
-      if (dd > 0 && dd < SEG * 0.8 && solapa(c.x, COCHE_W, o.x, COCHE_W, 0.8) && c.v > o.v) c.v = o.v * 0.98;
-    }
-    c.d = Math.min(c.d + c.v * dt, (segmentos.length - VISTA) * SEG);
-    if (!c.llegada && c.d >= metaI * SEG) c.llegada = reloj;
-  }
-
-  function echaPolvo(lado, fuerza) {
-    if (quieto.matches || polvo.length > 60) return;
-    const base = HOR + F;
-    polvo.push({
-      x: W / 2 + lado * F * 0.18 + (Math.random() - 0.5) * 20, y: base - 4,
-      vx: (lado || (Math.random() - 0.5)) * 60 * fuerza, vy: -30 - Math.random() * 40,
-      r: 6 + Math.random() * 8 * fuerza, t: 0.6, t0: 0.6,
-    });
-  }
-
-  // ─── el dibujo ──────────────────────────────────────────────────
-  function proyecta(p, camX, camY, camZ) {
-    p.cam.x = -camX;
-    p.cam.y = p.mundo.y - camY;
-    p.cam.z = p.mundo.z - camZ;
-    const e = p.pant.escala = PROF / p.cam.z;
-    p.pant.x = W / 2 + e * p.cam.x * F;
-    p.pant.y = HOR + inclina - e * p.cam.y * F;
-    p.pant.w = e * ANCHO * F;
-  }
-
-  function poligono(x1, y1, x2, y2, x3, y3, x4, y4, color) {
-    ctx.fillStyle = color;
-    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.lineTo(x3, y3); ctx.lineTo(x4, y4); ctx.closePath(); ctx.fill();
-  }
-
-  function dibujaSegmento(s, n) {
-    // El borde de lejos sube medio píxel y el segmento de delante tapa al de
-    // atrás: si no, entre segmento y segmento queda una raya del suavizado.
-    const a = s.p1.pant, b = { x: s.p2.pant.x, y: s.p2.pant.y - 0.6, w: s.p2.pant.w };
-    const z = ZONAS[s.zona];
-    const calle = COLOR[z.calle], lado = COLOR[z.lado];
-    ctx.fillStyle = s.claro ? lado.claro : lado.oscuro;
-    ctx.fillRect(0, b.y, W, a.y - b.y);
-    const r1 = a.w * 0.1, r2 = b.w * 0.1;
-    const borde = calle.borde[s.claro ? 0 : 1];
-    poligono(a.x - a.w - r1, a.y, a.x - a.w, a.y, b.x - b.w, b.y, b.x - b.w - r2, b.y, borde);
-    poligono(a.x + a.w + r1, a.y, a.x + a.w, a.y, b.x + b.w, b.y, b.x + b.w + r2, b.y, borde);
-    poligono(a.x - a.w, a.y, a.x + a.w, a.y, b.x + b.w, b.y, b.x - b.w, b.y, s.claro ? calle.claro : calle.oscuro);
-    if (calle.linea && s.claro) {
-      const l1 = a.w * 0.025, l2 = b.w * 0.025;
-      poligono(a.x - l1, a.y, a.x + l1, a.y, b.x + l2, b.y, b.x - l2, b.y, calle.linea);
-    }
-    if (calle.junta && n < 140) {
-      // El empedrado: una junta de lado a lado y unas cuantas a lo largo.
-      ctx.fillStyle = calle.junta;
-      ctx.fillRect(a.x - a.w, a.y - Math.max(1, a.w * 0.004), a.w * 2, Math.max(1, a.w * 0.006));
-      if (n < 70) {
-        for (const f of [-0.6, -0.2, 0.2, 0.6]) {
-          const o = (s.i % 2 ? 0.1 : 0);
-          const x1 = a.x + a.w * (f + o), x2 = b.x + b.w * (f + o), g1 = Math.max(0.6, a.w * 0.004), g2 = Math.max(0.6, b.w * 0.004);
-          poligono(x1 - g1, a.y, x1 + g1, a.y, x2 + g2, b.y, x2 - g2, b.y, calle.junta);
-        }
-      }
-    }
-    // La neblina de la mañana se come lo lejano.
-    const niebla = n / VISTA;
-    if (niebla > 0.45) {
-      ctx.globalAlpha = Math.min(0.9, ((niebla - 0.45) / 0.55) ** 1.6);
-      ctx.fillStyle = NIEBLA; ctx.fillRect(0, b.y, W, a.y - b.y);
-      ctx.globalAlpha = 1;
+  // Los rivales, los peatones y los choques entre coches.
+  for (const rv of rivales) actualizaRival(rv, dt);
+  for (const rv of rivales) {
+    const ds = rv.s - j.s, dx = Math.abs(rv.x - j.x);
+    if (Math.abs(ds) < 1.9 && dx < 0.72 && j.volcado <= 0) {
+      if (ds > 0 && j.v > rv.v) { j.v = rv.v * 0.93; j.s = rv.s - 1.9; sacudida = 0.7; golpe(0.5, 900); }
+      else if (ds < 0 && rv.v > j.v) { rv.v = j.v * 0.95; rv.s = j.s - 1.9; j.v += 0.4; }
+      rv.x += (rv.x > j.x ? 1 : -1) * dt * 1.5;
     }
   }
+  actualizaPeatones(dt);
 
-  function dibujaImagen(img, escala, x, y, w, clip, alfa) {
-    const dw = w * escala * ANCHO * F;
-    if (dw < 1.5) return;
-    const dh = dw * img.height / img.width;
-    const dx = x - dw / 2, dy = y - dh;
-    if (dx > W || dx + dw < 0) return;
-    const corte = Math.max(0, dy + dh - clip);
-    if (corte >= dh) return;
-    if (alfa < 1) ctx.globalAlpha = alfa;
-    ctx.drawImage(img, 0, 0, img.width, img.height * (1 - corte / dh), dx, dy, dw, dh - corte);
-    ctx.globalAlpha = 1;
+  sacudida = Math.max(0, sacudida - dt * 2.4);
+  for (const o of obstaculos) if (o.sp && o.sp.visible && Math.abs(o.s - j.s) < 120) o.sp.position.y = o.base + Math.sin(reloj * 4 + o.s) * 0.12;
+
+  if (estado === 'carrera' && j.s >= META) {
+    j.llegada = reloj; estado = 'llegada'; tLlegada = 0;
+    j.puesto = 1 + rivales.filter((rv) => rv.llegada).length;
+    tono(523, 0.15, 'triangle', 0.2); setTimeout(() => tono(659, 0.15, 'triangle', 0.2), 140); setTimeout(() => tono(784, 0.4, 'triangle', 0.22), 280);
   }
-
-  // Lo que cruza la calle de lado a lado: la salida, la meta y el Arco de
-  // la Reina. Se dibuja con la proyección del segmento, como un sprite.
-  function dibujaPortal(s, alfa) {
-    const p = s.p1.pant, e = p.escala;
-    if (p.w < 4) return;
-    ctx.save();
-    ctx.beginPath(); ctx.rect(0, 0, W, s.clip); ctx.clip();
-    ctx.globalAlpha = alfa;
-    const alto = e * 2600 * F;
-    const x = p.x, y = p.y, w = p.w;
-    if (s.portal === 'arco') {
-      const ext = w * 1.55, inn = w * 1.08, tope = y - alto * 1.25, luz = y - alto * 0.62;
-      ctx.fillStyle = '#F2EEE5';
-      ctx.beginPath();
-      ctx.rect(x - ext, tope, ext * 2, y - tope);
-      ctx.moveTo(x - inn, y); ctx.lineTo(x - inn, luz); ctx.ellipse(x, luz, inn, alto * 0.22, 0, Math.PI, 0); ctx.lineTo(x + inn, y); ctx.closePath();
-      ctx.fill('evenodd');
-      ctx.fillStyle = 'rgba(0,0,0,.12)'; ctx.fillRect(x + inn, tope, ext - inn, y - tope);
-      ctx.fillStyle = '#A8442C';
-      ctx.beginPath(); ctx.moveTo(x - ext - w * 0.08, tope); ctx.lineTo(x - ext + w * 0.2, tope - alto * 0.2); ctx.lineTo(x + ext - w * 0.2, tope - alto * 0.2); ctx.lineTo(x + ext + w * 0.08, tope); ctx.fill();
-      ctx.fillStyle = '#1F4E9E';
-      ctx.fillRect(x - w * 0.18, tope + alto * 0.12, w * 0.36, alto * 0.18);
-      if (w > 60) {
-        ctx.fillStyle = TINTA; ctx.font = `800 ${Math.round(w * 0.075)}px system-ui, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText('ARCO DE LA REINA', x, luz - alto * 0.3);
-      }
-    } else {
-      const meta = s.portal === 'meta';
-      const px = w * 1.18, pw = Math.max(2, w * 0.05), bh = alto * 0.22;
-      ctx.fillStyle = '#6B4423';
-      ctx.fillRect(x - px - pw, y - alto, pw * 2, alto); ctx.fillRect(x + px - pw, y - alto, pw * 2, alto);
-      const by = y - alto;
-      if (meta) {
-        const n = 16, c = (px * 2) / n;
-        for (let k = 0; k < n; k++) for (let f = 0; f < 2; f++) {
-          ctx.fillStyle = (k + f) % 2 ? '#FFFFFF' : TINTA;
-          ctx.fillRect(x - px + k * c, by + f * bh / 2, c + 0.5, bh / 2 + 0.5);
-        }
-      } else {
-        ctx.fillStyle = '#D6382B'; ctx.fillRect(x - px, by, px * 2, bh);
-        ctx.fillStyle = '#1F4E9E'; ctx.fillRect(x - px, by + bh * 0.82, px * 2, bh * 0.18);
-      }
-      if (bh > 10) {
-        const t = meta ? 'META · PLAZA GRANDE' : 'SALIDA · EL PANECILLO';
-        ctx.font = `800 ${Math.round(bh * 0.5)}px system-ui, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        const tw = ctx.measureText(t).width;
-        if (meta) { ctx.fillStyle = '#FFFFFF'; ctx.fillRect(x - tw / 2 - bh * 0.3, by + bh * 0.12, tw + bh * 0.6, bh * 0.76); }
-        ctx.fillStyle = meta ? TINTA : '#FFFFFF';
-        ctx.fillText(t, x, by + bh * 0.5);
-      }
-    }
-    ctx.restore();
+  if (estado === 'llegada') {
+    tLlegada += dt;
+    if (tLlegada > 2.4 && $('#llegada').hidden) muestraLlegada();
   }
+}
 
-  function dibujaCoche(img, escala, x, y, clip, giro, salto, nombre) {
-    const dw = COCHE_W * escala * ANCHO * F;
-    if (dw < 2) return;
-    const dh = dw * img.height / img.width;
-    if (y - dh > clip) return;
-    ctx.save();
-    ctx.beginPath(); ctx.rect(0, 0, W, clip); ctx.clip();
-    ctx.translate(x, y - salto);
-    ctx.rotate(giro * 0.07);
-    ctx.drawImage(img, -dw / 2, -dh, dw, dh);
-    ctx.restore();
-    if (nombre && dw > 46 && dw < 220 && y - dh - 6 < clip) {
-      ctx.font = `700 ${Math.round(limita(dw * 0.13, 10, 15))}px system-ui, sans-serif`;
-      ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
-      ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(42,33,24,.85)'; ctx.fillStyle = '#FFFFFF';
-      ctx.strokeText(nombre, x, y - dh - 4); ctx.fillText(nombre, x, y - dh - 4);
+function actualizaRival(rv, dt) {
+  const m = muestra(rv.s);
+  const hab = rv.cruce.eq.hab;
+  let a = -G * CUESTA * m.pend - (ZONAS[m.zona].calle === 'adoquin' ? ROCE_PIEDRA : ROCE) - AIRE * rv.v * rv.v / hab;
+  // Su empujador se baja en las subidas y cuando hay que arrancar.
+  const debe = rv.v < CORRE - 1.2 && (m.pend > 0.01 || rv.v < 3);
+  if (debe !== rv.empuja) {
+    rv.empuja = debe;
+    rv.cruce.empujador.pon(debe ? 'correr' : 'montado');
+  }
+  if (rv.empuja) a += EMPUJE * 0.85 * hab * Math.max(0, 1 - rv.v / CORRE) + (rv.v < 1 ? 1 : 0);
+  const ventaja = rv.s - j.s;
+  if (estado === 'carrera') {
+    if (ventaja > 40) a -= 1.2;
+    else if (ventaja < -40) a += 0.5;
+  }
+  let peor = 0;
+  for (let d = 0; d < 30; d += 3) peor = Math.max(peor, Math.abs(P.k[limita(Math.floor(rv.s + d), 0, N - 1)]));
+  const tope = peor > 0.005 ? Math.min(TOPE, GIRO / (CENTRIFUGA * peor) * (0.86 + 0.08 * hab)) : TOPE;
+  rv.v += a * dt;
+  if (rv.v > tope) rv.v = Math.max(tope, rv.v - FRENO * 0.7 * dt);
+  rv.v = limita(rv.v, 0, TOPE);
+  // El carril: lejos de los puestos y de quien va delante más lento.
+  let esquiva = 0;
+  for (const o of [j, ...rivales]) {
+    if (o === rv) continue;
+    const ds = o.s - rv.s;
+    if (ds > 0 && ds < 9 && rv.v > o.v && Math.abs(o.x - rv.x) < 0.9) { esquiva = o.x > rv.x || rv.x > m.hw - 1.2 ? -1 : 1; break; }
+  }
+  if (esquiva) rv.x += esquiva * dt * 1.6;
+  else {
+    if (Math.random() < dt * 0.2) rv.carril = (Math.random() - 0.5) * (m.hw - 1.4) * 2;
+    rv.x += limita(rv.carril - rv.x, -dt * 0.8, dt * 0.8);
+  }
+  rv.x = limita(rv.x, -(m.hw - 1.1), m.hw - 1.1);
+  for (const o of rivales) {
+    if (o === rv) continue;
+    const ds = o.s - rv.s;
+    if (ds > 0 && ds < 1.8 && Math.abs(o.x - rv.x) < 0.7 && rv.v > o.v) rv.v = o.v * 0.98;
+  }
+  rv.s = Math.min(rv.s + rv.v * dt, N - 2);
+  if (!rv.llegada && rv.s >= META) rv.llegada = reloj;
+}
+
+// Los peatones se cruzan delante, de vereda a vereda. Si les cae un coche
+// encima, casi siempre saltan a tiempo; si no, ruedan y se levantan.
+function actualizaPeatones(dt) {
+  tPeaton -= dt;
+  if (tPeaton <= 0 && estado === 'carrera' && CENTRO.has(zonaEn(j.s + 30)) && j.s + 40 < META) {
+    tPeaton = 2.2 + Math.random() * 3;
+    const pe = peatones.find((p) => p.estado === 'libre');
+    if (pe) {
+      const s = j.s + 26 + Math.random() * 18, hw = muestra(s).hw;
+      const lado = Math.random() < 0.5 ? -1 : 1;
+      Object.assign(pe, { estado: 'cruza', s, x: lado * (hw + 0.8), dir: -lado, t: 0, v: 1.25 + Math.random() * 0.4, salto: Math.random() < 0.7 });
+      pe.p.pon('andar', { fundido: 0 });
+      pe.p.obj.visible = true;
     }
   }
+  for (const pe of peatones) {
+    if (pe.estado === 'libre') { pe.p.obj.visible = false; continue; }
+    const hw = muestra(pe.s).hw;
+    if (pe.estado === 'cruza') {
+      pe.x += pe.dir * pe.v * dt;
+      const ds = pe.s - j.s;
+      if (pe.salto && ds > 2 && ds < 7 + j.v * 0.4 && Math.abs(pe.x - j.x) < 1.3 && j.volcado <= 0) {
+        pe.estado = 'esquiva'; pe.t = 0; pe.dir = pe.x > j.x ? 1 : -1;
+        pe.p.pon('salto', { una: true, fundido: 0.08, vel: 1.6 });
+      }
+      if (Math.abs(pe.x) > hw + 1.2 && Math.sign(pe.x) === pe.dir) pe.estado = 'libre';
+    } else if (pe.estado === 'esquiva') {
+      pe.t += dt;
+      pe.x += pe.dir * 3.6 * Math.max(0, 1 - pe.t) * dt;
+      if (pe.t > 1.1) { pe.estado = 'cruza'; pe.p.pon('andar'); }
+    } else if (pe.estado === 'tumbado') {
+      pe.t += dt;
+      pe.s += pe.vs * dt; pe.vs = Math.max(0, pe.vs - 8 * dt);
+      pe.x += pe.dir * 1.5 * Math.max(0, 1 - pe.t) * dt;
+      if (pe.t > 2.4) { pe.estado = 'cruza'; pe.salto = false; pe.dir = Math.sign(pe.x) || 1; pe.p.pon('andar'); }
+    }
+    if ((pe.estado === 'cruza' || pe.estado === 'esquiva') && Math.abs(pe.s - j.s) < 1.1 && Math.abs(pe.x - j.x) < 0.65 && j.volcado <= 0 && j.h < 0.6) {
+      pe.estado = 'tumbado'; pe.t = 0; pe.vs = j.v * 0.5; pe.dir = pe.x > j.x ? 1 : -1;
+      pe.p.pon('rol', { fundido: 0.06 });
+      j.v *= 0.55; sacudida = 1; golpe(0.6, 700); stats.atropellos++;
+      avisa(PERDONES[Math.floor(Math.random() * PERDONES.length)], 1300);
+    }
+    if (pe.s < j.s - 25) pe.estado = 'libre';
+  }
+}
 
-  // ─── el fondo: el Pichincha y las laderas con sus casitas ───────
-  const FONDO = {};
-  function pintaFondo() {
-    const r = azar(99);
-    const LW = 2400;
-    const onda = (x, ks) => ks.reduce((t, [k, a, f]) => t + a * Math.sin((x / LW) * Math.PI * 2 * k + f), 0);
-    FONDO.montes = lienzo(LW, 420, (c, w, h) => {
-      const g = c.createLinearGradient(0, 60, 0, h);
-      g.addColorStop(0, '#7E98AC'); g.addColorStop(1, '#9DB3BF');
-      c.fillStyle = g; c.beginPath(); c.moveTo(0, h);
-      for (let x = 0; x <= w; x += 8) {
-        const pico = 150 * Math.exp(-(((x - 700) / 260) ** 2)) + 90 * Math.exp(-(((x - 1050) / 180) ** 2)) + 70 * Math.exp(-(((x - 1900) / 300) ** 2));
-        c.lineTo(x, 300 - pico - onda(x, [[3, 22, 0.4], [7, 10, 1.3], [13, 5, 2.1]]));
-      }
-      c.lineTo(w, h); c.fill();
-      // el poco de nieve que a veces tiene arriba
-      c.fillStyle = 'rgba(255,255,255,.55)';
-      c.beginPath(); c.moveTo(640, 160); c.lineTo(700, 140); c.lineTo(760, 165); c.lineTo(720, 160); c.lineTo(690, 172); c.fill();
-    });
-    FONDO.laderas = lienzo(LW, 300, (c, w, h) => {
-      const borde = (x) => 120 - onda(x, [[2, 40, 0.9], [5, 18, 2.4], [11, 8, 0.2]]);
-      c.fillStyle = '#8FA675'; c.beginPath(); c.moveTo(0, h);
-      for (let x = 0; x <= w; x += 8) c.lineTo(x, borde(x));
-      c.lineTo(w, h); c.fill();
-      // las casitas que trepan por la ladera
-      const tonos = ['#F2EEE5', '#EAD9B0', '#E8C9C0', '#C9DCE6', '#F3E3D3', '#D8D2C2', '#E6B98F'];
-      for (let k = 0; k < 1400; k++) {
-        const x = r() * w, y0 = borde(x) + 10, y = y0 + r() ** 0.7 * (h - y0);
-        const s = 4 + (y / h) * 7;
-        c.fillStyle = elige(r, tonos); c.fillRect(x, y, s * 1.4, s);
-        c.fillStyle = '#A8442C'; c.fillRect(x - 1, y - 2, s * 1.4 + 2, 2.5);
-      }
-    });
-    FONDO.nubes = lienzo(LW, 200, (c, w) => {
-      c.fillStyle = 'rgba(255,255,255,.85)';
-      for (let k = 0; k < 9; k++) {
-        const x = (k / 9) * w + r() * 120, y = 40 + r() * 100, s = 30 + r() * 30;
-        for (let b = 0; b < 5; b++) { c.beginPath(); c.ellipse(x + b * s * 0.7, y + Math.sin(b) * 8, s, s * 0.55, 0, 0, 7); c.fill(); }
-      }
-    });
+// ─── el dibujo ─────────────────────────────────────────────────────
+const _v = new THREE.Vector3(), _e = new THREE.Euler(0, 0, 0, 'YXZ');
+
+// Pone un grupo sobre la calle en (s, x, h), mirando hacia delante, con la
+// pendiente y un giro de más.
+function colocaEnCalle(obj, s, x, h, giro, alabeo) {
+  const m = muestra(s);
+  punto(s, x, h, obj.position);
+  _e.set(-Math.atan(m.pend), m.th + (giro || 0), alabeo || 0, 'YXZ');
+  obj.quaternion.setFromEuler(_e);
+}
+
+// La tripulación, sentada o empujando, va pegada al coche.
+function enCoche(persona, coche, z, pose) {
+  const off = persona.apoyo(pose);
+  _v.set(0, pose === 'montado' ? TABLA + 0.03 + off - persona.pie : 0, z);
+  coche.localToWorld(_v);
+  persona.obj.position.copy(_v);
+  persona.obj.quaternion.copy(coche.quaternion);
+}
+
+function colocaCoche(cc, s, x, h, giro, vuelco, v, dt) {
+  colocaEnCalle(cc.g, s, x, h, giro * 0.18, vuelco);
+  cc.g.updateMatrixWorld(true);
+  cc.delante.rotation.y = -giro * 0.35;
+  for (const w of cc.ruedas) w.rotation.x += (v * dt) / 0.09;
+  cc.sombra.visible = Math.abs(vuelco) < 0.3;
+}
+
+function dibujaMundo(dt) {
+  // El coche del jugador.
+  let alabeo = 0, salto = 0;
+  if (j.volcado > 0) {
+    const t = j.giroVuelco;
+    alabeo = t < 0.6 ? t / 0.6 * Math.PI * 1.5 : t < 1.3 ? Math.PI * 1.5 : Math.PI * 1.5 + Math.min(1, (t - 1.3) / 0.5) * Math.PI * 0.5;
+    salto = t < 0.6 ? Math.sin(t / 0.6 * Math.PI) * 0.9 : 0;
+  }
+  const temblor = quieto.matches ? 0 : (Math.random() - 0.5) * (ZONAS[zonaEn(j.s)].calle === 'adoquin' ? j.v / TOPE * 0.05 : 0.01);
+  const enAcera = Math.abs(j.x) > muestra(j.s).hw ? BORDILLO : 0;
+  colocaCoche(cocheJ, j.s, j.x, j.h + salto + temblor + enAcera, j.giro, alabeo, j.v, dt);
+  if (c.suelto) colocaEnCalle(cocheJ.conductor.obj, c.s + 1, c.x + 0.4, 0, 0.3);
+  else enCoche(cocheJ.conductor, cocheJ.g, 0.32, 'montado');
+  if (e.estado === 'a_bordo') enCoche(cocheJ.empujador, cocheJ.g, -0.5, 'montado');
+  else if (e.estado === 'empujando') {
+    enCoche(cocheJ.empujador, cocheJ.g, -1.3, 'correr');
+    cocheJ.empujador.acciones.correr.timeScale = 0.6 + j.v / CORRE * 0.8;
+  } else {
+    colocaEnCalle(cocheJ.empujador.obj, e.s, e.x, 0, 0);
+    if (e.estado === 'corriendo') cocheJ.empujador.acciones.correr.timeScale = 1.3;
   }
 
-  function capa(img, desplaza, base, alto) {
-    const ew = alto / img.height * img.width;
-    let x = -((desplaza * ew) % ew);
-    if (x > 0) x -= ew;
-    for (; x < W; x += ew) ctx.drawImage(img, x, base - alto, ew + 1, alto);
+  // Los rivales.
+  for (const rv of rivales) {
+    colocaCoche(rv.cruce, rv.s, rv.x, 0, 0, 0, rv.v, dt);
+    enCoche(rv.cruce.conductor, rv.cruce.g, 0.32, 'montado');
+    if (rv.empuja) enCoche(rv.cruce.empujador, rv.cruce.g, -1.3, 'correr');
+    else enCoche(rv.cruce.empujador, rv.cruce.g, -0.5, 'montado');
+  }
+  // Los peatones.
+  for (const pe of peatones) {
+    if (pe.estado === 'libre') continue;
+    const giro = pe.estado === 'tumbado' ? 0 : (pe.dir > 0 ? -Math.PI / 2 : Math.PI / 2);
+    colocaEnCalle(pe.p.obj, pe.s, pe.x, Math.abs(pe.x) > muestra(pe.s).hw ? BORDILLO : 0, giro);
   }
 
-  function dibujaFondo() {
-    const hor = HOR + inclina;
-    const cielo = ctx.createLinearGradient(0, 0, 0, Math.max(1, hor));
-    cielo.addColorStop(0, '#5E9BD0'); cielo.addColorStop(0.7, '#A9CBE2'); cielo.addColorStop(1, '#DCE9EF');
-    ctx.fillStyle = cielo; ctx.fillRect(0, 0, W, Math.max(0, hor) + 2);
-    const u = Math.max(W, H);
-    capa(FONDO.nubes, cieloX, hor - u * 0.12, u * 0.14);
-    capa(FONDO.montes, montesX, hor + u * 0.01, u * 0.2);
-    capa(FONDO.laderas, laderasX, hor + u * 0.03, u * 0.13);
-    ctx.fillStyle = '#9DB08A'; ctx.fillRect(0, hor + u * 0.03 - 1, W, H);
-  }
+  // Las animaciones.
+  for (const cc of [cocheJ, ...rivales.map((rv) => rv.cruce)]) for (const p of [cc.conductor, cc.empujador]) p.mixer.update(dt);
+  for (const pe of peatones) if (pe.estado !== 'libre') pe.p.mixer.update(dt);
+}
 
-  function dibuja() {
-    const segBase = segmentoEn(j.d - JUG_Z);
-    const posicion = j.d - JUG_Z;
-    const pctBase = (posicion % SEG) / SEG;
-    const segJ = segmentoEn(j.d);
-    const pctJ = (j.d % SEG) / SEG;
-    const jugY = mezcla(segJ.p1.mundo.y, segJ.p2.mundo.y, pctJ);
+let camS = 0;
+function dibujaCamara(dt) {
+  // Mientras se vuelca, la cámara se queda atrás y llega tarde: se ve el
+  // tumbo entero en vez de pegada a la tabla.
+  camS = j.volcado > 0 ? mezcla(camS, j.s, Math.min(1, dt * 1.5)) : j.s;
+  const lejos = 5.4 + j.v * 0.06;
+  const objetivo = punto(camS - lejos, j.x * 0.8, 2.25 + j.v * 0.02);
+  // La cámara no se mete bajo la calle en las bajadas fuertes.
+  const suelo = muestra(camS - lejos).y + 1.2;
+  if (objetivo.y < suelo) objetivo.y = suelo;
+  const mira = punto(camS + 7, j.x * 0.6, 0.9 + j.h * 0.5);
+  // Si la cámara quedó lejos (al empezar o tras un salto de tiempo), se
+  // pone en su sitio de golpe: deslizarse cien metros la mete en las casas.
+  if (camara.position.distanceToSquared(objetivo) > 225) camara.position.copy(objetivo);
+  else camara.position.lerp(objetivo, Math.min(1, dt * 6));
+  if (sacudida > 0 && !quieto.matches) camara.position.add(_v.set((Math.random() - 0.5) * sacudida * 0.12, (Math.random() - 0.5) * sacudida * 0.12, 0));
+  camara.lookAt(mira);
+  const fov = 60 + 12 * Math.min(1, j.v / TOPE) + (j.turbo > 0 ? 6 : 0);
+  if (Math.abs(camara.fov - fov) > 0.05) { camara.fov = mezcla(camara.fov, fov, Math.min(1, dt * 3)); camara.updateProjectionMatrix(); }
+  panorama.position.set(camara.position.x, camara.position.y + 30, camara.position.z);
+}
 
-    // La cámara cabecea con la cuesta: mira hacia abajo cuando se baja.
-    const adelante = segmentos[Math.min(segJ.i + 14, segmentos.length - 1)];
-    // Solo a medias: si compensara del todo, la bajada se vería plana.
-    const objetivo = limita((pendiente(segJ) * 0.4 + pendiente(adelante) * 0.6) * F * 0.45, -H * 0.2, H * 0.16);
-    inclina = mezcla(inclina, objetivo, 0.08);
+// La portada: la cámara gira despacio alrededor de la parrilla.
+function dibujaPortada(t) {
+  const centro = punto(SALIDA - 4, 0, 1);
+  camara.position.set(centro.x + Math.sin(t * 0.15) * 9, centro.y + 3.2, centro.z + Math.cos(t * 0.15) * 9);
+  camara.lookAt(centro);
+  panorama.position.set(camara.position.x, camara.position.y + 30, camara.position.z);
+}
 
-    const tiembla = sacudida * 4 + (ZONAS[segJ.zona].calle === 'adoquin' ? j.v / VMAX * 1.8 : 0);
-    const ox = quieto.matches ? 0 : (Math.random() - 0.5) * tiembla;
-    const oy = quieto.matches ? 0 : (Math.random() - 0.5) * tiembla;
-
-    ctx.save();
-    ctx.translate(ox, oy);
-    dibujaFondo();
-
-    let maxy = H;
-    let x = 0, dx = -(segBase.curva * pctBase);
-    const fin = Math.min(segmentos.length, segBase.i + VISTA);
-    for (let i = segBase.i, n = 0; i < fin; i++, n++) {
-      const s = segmentos[i];
-      s.clip = maxy;
-      proyecta(s.p1, j.x * ANCHO - x, jugY + CAM_ALTO, posicion);
-      proyecta(s.p2, j.x * ANCHO - x - dx, jugY + CAM_ALTO, posicion);
-      x += dx; dx += s.curva;
-      s.visto = !(s.p1.cam.z <= PROF || s.p2.pant.y >= s.p1.pant.y || s.p2.pant.y >= maxy);
-      if (s.visto) maxy = s.p1.pant.y;
-    }
-    // La calle se pinta de lejos a cerca, para que cada segmento tape el
-    // borde suavizado del de detrás.
-    for (let i = fin - 1; i >= segBase.i; i--) if (segmentos[i].visto) dibujaSegmento(segmentos[i], i - segBase.i);
-
-    // De atrás hacia delante: los sprites, los coches y al final tú.
-    const porSeg = new Map();
-    for (const c of coches) {
-      const i = Math.floor(c.d / SEG);
-      if (!porSeg.has(i)) porSeg.set(i, []);
-      porSeg.get(i).push(c);
-    }
-    const t = performance.now() / 1000;
-    // Los huecos son planos, están en el suelo: van antes que todo lo que
-    // está de pie, o el de detrás de la cámara taparía las ruedas.
-    for (let i = fin - 1; i >= segBase.i; i--) {
-      const s = segmentos[i];
-      if (s.p1.cam.z <= PROF) continue;
-      for (const p of s.sprites) {
-        if (p.tipo !== 'hueco') continue;
-        const e = s.p1.pant.escala;
-        dibujaImagen(p.img, e, s.p1.pant.x + e * p.x * ANCHO * F, s.p1.pant.y + e * F * 30, p.w, s.clip, 1);
-      }
-    }
-    for (let i = fin - 1; i >= segBase.i; i--) {
-      const s = segmentos[i];
-      const n = i - segBase.i;
-      if (s.p1.cam.z <= PROF) continue;
-      const alfa = n > VISTA * 0.6 ? Math.max(0, 1 - (n - VISTA * 0.6) / (VISTA * 0.4)) : 1;
-      const e = s.p1.pant.escala;
-      const orden = s.sprites.slice().sort((a, b) => Math.abs(b.x) - Math.abs(a.x));
-      for (const p of orden) {
-        if (p.tomada || p.tipo === 'hueco') continue;
-        const sx = s.p1.pant.x + e * p.x * ANCHO * F;
-        let sy = s.p1.pant.y;
-        if (p.tipo === 'colada') sy -= e * F * (180 + Math.sin(t * 4 + i) * 50);
-        dibujaImagen(p.img, e, sx, sy, p.w, s.clip, alfa);
-      }
-      if (s.portal) dibujaPortal(s, alfa);
-      const aqui = porSeg.get(i);
-      if (aqui) {
-        for (const c of aqui) {
-          const pct = (c.d % SEG) / SEG;
-          const ce = mezcla(s.p1.pant.escala, s.p2.pant.escala, pct);
-          const cx = mezcla(s.p1.pant.x, s.p2.pant.x, pct) + ce * c.x * ANCHO * F;
-          const cy = mezcla(s.p1.pant.y, s.p2.pant.y, pct);
-          const pataleo = c.v < PATADA_HASTA && estado === 'carrera' ? (Math.floor(t * 5 + c.p.num) % 2 ? 'izq' : 'der') : 'quieto';
-          dibujaCoche(c.p.spr[pataleo], ce, cx, cy, s.clip, 0, 0, c.p.nombre);
-        }
-      }
-      if (s === segJ) {
-        const e2 = PROF / JUG_Z;
-        const camY = mezcla(segJ.p1.cam.y, segJ.p2.cam.y, pctJ);
-        const py = HOR + inclina - e2 * camY * F;
-        const empedrado = ZONAS[segJ.zona].calle === 'adoquin';
-        const salto = quieto.matches ? 0 : (Math.random() * (empedrado ? 2.6 : 0.8) * (j.v / VMAX)) + sacudida * 3;
-        const img = (teclas.freno && estado === 'carrera') || estado === 'llegada' ? TU.spr.freno : j.pie === -1 ? TU.spr.izq : j.pie === 1 ? TU.spr.der : TU.spr.quieto;
-        dibujaCoche(img, e2, W / 2, py, H * 2, j.giro, salto, '');
-      }
-    }
-
-    // Polvo de las suelas.
-    for (const p of polvo) {
-      ctx.globalAlpha = (p.t / p.t0) * 0.55;
-      ctx.fillStyle = '#E8DCC6';
-      ctx.beginPath(); ctx.arc(p.x, p.y, p.r * (1.6 - p.t / p.t0), 0, 7); ctx.fill();
-    }
-    ctx.globalAlpha = 1;
-
-    // Rayas de velocidad en los bordes cuando la cosa se pone seria.
-    const sp = j.v / VMAX;
-    if (!quieto.matches && (sp > 0.95 || j.turbo > 0)) {
-      const fuerza = j.turbo > 0 ? 1 : (sp - 0.95) / 0.2;
-      ctx.strokeStyle = j.turbo > 0 ? 'rgba(180,120,220,.5)' : 'rgba(255,255,255,.4)';
-      ctx.lineWidth = 2;
-      const cx = W / 2, cy = HOR + inclina;
-      for (let k = 0; k < 14 * fuerza; k++) {
-        const a = Math.random() * Math.PI * 2, r0 = Math.max(W, H) * (0.45 + Math.random() * 0.2);
-        ctx.beginPath(); ctx.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0 * 0.7);
-        ctx.lineTo(cx + Math.cos(a) * r0 * 1.25, cy + Math.sin(a) * r0 * 0.875); ctx.stroke();
-      }
-    }
-    ctx.restore();
-  }
-
-  // ─── el HUD ─────────────────────────────────────────────────────
-  const hud = {
-    puesto: $('#h-puesto'), tiempo: $('#h-tiempo'), vel: $('#h-vel'),
-    aliento: $('#h-aliento > i'), alientoBarra: $('#h-aliento'), ruta: $('#h-ruta > i'), turbo: $('#h-turbo'),
+// ─── el HUD ────────────────────────────────────────────────────────
+const hud = {
+  puesto: $('#h-puesto'), tiempo: $('#h-tiempo'), vel: $('#h-vel'),
+  empujador: $('#h-empujador'), ruta: $('#h-ruta > i'), turbo: $('#h-turbo'),
+};
+const formato = (t) => {
+  const m = Math.floor(t / 60), s = t - m * 60;
+  return `${m}:${s < 10 ? '0' : ''}${s.toFixed(1)}`;
+};
+const ESTADOS_EMPUJADOR = { a_bordo: 'A bordo', empujando: 'Empujando', corriendo: 'Se quedó atrás', piso: 'En el piso' };
+let ultimoHud = {};
+function pintaHud() {
+  const puesto = estado === 'llegada' ? j.puesto : 1 + rivales.filter((rv) => rv.s > j.s).length;
+  const datos = {
+    puesto: String(puesto),
+    tiempo: formato(estado === 'llegada' ? j.llegada : reloj),
+    vel: String(Math.round(j.v * 3.6)),
+    empujador: ESTADOS_EMPUJADOR[e.estado],
+    ruta: `${Math.round(limita((j.s - SALIDA) / (META - SALIDA), 0, 1) * 100)}%`,
   };
-  const formato = (t) => {
-    const m = Math.floor(t / 60), s = t - m * 60;
-    return `${m}:${s < 10 ? '0' : ''}${s.toFixed(1)}`;
-  };
-  let ultimoHud = {};
-  function pintaHud() {
-    const puesto = estado === 'llegada' ? j.puesto : 1 + coches.filter((c) => c.d > j.d).length;
-    const datos = {
-      puesto: String(puesto),
-      tiempo: formato(estado === 'llegada' ? j.llegada : reloj),
-      vel: String(Math.round(j.v * KMH)),
-      aliento: `${Math.round(j.aliento * 100)}%`,
-      ruta: `${Math.round(limita((j.d - salidaI * SEG) / ((metaI - salidaI) * SEG), 0, 1) * 100)}%`,
-    };
-    if (datos.puesto !== ultimoHud.puesto) hud.puesto.textContent = datos.puesto;
-    if (datos.tiempo !== ultimoHud.tiempo) hud.tiempo.textContent = datos.tiempo;
-    if (datos.vel !== ultimoHud.vel) hud.vel.textContent = datos.vel;
-    if (datos.aliento !== ultimoHud.aliento) {
-      hud.aliento.style.width = datos.aliento;
-      hud.alientoBarra.style.setProperty('--mal-relleno-medidor', j.aliento < 0.2 ? 'var(--mal-error, #D6382B)' : '');
-    }
-    if (datos.ruta !== ultimoHud.ruta) hud.ruta.style.width = datos.ruta;
-    hud.turbo.hidden = !(j.turbo > 0);
-    ultimoHud = datos;
+  if (datos.puesto !== ultimoHud.puesto) hud.puesto.textContent = datos.puesto;
+  if (datos.tiempo !== ultimoHud.tiempo) hud.tiempo.textContent = datos.tiempo;
+  if (datos.vel !== ultimoHud.vel) hud.vel.textContent = datos.vel;
+  if (datos.empujador !== ultimoHud.empujador) {
+    hud.empujador.textContent = datos.empujador;
+    hud.empujador.dataset.estado = e.estado;
   }
+  if (datos.ruta !== ultimoHud.ruta) hud.ruta.style.width = datos.ruta;
+  hud.turbo.hidden = !(j.turbo > 0);
+  ultimoHud = datos;
+}
 
-  // ─── la llegada ─────────────────────────────────────────────────
-  const PUESTOS = ['Primer puesto', 'Segundo puesto', 'Tercer puesto', 'Cuarto puesto', 'Quinto puesto', 'Sexto puesto'];
-  const FRASES = [
-    'Llegaste primero a la Plaza Grande. Ni el Chulla te vio pasar.',
-    'Segundo, por una tabla. La próxima, más patada en la García Moreno.',
-    'Al podio. La horquilla del Panecillo se puede bajar más rápido.',
-    'Cuarto. Las coladas moradas no están de adorno.',
-    'Quinto. Frena antes de las curvas, no en medio.',
-    'Último, pero entero, que en coche de madera ya es bastante.',
-  ];
-  function muestraLlegada() {
-    const p = j.puesto;
-    $('#l-puesto').textContent = PUESTOS[p - 1];
-    $('#l-desc').textContent = `Bajaste en ${formato(j.llegada)}. ${FRASES[p - 1]}`;
-    $('#disco-trofeo').style.display = p <= 3 ? '' : 'none';
-    $('#disco-coche').setAttribute('transform', p <= 3 ? '' : 'translate(-30 -86) scale(1.4)');
-    // La tabla: los que llegaron con su tiempo; a los que faltan se les
-    // calcula lo que les queda a la velocidad que llevan.
-    const filas = coches.map((c) => ({
-      nombre: c.p.nombre,
-      t: c.llegada || reloj + Math.max(0, metaI * SEG - c.d) / Math.max(c.v, 3000),
-    }));
-    filas.push({ nombre: 'Tú', t: j.llegada, tu: true });
-    filas.sort((a, b) => a.t - b.t);
-    const lista = $('#l-podio');
-    lista.textContent = '';
-    filas.forEach((f, k) => {
-      const li = document.createElement('li');
-      if (f.tu) li.className = 'es-tu';
-      const n = document.createElement('span'); n.textContent = `${k + 1}. ${f.nombre}`;
-      const t = document.createElement('span'); t.textContent = formato(f.t);
-      li.append(n, t); lista.append(li);
-    });
-    let record = null;
-    try { record = parseFloat(localStorage.getItem('coches-record')); } catch (e) { /* sin almacenamiento */ }
-    if (!record || j.llegada < record) {
-      try { localStorage.setItem('coches-record', String(j.llegada)); } catch (e) { /* sin almacenamiento */ }
-      if (record) $('#l-kicker').textContent = 'Plaza Grande · ¡récord nuevo!';
-      else $('#l-kicker').textContent = 'Plaza Grande';
-    } else $('#l-kicker').textContent = `Plaza Grande · tu récord: ${formato(record)}`;
-    $('#hud').hidden = true; $('#mandos').hidden = true;
-    $('#llegada').hidden = false;
-    $('#llegada').focus();
-  }
-
-  function muestraRecord() {
-    let record = null;
-    try { record = parseFloat(localStorage.getItem('coches-record')); } catch (e) { /* sin almacenamiento */ }
-    $('#record').textContent = record ? `Tu mejor bajada: ${formato(record)}` : '';
-  }
-
-  // ─── el flujo ───────────────────────────────────────────────────
-  function empieza() {
-    arrancaSonido();
-    reinicia();
-    $('#portada').hidden = true; $('#pausa').hidden = true; $('#llegada').hidden = true;
-    $('#hud').hidden = false;
-    $('#mandos').hidden = !esTactil;
-    estado = 'cuenta'; cuenta = 3; actualiza.n = null;
-    $('#h-zona').textContent = ZONAS.panecillo.nombre;
-  }
-  function pausa() {
-    if (estado !== 'carrera' && estado !== 'cuenta') return;
-    antes = estado; estado = 'pausa';
-    $('#pausa').hidden = false;
-    $('#b-seguir').focus();
-    if (son.ctx) son.ctx.suspend();
-  }
-  function sigue() {
-    if (estado !== 'pausa') return;
-    estado = antes; $('#pausa').hidden = true;
-    if (son.ctx) son.ctx.resume();
-  }
-
-  $('#b-empezar').addEventListener('click', empieza);
-  $('#b-pausa').addEventListener('click', pausa);
-  $('#b-seguir').addEventListener('click', sigue);
-  $('#b-reintentar').addEventListener('click', empieza);
-  $('#llegada').addEventListener('click', empieza);
-  $('#llegada').addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); empieza(); } });
-  $('#b-sonido').addEventListener('click', (e) => {
-    son.mudo = !son.mudo;
-    e.currentTarget.setAttribute('aria-pressed', String(son.mudo));
-    e.currentTarget.setAttribute('aria-label', son.mudo ? 'Activar el sonido' : 'Silenciar');
-    e.currentTarget.style.opacity = son.mudo ? 0.5 : '';
-    if (son.salida) son.salida.gain.value = son.mudo ? 0 : 0.8;
+// ─── la llegada ────────────────────────────────────────────────────
+const PUESTOS = ['Primer puesto', 'Segundo puesto', 'Tercer puesto', 'Cuarto puesto'];
+const FRASES = [
+  'Llegaste primero a la Plaza Grande. Ni el Chulla te vio pasar.',
+  'Segundo, por una tabla. La próxima, que el empujador se baje antes en la García Moreno.',
+  'Al podio. La horquilla del Panecillo se puede bajar más rápido, y con los dos arriba.',
+  'Último, pero enteros los dos, que en coche de madera ya es bastante.',
+];
+function muestraLlegada() {
+  const p = j.puesto;
+  $('#l-puesto').textContent = PUESTOS[p - 1];
+  $('#l-desc').textContent = `Bajaste en ${formato(j.llegada)}. ${FRASES[p - 1]}`;
+  $('#disco-trofeo').style.display = p <= 3 ? '' : 'none';
+  $('#disco-coche').setAttribute('transform', p <= 3 ? '' : 'translate(-30 -86) scale(1.4)');
+  const filas = rivales.map((rv) => ({ nombre: rv.cruce.eq.nombre, t: rv.llegada || reloj + Math.max(0, META - rv.s) / Math.max(rv.v, 4) }));
+  filas.push({ nombre: 'Tú', t: j.llegada, tu: true });
+  filas.sort((a, b) => a.t - b.t);
+  const lista = $('#l-podio');
+  lista.textContent = '';
+  filas.forEach((f, k) => {
+    const li = document.createElement('li');
+    if (f.tu) li.className = 'es-tu';
+    const n = document.createElement('span'); n.textContent = `${k + 1}. ${f.nombre}`;
+    const t = document.createElement('span'); t.textContent = formato(f.t);
+    li.append(n, t); lista.append(li);
   });
-  document.addEventListener('visibilitychange', () => { if (document.hidden) pausa(); });
+  let record = null;
+  try { record = parseFloat(localStorage.getItem('coches3d-record')); } catch (err) { /* sin almacenamiento */ }
+  if (!record || j.llegada < record) {
+    try { localStorage.setItem('coches3d-record', String(j.llegada)); } catch (err) { /* sin almacenamiento */ }
+    $('#l-kicker').textContent = record ? 'Plaza Grande · ¡récord nuevo!' : 'Plaza Grande';
+  } else $('#l-kicker').textContent = `Plaza Grande · tu récord: ${formato(record)}`;
+  $('#hud').hidden = true; $('#mandos').hidden = true;
+  $('#llegada').hidden = false;
+  $('#llegada').focus();
+}
+function muestraRecord() {
+  let record = null;
+  try { record = parseFloat(localStorage.getItem('coches3d-record')); } catch (err) { /* sin almacenamiento */ }
+  $('#record').textContent = record ? `Tu mejor bajada: ${formato(record)}` : '';
+}
 
-  // Teclado.
-  const MAPA = {
-    ArrowLeft: 'izq', KeyA: 'izq', ArrowRight: 'der', KeyD: 'der',
-    ArrowUp: 'patada', KeyW: 'patada', Space: 'patada', ArrowDown: 'freno', KeyS: 'freno',
-  };
-  addEventListener('keydown', (e) => {
-    if (e.code === 'Escape' || e.code === 'KeyP') { estado === 'pausa' ? sigue() : pausa(); return; }
-    const t = MAPA[e.code];
-    if (!t) return;
-    if (estado === 'portada' || estado === 'llegada' || estado === 'pausa') return;
-    e.preventDefault();
-    teclas[t] = true;
-  });
-  addEventListener('keyup', (e) => { const t = MAPA[e.code]; if (t) teclas[t] = false; });
-  addEventListener('blur', () => { for (const k in teclas) teclas[k] = false; });
-
-  // Mandos táctiles: cada dedo tiene su botón y lo suelta donde quiera.
-  let esTactil = tactilMQ.matches;
-  const marcaTactil = () => {
-    document.body.classList.toggle('tactil', esTactil);
-    document.body.classList.toggle('con-mandos', esTactil);
-  };
-  marcaTactil();
-  addEventListener('touchstart', () => {
-    if (esTactil) return;
-    esTactil = true; marcaTactil();
-    if (estado === 'carrera' || estado === 'cuenta') $('#mandos').hidden = false;
-  }, { passive: true });
-  for (const b of document.querySelectorAll('.coches-mando')) {
-    const t = b.dataset.tecla;
-    const on = (e) => { e.preventDefault(); b.setPointerCapture?.(e.pointerId); teclas[t] = true; b.classList.add('is-on'); };
-    const off = () => { teclas[t] = false; b.classList.remove('is-on'); };
-    b.addEventListener('pointerdown', on);
-    b.addEventListener('pointerup', off);
-    b.addEventListener('pointercancel', off);
-    b.addEventListener('lostpointercapture', off);
-    b.addEventListener('contextmenu', (e) => e.preventDefault());
-  }
-
-  // ─── el tamaño y el bucle ───────────────────────────────────────
-  function mide() {
-    DPR = Math.min(window.devicePixelRatio || 1, 2);
-    W = innerWidth; H = innerHeight;
-    lienzoEl.width = Math.round(W * DPR); lienzoEl.height = Math.round(H * DPR);
-    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-    HOR = H * (W < H ? 0.42 : 0.5);
-    F = Math.min(W / 2, (H - HOR) * 0.82);
-  }
-  addEventListener('resize', mide);
-
-  let previo = performance.now(), acum = 0;
-  const PASO = 1 / 60;
-  function bucle(ahora) {
-    const dt = Math.min(0.1, (ahora - previo) / 1000);
-    previo = ahora;
-    if (estado !== 'pausa') {
-      acum += dt;
-      while (acum >= PASO) { actualiza(PASO); acum -= PASO; }
-      const segJ = segmentoEn(j.d);
-      const sp = j.v / VMAX;
-      cieloX += dt * 0.004 + segJ.curva * sp * dt * 0.0016;
-      montesX += segJ.curva * sp * dt * 0.0035;
-      laderasX += segJ.curva * sp * dt * 0.006;
-      dibuja();
-      if (estado === 'carrera' || estado === 'llegada') pintaHud();
-      sonidoRodar(dt);
-    }
-    requestAnimationFrame(bucle);
-  }
-
-  pintaSprites();
-  construye();
-  pintaFondo();
+// ─── el flujo ──────────────────────────────────────────────────────
+let esTactil = tactilMQ.matches;
+function empieza() {
+  if (estado === 'cargando') return;
+  arrancaSonido();
   reinicia();
-  mide();
-  muestraRecord();
-  raiz.classList.add('coches-listo');
-  requestAnimationFrame(bucle);
+  for (const cc of [cocheJ, ...rivales.map((rv) => rv.cruce)]) cc.conductor.pon('montado');
+  cocheJ.empujador.pon('correr');
+  for (const rv of rivales) rv.cruce.empujador.pon('correr');
+  $('#portada').hidden = true; $('#pausa').hidden = true; $('#llegada').hidden = true;
+  $('#hud').hidden = false;
+  $('#mandos').hidden = !esTactil;
+  estado = 'cuenta'; cuenta = 3; actualiza.n = null;
+  $('#h-zona').textContent = ZONAS.panecillo.nombre;
+  camS = j.s;
+  punto(camS - 5.4, j.x * 0.8, 2.25, camara.position);
+}
+function pausa() {
+  if (estado !== 'carrera' && estado !== 'cuenta') return;
+  antes = estado; estado = 'pausa';
+  $('#pausa').hidden = false;
+  $('#b-seguir').focus();
+  if (son.ctx) son.ctx.suspend();
+}
+function sigue() {
+  if (estado !== 'pausa') return;
+  estado = antes; $('#pausa').hidden = true;
+  if (son.ctx) son.ctx.resume();
+}
 
-  // Para probar desde la consola sin jugar entero.
-  window.coches = {
-    estado: () => ({ estado, reloj, v: j.v, d: j.d, x: j.x, puesto: j.puesto, zona: segmentoEn(j.d).zona, metaZ: metaI * SEG }),
-    curva: (z) => segmentoEn(z).curva, topeCurva, empieza, teclas,
-  };
-})();
+$('#b-empezar').addEventListener('click', empieza);
+$('#b-pausa').addEventListener('click', pausa);
+$('#b-seguir').addEventListener('click', sigue);
+$('#b-reintentar').addEventListener('click', empieza);
+$('#llegada').addEventListener('click', empieza);
+$('#llegada').addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); empieza(); } });
+$('#b-sonido').addEventListener('click', (ev) => {
+  son.mudo = !son.mudo;
+  ev.currentTarget.setAttribute('aria-pressed', String(son.mudo));
+  ev.currentTarget.setAttribute('aria-label', son.mudo ? 'Activar el sonido' : 'Silenciar');
+  ev.currentTarget.style.opacity = son.mudo ? 0.5 : '';
+  if (son.salida) son.salida.gain.value = son.mudo ? 0 : 0.8;
+});
+document.addEventListener('visibilitychange', () => { if (document.hidden) pausa(); });
+
+const MAPA = {
+  ArrowLeft: 'izq', KeyA: 'izq', ArrowRight: 'der', KeyD: 'der',
+  ArrowUp: 'empuja', KeyW: 'empuja', Space: 'empuja', ArrowDown: 'freno', KeyS: 'freno',
+};
+addEventListener('keydown', (ev) => {
+  if (ev.code === 'Escape' || ev.code === 'KeyP') { if (estado === 'pausa') sigue(); else pausa(); return; }
+  const t = MAPA[ev.code];
+  if (!t || estado === 'portada' || estado === 'llegada' || estado === 'pausa' || estado === 'cargando') return;
+  ev.preventDefault();
+  teclas[t] = true;
+});
+addEventListener('keyup', (ev) => { const t = MAPA[ev.code]; if (t) teclas[t] = false; });
+addEventListener('blur', () => { for (const k in teclas) teclas[k] = false; });
+
+const marcaTactil = () => {
+  document.body.classList.toggle('tactil', esTactil);
+  document.body.classList.toggle('con-mandos', esTactil);
+};
+marcaTactil();
+addEventListener('touchstart', () => {
+  if (esTactil) return;
+  esTactil = true; marcaTactil();
+  if (estado === 'carrera' || estado === 'cuenta') $('#mandos').hidden = false;
+}, { passive: true });
+for (const b of document.querySelectorAll('.coches-mando')) {
+  const t = b.dataset.tecla;
+  const on = (ev) => { ev.preventDefault(); b.setPointerCapture?.(ev.pointerId); teclas[t] = true; b.classList.add('is-on'); };
+  const off = () => { teclas[t] = false; b.classList.remove('is-on'); };
+  b.addEventListener('pointerdown', on);
+  b.addEventListener('pointerup', off);
+  b.addEventListener('pointercancel', off);
+  b.addEventListener('lostpointercapture', off);
+  b.addEventListener('contextmenu', (ev) => ev.preventDefault());
+}
+
+function mide() {
+  render.setPixelRatio(Math.min(window.devicePixelRatio || 1, tactilMQ.matches ? 1.5 : 2));
+  render.setSize(innerWidth, innerHeight, false);
+  camara.aspect = innerWidth / innerHeight;
+  // En vertical se abre el ángulo para que quepa la calzada entera.
+  camara.zoom = innerWidth < innerHeight ? 0.7 : 1;
+  camara.updateProjectionMatrix();
+}
+addEventListener('resize', mide);
+
+let previo = performance.now(), acum = 0;
+const PASO = 1 / 60;
+function bucle(ahora) {
+  const dt = Math.min(0.1, (ahora - previo) / 1000);
+  previo = ahora;
+  if (estado === 'portada' || estado === 'cargando') {
+    if (cocheJ) dibujaMundo(dt);
+    dibujaPortada(ahora / 1000);
+    render.render(escena, camara);
+  } else if (estado !== 'pausa') {
+    acum += dt;
+    while (acum >= PASO) { actualiza(PASO); acum -= PASO; }
+    dibujaMundo(dt);
+    dibujaCamara(dt);
+    render.render(escena, camara);
+    if (estado === 'carrera' || estado === 'llegada') pintaHud();
+    sonidoRodar();
+  }
+  requestAnimationFrame(bucle);
+}
+
+// ─── la carga ──────────────────────────────────────────────────────
+async function carga() {
+  const boton = $('#b-empezar');
+  const texto = boton.querySelector('span');
+  const nombres = ['base-chico', 'base-chica', 'generico', 'policia', 'ministro', 'animaciones', 'quito'];
+  let listos = 0;
+  const cargador = new GLTFLoader();
+  const pide = (n) => cargador.loadAsync(modeloUrl(n)).then((g) => {
+    listos++;
+    texto.textContent = `Cargando… ${Math.round((listos / nombres.length) * 100)}%`;
+    return g;
+  });
+  const [chico, chica, generico, policia, ministro, anim, quito] = await Promise.all(nombres.map(pide));
+  Object.assign(MODELOS, { 'base-chico': chico, 'base-chica': chica, generico, policia, ministro });
+  for (const n of ['montado', 'correr', 'rol', 'golpe', 'salto', 'arrancar']) {
+    const clip = anim.animations.find((a) => a.name === n);
+    if (clip) CLIPS[n] = limpiaClip(clip);
+  }
+  construyeDecorado(quito);
+  cocheJ = construyeCoche(EQUIPOS[0]);
+  rivales = EQUIPOS.slice(1).map((eq) => ({ cruce: construyeCoche(eq) }));
+  peatones = ['generico', 'policia', 'ministro', 'generico', 'ministro', 'policia'].map((n) => {
+    const p = new Persona(n, { altura: ADULTO * (n === 'ministro' ? 1.04 : 1) });
+    p.obj.visible = false;
+    return { p, estado: 'libre', s: 0, x: 0 };
+  });
+  reinicia();
+  estado = 'portada';
+  boton.disabled = false;
+  texto.textContent = 'A bajar';
+}
+
+construyePista();
+construyeCalle();
+construyePanorama();
+mide();
+muestraRecord();
+requestAnimationFrame(bucle);
+carga().catch((err) => {
+  console.error(err);
+  $('#b-empezar').querySelector('span').textContent = 'No cargó: recarga la página';
+});
+
+// Para probar desde la consola sin jugar entero.
+window.coches = {
+  estado: () => ({ estado, reloj, v: j.v, s: j.s, x: j.x, h: j.h, aire: j.aire, volcado: j.volcado, empujador: e.estado, puesto: j.puesto, zona: zonaEn(j.s), meta: META }),
+  curva: (s) => P.k[limita(Math.floor(s), 0, N - 1)], tope: (k) => GIRO / (CENTRIFUGA * Math.max(k, 1e-4)), hw: (s) => muestra(s).hw, teclas, empieza,
+  // Avanza la simulación sin dibujar, para las pruebas automáticas.
+  volcar: () => volcar(),
+  peatones: () => peatones.filter((p) => p.estado !== 'libre').map((p) => ({ estado: p.estado, ds: +(p.s - j.s).toFixed(1), x: +p.x.toFixed(1) })),
+  simula: (seg, piloto) => { for (let k = 0; k < seg * 60; k++) { if (piloto) piloto(); actualiza(PASO); } },
+  obstaculos: () => obstaculos.map((o) => ({ s: o.s, x: o.x, tipo: o.tipo })),
+  stats: () => ({ ...stats, rivales: rivales.map((rv) => [rv.cruce.eq.nombre, Math.round(rv.s), rv.llegada && rv.llegada.toFixed(1)]) }),
+};

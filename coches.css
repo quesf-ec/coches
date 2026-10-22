@@ -12,6 +12,13 @@ body.coches{
 
 #pista{position:fixed;inset:0;width:100%;height:100%;display:block}
 
+/* El estado del empujador, de un vistazo: verde si empuja, gris a bordo,
+   rojo si se quedó o se cayó. */
+.coches-empujador{align-self:flex-start}
+.coches-empujador[data-estado="empujando"]{background:var(--mal-verde);border-color:var(--mal-verde);color:#fff}
+.coches-empujador[data-estado="corriendo"],.coches-empujador[data-estado="piso"]{background:var(--mal-primary);border-color:var(--mal-primary);color:var(--mal-on-primary)}
+.boton-juego:disabled{opacity:.6;cursor:progress}
+
 /* Sobre el cielo y el empedrado las cifras sueltas no se leen: van sobre
    el vidrio del sistema, en una tarjeta pequeña. */
 .coches .hud-juego__cifras,.coches-tablero{
@@ -36,7 +43,7 @@ body.coches{
 /* ─── los mandos táctiles ──────────────────────────────────────
    Dirección a la izquierda, pies a la derecha, como un mando. Cada
    botón responde a pointerdown/up, no a click: hay que poder mantener
-   «derecha» y «patada» a la vez con dos pulgares. */
+   «derecha» y «empuja» a la vez con dos pulgares. */
 .coches-mandos{
   position:fixed;left:0;right:0;bottom:0;z-index:25;pointer-events:none;
   display:flex;justify-content:space-between;align-items:flex-end;
@@ -56,8 +63,8 @@ body.coches{
 }
 .coches-mando.is-on{transform:translateY(3px);box-shadow:0 1px 0 rgba(var(--ref-borde-rgb), .55);
   background:var(--mal-surface)}
-.coches-mando--patada{background:var(--mal-primary);color:var(--mal-on-primary);border-color:var(--mal-primary-hover)}
-.coches-mando--patada.is-on{background:var(--mal-primary-hover)}
+.coches-mando--empuja{background:var(--mal-primary);color:var(--mal-on-primary);border-color:var(--mal-primary-hover)}
+.coches-mando--empuja.is-on{background:var(--mal-primary-hover)}
 /* Con mandos, el tablero sube para no quedar debajo de los pulgares. */
 .coches.con-mandos .hud-juego__abajo{padding-bottom:calc(clamp(64px, 18vw, 84px) + var(--mal-e4))}
 
