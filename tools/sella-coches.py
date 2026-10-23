@@ -1,4 +1,4 @@
-"""Sella el CSS, el JS y los modelos de coches/ con un sello de su contenido.
+"""Sella el CSS, el tema, el JS y los modelos de coches/ con un sello de su contenido.
 
 El sello es un hash de todo lo que hay en coches/ salvo index.html. Así cambia
 solo cuando cambia el juego, y cada versión nueva pide sus archivos con URL
@@ -17,7 +17,7 @@ import sys
 RAIZ = pathlib.Path(__file__).resolve().parent.parent
 JUEGO = RAIZ / 'coches'
 PAGINA = JUEGO / 'index.html'
-PATRON = re.compile(r'(coches\.(?:css|js))\?v=[^"\']*')
+PATRON = re.compile(r'(coches\.(?:css|js)|tema/tema\.css)\?v=[^"\']*')
 
 
 def sello():
@@ -32,8 +32,8 @@ def main():
     s = sello()
     texto = PAGINA.read_text(encoding='utf-8')
     nuevo, n = PATRON.subn(lambda m: f'{m.group(1)}?v={s}', texto)
-    if n != 2:
-        sys.exit(f'coches/index.html: se esperaban 2 referencias a coches.css/js y hay {n}')
+    if n != 3:
+        sys.exit(f'coches/index.html: se esperaban 3 referencias (coches.css, coches.js, tema/tema.css) y hay {n}')
     if nuevo != texto:
         PAGINA.write_text(nuevo, encoding='utf-8')
         print(f'sello de coches/: {s} (actualizado)')

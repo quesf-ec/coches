@@ -30,5 +30,16 @@ La Mamá Negra va con la piel de la misma paleta que el resto: se la
 reconoce por el traje, el tocado de cintas y la muñeca, no por la cara
 pintada de negro.
 
+## Las pistas
+
+Las pistas (`PISTAS` en `coches.js`) se arman con el mismo material: las
+casas y puestos de `quito.glb` y las fachadas que se pintan en código
+(`FACHADAS`: la Compañía, la Catedral, el Palacio, la Basílica y el
+santuario de Guápulo). Ninguna trae modelo propio. La vuelta al Panecillo
+es un anillo generado en código (`GENERADAS`), con el cerro y la Virgen en
+medio; las de noche heredan las calles de las de día y cambian el cielo,
+las luces y los cohetes. Las estampitas del álbum (`CROMOS`) son canvas:
+las fachadas de arriba o los iconos de `ICONOS`.
+
 Si uno de los dos juegos retoca un modelo, aquí no cambia solo: hay que volver
 a copiarlo.
