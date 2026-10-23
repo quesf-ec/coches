@@ -21,9 +21,9 @@
 <!-- El sello ?v= se sube a mano en cada cambio del juego (CSS, JS y, con el
      JS, los modelos, que heredan su sello): así el navegador no se queda con
      la versión anterior. -->
-<link rel="stylesheet" href="coches.css?v=764b5624af">
+<link rel="stylesheet" href="coches.css?v=46ddb849d8">
 <!-- La piel del juego: variante del tema juegos (ver tema/LEEME.md). Va al final para mandar. -->
-<link rel="stylesheet" href="tema/tema.css?v=764b5624af">
+<link rel="stylesheet" href="tema/tema.css?v=46ddb849d8">
 <script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js", "three/addons/": "./vendor/addons/" } }</script>
 </head>
 <body class="coches">
@@ -112,6 +112,8 @@
         <svg class="icono coches-candado" aria-hidden="true"><use href="#i-candado"/></svg><svg class="icono" aria-hidden="true"><use href="#i-luna"/></svg> Copa de la Noche</button>
       <button class="btn boton-juego btn-block" id="b-suelta" type="button" disabled>
         <svg class="icono" aria-hidden="true"><use href="#i-play"/></svg> Carrera suelta</button>
+      <button class="btn boton-juego btn-block" id="b-tiempo" type="button" disabled>
+        <svg class="icono" aria-hidden="true"><use href="#i-reloj"/></svg> Contrarreloj</button>
       <button class="btn boton-juego btn-block" id="b-medallas" type="button" disabled>
         <svg class="icono" aria-hidden="true"><use href="#i-estrella"/></svg> Medallas y récords</button>
       <button class="btn boton-juego btn-block" id="b-album" type="button" disabled>
@@ -197,6 +199,9 @@
       <p class="coches-pareja-nombre" id="pareja-nombre"></p>
       <p class="caption" id="pareja-lema"></p>
       <dl class="coches-stats" id="pareja-stats"></dl>
+      <p class="micro">Pintura de la tabla</p>
+      <div class="coches-parejas" id="pinturas" role="radiogroup" aria-label="Pintura"></div>
+      <p class="caption" id="pintura-lema"></p>
     </div>
     <div class="coches-elige" id="elegir-pistas">
       <p class="micro">Pista</p>
@@ -298,6 +303,6 @@
 </div>
 
 <script src="../ds/mal/mal.js?v=1.0.17" defer></script>
-<script type="module" src="coches.js?v=764b5624af"></script>
+<script type="module" src="coches.js?v=46ddb849d8"></script>
 </body>
 </html>

@@ -1775,6 +1775,20 @@ const EQUIPOS = [
   { id: 'mamanegra', nombre: 'La Mamá Negra y el Ángel', lema: 'Desde Latacunga, con el Ángel de la Estrella empujando.', piloto: 'mamanegra', empuja: 'angel', tabla: '#D2A26A', placa: '#E01B6A', num: 11, stats: [4, 2, 4], hab: 0.93 },
 ];
 const STATS = ['Velocidad', 'Empuje', 'Giro'];
+// Las pinturas de la tabla: se ganan con las estampitas y con la Copa de
+// la Noche. La de madera es la de siempre (el color de cada pareja).
+const PINTURAS = [
+  { id: 'madera', nombre: 'Madera', lema: 'La tabla como viene del aserradero.' },
+  { id: 'fiesta', nombre: 'Rojo de fiesta', lema: 'Pintada con el rojo de las banderitas.', color: 0xC8301E },
+  { id: 'anil', nombre: 'Añil', lema: 'El azul de las puertas del centro.', color: 0x1E4FA0 },
+  { id: 'morada', nombre: 'Colada morada', lema: 'Morada como la colada, y con el mismo brillo.', color: 0x6B2D7B },
+  { id: 'oro', nombre: 'Dorada', lema: 'La tabla de los campeones de la noche.', color: 0xE2B13C, metal: true },
+];
+function aplicaPintura() {
+  for (const cc of carros) { cc.cruce.tabla.material.color.set(cc.cruce.eq.tabla); cc.cruce.tabla.material.metalness = 0; cc.cruce.tabla.material.roughness = 0.85; }
+  const p = PINTURAS.find((q) => q.id === prog.pintura) || PINTURAS[0];
+  if (p.color && cocheJ) { cocheJ.tabla.material.color.set(p.color); if (p.metal) { cocheJ.tabla.material.metalness = 0.7; cocheJ.tabla.material.roughness = 0.3; } }
+}
 const ALTO = 1.25;
 
 const persona = (id) => {
@@ -1816,7 +1830,23 @@ function construyeCoche(eq) {
   const conductor = persona(eq.piloto);
   const empujador = persona(eq.empuja);
   conductor.pon('montado'); empujador.pon('montado');
-  return { g, ruedas, delante, sombra, conductor, empujador, eq };
+  return { g, ruedas, delante, sombra, conductor, empujador, eq, tabla };
+}
+// El fantasma: un coche traslúcido con la misma pareja, que repite el récord.
+function construyeFantasma(eq) {
+  const cc = construyeCoche(eq);
+  for (const raiz of [cc.g, cc.conductor.obj, cc.empujador.obj]) {
+    raiz.traverse((o) => {
+      if (!o.isMesh && !o.isSkinnedMesh) return;
+      o.castShadow = false;
+      const ms = Array.isArray(o.material) ? o.material : [o.material];
+      const nuevos = ms.map((m) => { const n = m.clone(); n.transparent = true; n.opacity = 0.38; n.depthWrite = false; return n; });
+      o.material = Array.isArray(o.material) ? nuevos : nuevos[0];
+    });
+  }
+  cc.sombra.visible = false;
+  cc.conductor.pon('montado', { fundido: 0 }); cc.empujador.pon('montado', { fundido: 0 });
+  return cc;
 }
 
 // ─── el estado ─────────────────────────────────────────────────────
@@ -1828,6 +1858,9 @@ let peatones = [];
 let estado = 'cargando';      // cargando · titulo · menu · elegir · cuenta · carrera · llegada · pausa · premio · podio
 let antes = 'carrera';
 const foto = { s: 0, x: 0, h: 2, giro: 0 };
+// El fantasma del récord: dónde iba el coche cada décima de segundo.
+const fantasma = { trazo: [], datos: null, coche: null, t: 0 };
+const fantasmaClave = (id) => `coches3d-fantasma-${id}`;
 const cromosNuevos = [];
 let reloj = 0, cuenta = 0, tLlegada = 0, zonaActual = '', sacudida = 0, tPeaton = 0, llegadaVista = false, vueltaActual = 1;
 const vueltaDe = (s) => LARGO_VUELTA ? limita(Math.floor((s - SALIDA) / LARGO_VUELTA) + 1, 1, pistaActual.vueltas) : 1;
@@ -1851,6 +1884,19 @@ function reinicia() {
   Object.assign(c, { suelto: false, s: 0, x: 0, v: 0 });
   for (const pe of peatones) pe.estado = 'libre';
   reloj = 0; zonaActual = ''; sacudida = 0; tPeaton = 1; vueltaActual = 1;
+  fantasma.trazo = [];
+  // En la contrarreloj los rivales se esconden, y sale el fantasma si hay récord.
+  const solo = modo === 'tiempo';
+  for (const rv of rivales) { rv.cruce.g.visible = !solo; rv.cruce.conductor.obj.visible = !solo; rv.cruce.empujador.obj.visible = !solo; if (solo) rv.s = -999; }
+  if (fantasma.coche) { fantasma.coche.g.visible = false; fantasma.coche.conductor.obj.visible = false; fantasma.coche.empujador.obj.visible = false; }
+  fantasma.datos = null;
+  if (solo && pistaActual) {
+    try { fantasma.datos = JSON.parse(localStorage.getItem(fantasmaClave(pistaActual.id)) || 'null'); } catch (err) { /* sin almacenamiento */ }
+    if (fantasma.datos && fantasma.datos.length > 2) {
+      if (!fantasma.coche) fantasma.coche = construyeFantasma(eqJ);
+      fantasma.coche.g.visible = true; fantasma.coche.conductor.obj.visible = true; fantasma.coche.empujador.obj.visible = true;
+    } else fantasma.datos = null;
+  }
   for (const k in stats) stats[k] = 0;
 }
 
@@ -2073,7 +2119,11 @@ function actualiza(dt) {
     return;
   }
   if (estado !== 'carrera' && estado !== 'llegada') return;
-  if (estado === 'carrera') reloj += dt;
+  if (estado === 'carrera') {
+    reloj += dt;
+    // El trazo de esta carrera, por si sale récord.
+    if (fantasma.trazo.length < Math.floor(reloj * 10) + 1) fantasma.trazo.push([+j.s.toFixed(2), +j.x.toFixed(2), +j.h.toFixed(2)]);
+  }
 
   const m = muestra(j.s);
   const hw = m.hw, pend = m.pend, k = m.k, zona = m.zona;
@@ -2169,9 +2219,10 @@ function actualiza(dt) {
     }
   }
 
-  // Los rivales, los peatones y los choques entre coches.
-  for (const rv of rivales) actualizaRival(rv, dt);
-  for (const rv of rivales) {
+  // Los rivales, los peatones y los choques entre coches. En la
+  // contrarreloj no hay rivales: solo el fantasma, que no choca.
+  if (modo !== 'tiempo') for (const rv of rivales) actualizaRival(rv, dt);
+  if (modo !== 'tiempo') for (const rv of rivales) {
     const ds = rv.s - j.s, dx = Math.abs(rv.x - j.x);
     if (Math.abs(ds) < 1.9 && dx < 0.72 && j.volcado <= 0) {
       if (ds > 0 && j.v > rv.v) { j.v = rv.v * 0.93; j.s = rv.s - 1.9; sacudida = 0.7; golpe(0.5, 900); }
@@ -2340,6 +2391,16 @@ function dibujaMundo(dt) {
     cocheJ.empujador.acciones.correr.timeScale = 0.6 + j.v / CORRE * 0.8;
   }
 
+  // El fantasma, donde iba el récord en este segundo.
+  if (fantasma.coche) {
+    const tr = fantasma.datos, i = Math.min(Math.floor(reloj * 10), tr.length - 1), f = Math.min(1, reloj * 10 - i);
+    const a = tr[i], b = tr[Math.min(i + 1, tr.length - 1)];
+    const s = mezcla(a[0], b[0], f), x = mezcla(a[1], b[1], f), h = mezcla(a[2], b[2], f);
+    colocaCoche(fantasma.coche, s, x, h, 0, 0, (b[0] - a[0]) * 10, dt);
+    enCoche(fantasma.coche.conductor, fantasma.coche.g, 0.32, 'montado');
+    enCoche(fantasma.coche.empujador, fantasma.coche.g, -0.5, 'montado');
+    fantasma.coche.conductor.mixer.update(dt); fantasma.coche.empujador.mixer.update(dt);
+  }
   // Los rivales.
   for (const rv of rivales) {
     colocaCoche(rv.cruce, rv.s, rv.x, 0, 0, 0, rv.v, dt);
@@ -2422,7 +2483,8 @@ const hud = {
 // Un punto por coche en la línea de la carrera, con su color y su número.
 function armaRuta() {
   hud.ruta.textContent = '';
-  hud.puntos = [{ eq: eqJ, tu: true }, ...rivales.map((rv) => ({ eq: rv.cruce.eq, rv }))].map((q) => {
+  $('#hud').classList.toggle('sin-rivales', modo === 'tiempo');
+  hud.puntos = [{ eq: eqJ, tu: true }, ...(modo === 'tiempo' ? [] : rivales.map((rv) => ({ eq: rv.cruce.eq, rv })))].map((q) => {
     const el = document.createElement('i');
     el.className = 'coches-punto' + (q.tu ? ' es-tu' : '');
     el.style.setProperty('--c', q.eq.placa);
@@ -2434,7 +2496,7 @@ function armaRuta() {
   pintaRutaTitulo();
 }
 function pintaRutaTitulo() {
-  const partes = [pistaActual.nombre];
+  const partes = [modo === 'tiempo' ? `Contrarreloj · ${pistaActual.nombre}` : pistaActual.nombre];
   if (LARGO_VUELTA) partes.push(`vuelta ${vueltaActual} de ${pistaActual.vueltas}`);
   if (modo === 'copa' && copa) partes.push(`${copa.k + 1} de ${COPAS[copa.id].pistas.length}`);
   $('#h-pista').textContent = partes.join(' · ');
@@ -2494,7 +2556,7 @@ function aplicaAjustes() {
   for (const el of document.querySelectorAll('#opciones [data-ajuste]')) el.setAttribute('aria-pressed', String(!!ajustes[el.dataset.ajuste]));
 }
 const GUARDA = 'coches3d-progreso';
-const progresoBase = () => ({ medallas: {}, records: {}, parejas: ['cucuruchos', 'guarichas'], pistas: ['panecillo'], copa: 0, copas: {}, album: [] });
+const progresoBase = () => ({ medallas: {}, records: {}, parejas: ['cucuruchos', 'guarichas'], pistas: ['panecillo'], copa: 0, copas: {}, album: [], pinturas: ['madera'], pintura: 'madera' });
 let prog = progresoBase();
 try { const p = JSON.parse(localStorage.getItem(GUARDA) || 'null'); if (p) prog = Object.assign(progresoBase(), p); } catch (err) { /* sin almacenamiento */ }
 const guarda = () => { try { localStorage.setItem(GUARDA, JSON.stringify(prog)); } catch (err) { /* sin almacenamiento */ } };
@@ -2506,6 +2568,10 @@ const DESBLOQUEOS = [
   { tipo: 'pareja', id: 'gallo', cuando: (p) => p.medallas.guapulo <= 3, como: 'una medalla en La cuesta de Guápulo' },
   { tipo: 'pareja', id: 'mamanegra', cuando: (p) => p.medallas.sanjuan <= 3, como: 'una medalla en La bajada de San Juan' },
   { tipo: 'pista', id: 'subida', cuando: (p) => p.copa === 1, como: 'ganar la Copa de las Fiestas' },
+  { tipo: 'pintura', id: 'fiesta', cuando: (p) => p.album.length >= 4, como: 'cuatro estampitas' },
+  { tipo: 'pintura', id: 'anil', cuando: (p) => p.album.length >= 9, como: 'nueve estampitas' },
+  { tipo: 'pintura', id: 'morada', cuando: (p) => p.album.length >= 14, como: 'catorce estampitas' },
+  { tipo: 'pintura', id: 'oro', cuando: (p) => p.copas.noche === 1, como: 'ganar la Copa de la Noche' },
 ];
 const COPAS = {
   fiestas: { nombre: 'Copa de las Fiestas', pistas: ['panecillo', 'guapulo', 'sanjuan'], campeones: '¡Campeones de las Fiestas!', ruta: 'el Panecillo, Guápulo y San Juan' },
@@ -2513,10 +2579,11 @@ const COPAS = {
 };
 const copaAbierta = (id) => id === 'fiestas' || prog.copa === 1;
 const PUNTOS = [10, 7, 5, 3, 1];
-const abierta = (tipo, id) => (tipo === 'pareja' ? prog.parejas : prog.pistas).includes(id);
+const listaDe = (tipo) => (tipo === 'pareja' ? prog.parejas : tipo === 'pista' ? prog.pistas : prog.pinturas);
+const abierta = (tipo, id) => listaDe(tipo).includes(id);
 const comoSeGana = (tipo, id) => {
   const d = DESBLOQUEOS.find((q) => q.tipo === tipo && q.id === id);
-  return d ? `Se gana con ${d.como}.` : 'Se abre corriéndola en la Copa de las Fiestas.';
+  return d ? `Se gana con ${d.como}.` : tipo === 'pista' ? 'Se abre corriéndola en su Copa.' : 'Todavía no se gana.';
 };
 
 // ─── los dibujos de los premios ────────────────────────────────────
@@ -2598,7 +2665,9 @@ const FRASES = [
 ];
 let modo = 'suelta', copa = null, pistaSuelta = 'panecillo';
 function trasCarrera() {
-  const def = pistaActual, p = j.puesto;
+  const def = pistaActual;
+  if (modo === 'tiempo') { trasContrarreloj(def); return; }
+  const p = j.puesto;
   // El orden de llegada: a los que no llegaron se les calcula lo que les falta.
   // Tu puesto manda: se te pone ahí aunque un rival haya cruzado en la misma décima.
   const filas = rivales.map((rv) => ({ id: rv.cruce.eq.id, nombre: rv.cruce.eq.nombre, t: rv.llegada || reloj + Math.max(0, META - rv.s) / Math.max(rv.v, 4) }));
@@ -2607,7 +2676,7 @@ function trasCarrera() {
   // Lo que se guarda.
   const record = prog.records[def.id];
   const recordNuevo = !record || j.llegada < record;
-  if (recordNuevo) prog.records[def.id] = j.llegada;
+  if (recordNuevo) { prog.records[def.id] = j.llegada; guardaFantasma(def.id); }
   if (p <= 3 && !(prog.medallas[def.id] <= p)) prog.medallas[def.id] = p;
   if (!prog.pistas.includes(def.id)) prog.pistas.push(def.id);
   const premios = [{
@@ -2656,11 +2725,11 @@ function trasCarrera() {
   // Lo que se abre.
   for (const d of DESBLOQUEOS) {
     if (abierta(d.tipo, d.id) || !d.cuando(prog)) continue;
-    (d.tipo === 'pareja' ? prog.parejas : prog.pistas).push(d.id);
-    const cosa = d.tipo === 'pareja' ? EQUIPOS.find((q) => q.id === d.id) : PISTAS.find((q) => q.id === d.id);
+    listaDe(d.tipo).push(d.id);
+    const cosa = (d.tipo === 'pareja' ? EQUIPOS : d.tipo === 'pista' ? PISTAS : PINTURAS).find((q) => q.id === d.id);
     premios.push({
       disco: SVG.candado(),
-      kicker: d.tipo === 'pareja' ? 'Pareja nueva' : 'Pista nueva',
+      kicker: d.tipo === 'pareja' ? 'Pareja nueva' : d.tipo === 'pista' ? 'Pista nueva' : 'Pintura nueva',
       nombre: cosa.nombre,
       desc: cosa.lema,
     });
@@ -2713,6 +2782,43 @@ function dibujaPodio(t) {
   panorama.position.set(camara.position.x, camara.position.y + 30, camara.position.z);
   sigueSol(centro);
   if (publico) publico.coloca(t, podioS + 2);
+}
+
+// La contrarreloj: solo contra el reloj y contra el fantasma del récord.
+function guardaFantasma(id) {
+  try { localStorage.setItem(fantasmaClave(id), JSON.stringify(fantasma.trazo)); } catch (err) { /* sin almacenamiento */ }
+}
+function trasContrarreloj(def) {
+  const record = prog.records[def.id];
+  const recordNuevo = !record || j.llegada < record;
+  const antes = record;
+  if (recordNuevo) { prog.records[def.id] = j.llegada; guardaFantasma(def.id); }
+  if (!prog.pistas.includes(def.id)) prog.pistas.push(def.id);
+  const dif = antes ? j.llegada - antes : 0;
+  const premios = [{
+    disco: recordNuevo ? SVG.trofeo(1) : SVG.coche(),
+    fanfarria: recordNuevo,
+    kicker: `Contrarreloj · ${def.nombre}`,
+    nombre: recordNuevo ? (antes ? '¡Récord nuevo!' : '¡Primer tiempo!') : 'Sin récord',
+    desc: recordNuevo
+      ? (antes ? `${formato(j.llegada)}: ${formato(-dif)} menos que el fantasma. El fantasma ya es este.` : `${formato(j.llegada)}. La próxima vez, el fantasma va a ir delante.`)
+      : `${formato(j.llegada)}: ${formato(dif)} más que el récord (${formato(antes)}).`,
+    lista: [{ texto: 'Este tiempo', valor: formato(j.llegada), tu: true }, { texto: 'El récord', valor: formato(prog.records[def.id]) }],
+  }];
+  for (const id of cromosNuevos) {
+    const cr = CROMOS.find((q) => q.id === id);
+    premios.push({ disco: `<img src="${cromoCanvas(cr).toDataURL()}" width="110" height="150" alt="" style="border-radius:8px">`, kicker: `Estampita ${prog.album.length} de ${CROMOS.length}`, nombre: cr.nombre, desc: cr.desc });
+  }
+  for (const d of DESBLOQUEOS) {
+    if (abierta(d.tipo, d.id) || !d.cuando(prog)) continue;
+    listaDe(d.tipo).push(d.id);
+    const cosa = (d.tipo === 'pareja' ? EQUIPOS : d.tipo === 'pista' ? PISTAS : PINTURAS).find((q) => q.id === d.id);
+    premios.push({ disco: SVG.candado(), kicker: d.tipo === 'pareja' ? 'Pareja nueva' : d.tipo === 'pista' ? 'Pista nueva' : 'Pintura nueva', nombre: cosa.nombre, desc: cosa.lema });
+  }
+  guarda();
+  colaPremios = premios;
+  trasPremios = abreElegir;
+  siguientePremio();
 }
 
 // ─── la Copa ───────────────────────────────────────────────────────
@@ -2866,7 +2972,7 @@ function abreElegir() {
 }
 function pintaElegir() {
   const enCopa = modo === 'copa';
-  $('#elegir-kicker').textContent = enCopa ? `${COPAS[copa.id].nombre} · carrera 1 de ${COPAS[copa.id].pistas.length}` : 'Carrera suelta';
+  $('#elegir-kicker').textContent = enCopa ? `${COPAS[copa.id].nombre} · carrera 1 de ${COPAS[copa.id].pistas.length}` : modo === 'tiempo' ? 'Contrarreloj' : 'Carrera suelta';
   $('#elegir-titulo').textContent = enCopa ? 'Elige tu pareja para toda la Copa' : 'Elige pareja y pista';
   $('#elegir-pistas').hidden = enCopa;
   for (const b of document.querySelectorAll('#parejas .chip')) {
@@ -2874,6 +2980,24 @@ function pintaElegir() {
     b.classList.toggle('is-cerrada', !ok);
     b.setAttribute('aria-checked', String(b.dataset.id === eqJ.id));
   }
+  const cajaP = $('#pinturas');
+  cajaP.textContent = '';
+  for (const q of PINTURAS) {
+    const b = document.createElement('button');
+    const ok = abierta('pintura', q.id);
+    b.type = 'button'; b.className = 'chip' + (ok ? '' : ' is-cerrada');
+    b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', String(q.id === (prog.pintura || 'madera')));
+    b.innerHTML = '<svg class="icono icono--s coches-candado" aria-hidden="true"><use href="#i-candado"/></svg>';
+    b.append(q.nombre);
+    b.addEventListener('click', () => {
+      if (!ok) { $('#pintura-lema').textContent = `${q.nombre}: ${comoSeGana('pintura', q.id)}`; return; }
+      prog.pintura = q.id; guarda(); aplicaPintura();
+      $('#pintura-lema').textContent = q.lema;
+      for (const o of cajaP.children) o.setAttribute('aria-checked', String(o === b));
+    });
+    cajaP.append(b);
+  }
+  $('#pintura-lema').textContent = (PINTURAS.find((q) => q.id === prog.pintura) || PINTURAS[0]).lema;
   const caja = $('#pistas');
   caja.textContent = '';
   for (const q of PISTAS) {
@@ -2892,7 +3016,7 @@ function pintaElegir() {
     caja.append(b);
   }
   const actual = PISTAS.find((q) => q.id === pistaSuelta);
-  if (!enCopa) { $('#pista-lema').textContent = actual.lema; dibujaMapa(); }
+  if (!enCopa) { $('#pista-lema').textContent = (modo === 'tiempo' && prog.records[actual.id] ? `Récord: ${formato(prog.records[actual.id])}. ` : '') + actual.lema; dibujaMapa(); }
 }
 // El álbum: todas las estampitas, las que faltan en sombra con una pista.
 function pintaAlbum() {
@@ -2960,6 +3084,8 @@ function eligePareja(id) {
   ST.tope = 0.94 + 0.03 * eqJ.stats[0];
   ST.empuje = 0.85 + 0.075 * eqJ.stats[1];
   ST.giro = 0.9 + 0.05 * eqJ.stats[2];
+  aplicaPintura();
+  if (fantasma.coche) { for (const r of [fantasma.coche.g, fantasma.coche.conductor.obj, fantasma.coche.empujador.obj]) escena.remove(r); fantasma.coche = null; }
   reinicia();
   // En la parrilla, los de atrás están listos para empujar.
   for (const cc of carros) { cc.cruce.conductor.pon('montado', { fundido: 0 }); cc.cruce.empujador.pon('correr', { fundido: 0 }); }
@@ -3037,6 +3163,7 @@ function empiezaCopa(id) {
 $('#b-copa').addEventListener('click', () => empiezaCopa('fiestas'));
 $('#b-copa-noche').addEventListener('click', () => empiezaCopa('noche'));
 $('#b-suelta').addEventListener('click', () => { modo = 'suelta'; abreElegir(); });
+$('#b-tiempo').addEventListener('click', () => { modo = 'tiempo'; abreElegir(); });
 $('#b-medallas').addEventListener('click', () => { pintaMedallas(); pantalla('medallas'); $('#b-volver-medallas').focus({ preventScroll: true }); });
 $('#b-album').addEventListener('click', () => { pintaAlbum(); pantalla('album'); $('#b-volver-album').focus({ preventScroll: true }); });
 $('#b-volver-album').addEventListener('click', aMenu);
@@ -3227,7 +3354,7 @@ async function carga() {
   eqJ = EQUIPOS.find((q) => q.id === (abierta('pareja', guardada) ? guardada : prog.parejas[0]));
   cargaPista('panecillo');
   eligePareja(eqJ.id);
-  for (const id of ['b-copa', 'b-copa-noche', 'b-suelta', 'b-medallas', 'b-album']) $('#' + id).disabled = false;
+  for (const id of ['b-copa', 'b-copa-noche', 'b-suelta', 'b-tiempo', 'b-medallas', 'b-album']) $('#' + id).disabled = false;
   aplicaAjustes();
   texto.textContent = tactilMQ.matches ? 'Toca para empezar' : 'Pulsa una tecla';
   $('#start').classList.add('is-lista');
@@ -3278,6 +3405,9 @@ window.coches = {
   },
   camaraEn: (s, x, h, giro, mira) => { Object.assign(foto, { s, x, h, giro: giro || 0, mira: mira || null }); pantalla(null, true); estado = 'foto'; },
   punto: (s, x, h) => punto(s, x, h).toArray(),
+  fantasma: () => ({ datos: fantasma.datos ? fantasma.datos.length : 0, trazo: fantasma.trazo.length, coche: !!(fantasma.coche && fantasma.coche.g.visible) }),
+  pintura: () => ({ elegida: prog.pintura, color: cocheJ ? '#' + cocheJ.tabla.material.color.getHexString() : null }),
+  modo: (m) => { modo = m; },
   progreso: () => prog, album: () => prog.album.slice(), cromos: () => CROMOS.map((c) => ({ id: c.id, pista: c.pista })),
   copa: () => copa,
   peatones: () => peatones.filter((p) => p.estado !== 'libre').map((p) => ({ estado: p.estado, ds: +(p.s - j.s).toFixed(1), x: +p.x.toFixed(1) })),

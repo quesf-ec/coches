@@ -133,6 +133,9 @@ body.coches{
 @keyframes coches-parpadeo{to{visibility:hidden}}
 .coches-pie-titulo{margin:0;font-size:var(--mal-t-micro);opacity:.8}
 
+/* En la contrarreloj no hay puesto. */
+.sin-rivales .coches-puesto__n{display:none}
+
 /* Opciones y créditos */
 .coches-ajustes{display:flex;flex-wrap:wrap;gap:var(--mal-e2)}
 .coches-ajustes .chip[aria-pressed="true"]{background:var(--mal-primary);border-color:var(--mal-primary);color:var(--mal-on-primary)}
