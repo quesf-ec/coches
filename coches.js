@@ -406,10 +406,81 @@ const PISTAS = [
 let P = {};
 const tramos = [];
 let N = 0, SALIDA = 0, META = 0;
+// En un circuito, lo que mide una vuelta y hasta dónde llega el decorado
+// (una vuelta: las demás pasan por el mismo sitio).
+let LARGO_VUELTA = 0, DECO_FIN = 0;
+// Las calles de verdad, de coches/pistas/*.json (las trae tools/calles.py).
+const DATOS_REALES = {};
+
+// Una pista sobre una calle de verdad: el trazado viene en metros, cada
+// pocos metros, y aquí se muestrea cada metro. Si es un circuito, la vuelta
+// se repite `vueltas` veces, con 40 m antes de la línea y 220 después.
+function construyePistaReal(def) {
+  const d = DATOS_REALES[def.real];
+  if (!d) return false;
+  const pts = d.puntos.slice();
+  const cerrada = !!(d.cerrada && def.vueltas);
+  if (cerrada) pts.push(pts[0]);
+  const vuelta = [];
+  let resto = 0;
+  for (let i = 0; i + 1 < pts.length; i++) {
+    const [ax, az, ay] = pts[i], [bx, bz, by] = pts[i + 1];
+    const l = Math.hypot(bx - ax, bz - az);
+    if (l < 1e-6) continue;
+    for (let t = resto; t < l; t += 1) {
+      const f = t / l;
+      vuelta.push([ax + (bx - ax) * f, az + (bz - az) * f, ay + (by - ay) * f]);
+    }
+    resto = (resto - l) % 1 + 1; if (resto >= 1) resto -= 1;
+  }
+  if (!cerrada) vuelta.push(pts[pts.length - 1]);
+  const largo = vuelta.length;
+  const zonaDe = (m) => { let z = def.zonas[0][0]; for (const [n, desde] of def.zonas) if (m >= desde) z = n; return z; };
+  let desde, hasta;
+  if (cerrada) {
+    LARGO_VUELTA = largo;
+    desde = -40; hasta = largo * def.vueltas + 220;
+    SALIDA = 40; META = 40 + largo * def.vueltas;
+  } else {
+    desde = 0; hasta = largo;
+    SALIDA = def.salidaM ?? 30; META = Math.min(def.metaM ?? largo - 40, largo - 10);
+  }
+  let zona = '';
+  for (let i = desde; i < hasta; i++) {
+    const m = ((i % largo) + largo) % largo;
+    const [x, z, y] = vuelta[m];
+    const sig = cerrada ? vuelta[(m + 1) % largo] : vuelta[Math.min(m + 1, largo - 1)];
+    const ant = cerrada ? vuelta[(m - 1 + largo) % largo] : vuelta[Math.max(m - 1, 0)];
+    const th = Math.atan2(sig[0] - ant[0], sig[1] - ant[1]);
+    const zn = zonaDe(m);
+    if (zn !== zona) { zona = zn; tramos.push({ zona, i: P.x.length }); }
+    P.x.push(x); P.z.push(z); P.y.push(y); P.th.push(th); P.zona.push(zona); P.hw.push(ZONAS[zona].hw); P.k.push(0);
+  }
+  // Sin saltos de 2π en el rumbo, y la curva es lo que gira cada metro.
+  for (let i = 1; i < P.th.length; i++) {
+    while (P.th[i] - P.th[i - 1] > Math.PI) P.th[i] -= Math.PI * 2;
+    while (P.th[i] - P.th[i - 1] < -Math.PI) P.th[i] += Math.PI * 2;
+  }
+  for (let i = 0; i + 1 < P.th.length; i++) P.k[i] = P.th[i] - P.th[i + 1];
+  return true;
+}
 
 function construyePista(def) {
   P = { x: [], z: [], y: [], th: [], k: [], hw: [], zona: [], pend: [] };
   tramos.length = 0;
+  LARGO_VUELTA = 0;
+  if (def.real) {
+    if (!construyePistaReal(def)) return false;
+    N = P.x.length;
+    DECO_FIN = LARGO_VUELTA ? SALIDA + LARGO_VUELTA + 6 : N;
+    // La curva se suaviza (una calle de OSM va a tramos rectos) y la
+    // altura, más que en las pistas inventadas: el terreno viene a 30 m.
+    P.k = suavizaArr(P.k, 4, 2);
+    P.y = suavizaArr(P.y, 25, 3);
+    P.hw = suavizaArr(P.hw, 8, 1);
+    for (let i = 0; i < N; i++) P.pend[i] = (P.y[Math.min(i + 1, N - 1)] - P.y[Math.max(i - 1, 0)]) / 2;
+    return true;
+  }
   let x = 0, z = 0, y = 0, th = 0, zona = def.tramos[0];
   const metro = (k, dy) => {
     P.x.push(x); P.z.push(z); P.y.push(y); P.th.push(th); P.k.push(k); P.zona.push(zona); P.hw.push(ZONAS[zona].hw);
@@ -428,25 +499,28 @@ function construyePista(def) {
     else tramo(...p);
   }
   N = P.x.length;
+  DECO_FIN = N;
 
   // Las alturas y los anchos se suavizan: la pendiente cambia sin escalones
   // y la calle se ensancha o se estrecha a lo largo de unos metros.
-  const suaviza = (arr, R, pasadas) => {
-    let a = arr.slice();
-    for (let p = 0; p < pasadas; p++) {
-      const b = new Array(a.length);
-      for (let i = 0; i < a.length; i++) {
-        let t = 0, c = 0;
-        for (let k = i - R; k <= i + R; k++) { t += a[limita(k, 0, a.length - 1)]; c++; }
-        b[i] = t / c;
-      }
-      a = b;
-    }
-    return a;
-  };
-  P.y = suaviza(P.y, 12, 2);
-  P.hw = suaviza(P.hw, 8, 1);
+  P.y = suavizaArr(P.y, 12, 2);
+  P.hw = suavizaArr(P.hw, 8, 1);
   for (let i = 0; i < N; i++) P.pend[i] = (P.y[Math.min(i + 1, N - 1)] - P.y[Math.max(i - 1, 0)]) / 2;
+  return true;
+}
+// Un filtro de caja: cada valor, la media de los 2R+1 de alrededor, varias veces.
+function suavizaArr(arr, R, pasadas) {
+  let a = arr.slice();
+  for (let p = 0; p < pasadas; p++) {
+    const b = new Array(a.length);
+    for (let i = 0; i < a.length; i++) {
+      let t = 0, c = 0;
+      for (let k = i - R; k <= i + R; k++) { t += a[limita(k, 0, a.length - 1)]; c++; }
+      b[i] = t / c;
+    }
+    a = b;
+  }
+  return a;
 }
 
 const M = { x: 0, z: 0, y: 0, th: 0, k: 0, hw: 4, zona: 'panecillo', pend: 0 };
@@ -719,9 +793,11 @@ const FACHADAS = {
 function construyeDecorado(def) {
   const r = azar(2024 + def.id.length * 97);
   const f = new Fundidor();
-  const corridas = tramos.map((t, k) => ({ zona: t.zona, z0: t.i, z1: k + 1 < tramos.length ? tramos[k + 1].i : N }));
+  // En un circuito el decorado se arma una vez: las vueltas pasan por ahí.
+  const corridas = tramos.map((t, k) => ({ zona: t.zona, z0: t.i, z1: Math.min(k + 1 < tramos.length ? tramos[k + 1].i : N, DECO_FIN) }))
+    .filter((cr) => cr.z0 < DECO_FIN);
   const enZona = (z, d) => { const t = tramos.find((q) => q.zona === z); return (t ? t.i : 0) + d; };
-  const hasta = (z1, extra) => Math.min(z1, META + extra, N - 5);
+  const hasta = (z1, extra) => Math.min(z1, META + extra, N - 5, DECO_FIN);
 
   // Las fachadas grandes: van en cajas y dejan hueco entre las casas.
   const reservas = [];
@@ -855,7 +931,7 @@ function construyeDecorado(def) {
     }
   };
   for (let s = 4; s < SALIDA + 10; s += 5) { fila(s, -1, 5); fila(s + 2.5, 1, 5); }
-  for (let s = META - 14; s < META + 16; s += 5) { fila(s, -1, 6); fila(s + 2.5, 1, 6); }
+  if (!LARGO_VUELTA) for (let s = META - 14; s < META + 16; s += 5) { fila(s, -1, 6); fila(s + 2.5, 1, 6); }
   corridas.forEach((cr, k) => {
     const [paso, n] = ZONAS[cr.zona].publico || [0, 0];
     if (!paso) return;
@@ -905,8 +981,8 @@ function construyeDecorado(def) {
     grupo.applyMatrix4(matrizEn(s, 0, 0, 0, Math.PI));
     mundo.add(grupo);
   };
-  portal(SALIDA, `SALIDA · ${def.salida}`, false);
-  portal(META, `META · ${def.meta}`, true);
+  if (LARGO_VUELTA) portal(SALIDA, `META · ${def.meta}`, true);
+  else { portal(SALIDA, `SALIDA · ${def.salida}`, false); portal(META, `META · ${def.meta}`, true); }
 
   // El Arco de la Reina, donde la pista lo tiene.
   for (const [tipo, z, d] of def.hitos) {
@@ -960,6 +1036,12 @@ function construyeDecorado(def) {
       obstaculos.push({ s, x, r: 0.4, largo: 0.5, tipo: 'colada', sp, base: sp.position.y });
     }
   }
+  // En un circuito, lo que hay en la calle está en cada vuelta: mismas
+  // piezas, otro metro.
+  if (LARGO_VUELTA) {
+    const base = obstaculos.filter((o) => o.s < DECO_FIN);
+    for (let v = 1; v < def.vueltas; v++) for (const o of base) obstaculos.push({ ...o, s: o.s + v * LARGO_VUELTA });
+  }
   obstaculos.sort((a, b) => a.s - b.s);
 }
 
@@ -968,13 +1050,14 @@ function construyeDecorado(def) {
 let pistaActual = null;
 function cargaPista(id) {
   const def = PISTAS.find((p) => p.id === id);
+  if (!construyePista(def)) return false;
   limpiaMundo();
   obstaculos.length = 0;
-  construyePista(def);
   construyeCalle();
   if (CASAS.length) construyeDecorado(def);
   pistaActual = def;
   reinicia();
+  return true;
 }
 
 // ─── el público ────────────────────────────────────────────────────
@@ -1403,7 +1486,8 @@ let rivales = [];
 let peatones = [];
 let estado = 'cargando';      // cargando · titulo · menu · elegir · cuenta · carrera · llegada · pausa · premio · podio
 let antes = 'carrera';
-let reloj = 0, cuenta = 0, tLlegada = 0, zonaActual = '', sacudida = 0, tPeaton = 0, llegadaVista = false;
+let reloj = 0, cuenta = 0, tLlegada = 0, zonaActual = '', sacudida = 0, tPeaton = 0, llegadaVista = false, vueltaActual = 1;
+const vueltaDe = (s) => LARGO_VUELTA ? limita(Math.floor((s - SALIDA) / LARGO_VUELTA) + 1, 1, pistaActual.vueltas) : 1;
 const teclas = { izq: false, der: false, empuja: false, freno: false };
 let cocheJ, carros = [], eqJ;
 // Lo que la pareja elegida cambia de la física: velocidad, empuje y giro.
@@ -1422,7 +1506,7 @@ function reinicia() {
   Object.assign(e, { estado: 'empujando', s: j.s - 1.3, x: j.x, t: 0 });
   Object.assign(c, { suelto: false, s: 0, x: 0, v: 0 });
   for (const pe of peatones) pe.estado = 'libre';
-  reloj = 0; zonaActual = ''; sacudida = 0; tPeaton = 1;
+  reloj = 0; zonaActual = ''; sacudida = 0; tPeaton = 1; vueltaActual = 1;
   for (const k in stats) stats[k] = 0;
 }
 
@@ -1566,6 +1650,12 @@ function actualiza(dt) {
     zonaActual = zona;
     if (reloj > 1) avisa(ZONAS[zona].nombre);
   }
+  if (LARGO_VUELTA && estado === 'carrera' && vueltaDe(j.s) !== vueltaActual) {
+    vueltaActual = vueltaDe(j.s);
+    avisa(vueltaActual === pistaActual.vueltas ? '¡Última vuelta!' : `Vuelta ${vueltaActual}`, 1300);
+    tono(880, 0.15, 'square', 0.12, 1320);
+    pintaRutaTitulo();
+  }
 
   actualizaEmpujador(dt);
 
@@ -1628,7 +1718,7 @@ function actualiza(dt) {
       if (o.tomada || Math.abs(o.s - j.s) > (o.largo || 0.6)) continue;
       const dx = Math.abs(o.x - j.x);
       if (o.tipo === 'colada' && dx < 0.8 && !j.aire) {
-        o.tomada = true; o.sp.visible = false; j.turbo = 1.6;
+        o.tomada = true; if (!LARGO_VUELTA) o.sp.visible = false; j.turbo = 1.6;
         tono(660, 0.12, 'triangle', 0.2); setTimeout(() => tono(990, 0.18, 'triangle', 0.2), 90);
         avisa('¡Colada morada!', 900);
       } else if (o.tipo === 'rampa' && dx < o.r && !j.aire && j.v > 3) {
@@ -1900,8 +1990,13 @@ function armaRuta() {
     hud.ruta.append(el);
     return { ...q, el, ultimo: '' };
   });
-  $('#h-pista').textContent = modo === 'copa' && copa
-    ? `${pistaActual.nombre} · ${copa.k + 1} de ${COPA.length}` : pistaActual.nombre;
+  pintaRutaTitulo();
+}
+function pintaRutaTitulo() {
+  const partes = [pistaActual.nombre];
+  if (LARGO_VUELTA) partes.push(`vuelta ${vueltaActual} de ${pistaActual.vueltas}`);
+  if (modo === 'copa' && copa) partes.push(`${copa.k + 1} de ${COPA.length}`);
+  $('#h-pista').textContent = partes.join(' · ');
 }
 const formato = (t) => {
   const m = Math.floor(t / 60), s = t - m * 60;
@@ -2216,18 +2311,19 @@ function dibujaMapa() {
   const g = cv.getContext('2d'), W = cv.width, H = cv.height;
   g.clearRect(0, 0, W, H);
   let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
-  for (let i = SALIDA; i <= META; i++) { x0 = Math.min(x0, P.x[i]); x1 = Math.max(x1, P.x[i]); z0 = Math.min(z0, P.z[i]); z1 = Math.max(z1, P.z[i]); }
+  const FIN = LARGO_VUELTA ? SALIDA + LARGO_VUELTA : META;
+  for (let i = SALIDA; i <= FIN; i++) { x0 = Math.min(x0, P.x[i]); x1 = Math.max(x1, P.x[i]); z0 = Math.min(z0, P.z[i]); z1 = Math.max(z1, P.z[i]); }
   const esc = Math.min((W - 24) / Math.max(1, x1 - x0), (H - 24) / Math.max(1, z1 - z0));
   const px = (i) => 12 + (P.x[i] - x0) * esc + ((W - 24) - (x1 - x0) * esc) / 2;
   const py = (i) => 12 + (P.z[i] - z0) * esc + ((H - 24) - (z1 - z0) * esc) / 2;
-  const traza = () => { g.beginPath(); for (let i = SALIDA; i <= META; i += 2) i === SALIDA ? g.moveTo(px(i), py(i)) : g.lineTo(px(i), py(i)); };
+  const traza = () => { g.beginPath(); for (let i = SALIDA; i <= FIN; i += 2) i === SALIDA ? g.moveTo(px(i), py(i)) : g.lineTo(px(i), py(i)); if (LARGO_VUELTA) g.closePath(); };
   g.lineCap = 'round'; g.lineJoin = 'round';
   traza(); g.strokeStyle = TINTA; g.lineWidth = 9; g.stroke();
   traza(); g.strokeStyle = '#F3F1EC'; g.lineWidth = 5; g.stroke();
   traza(); g.strokeStyle = '#E2B13C'; g.lineWidth = 1; g.setLineDash([3, 4]); g.stroke(); g.setLineDash([]);
   g.fillStyle = '#5DBB4F'; g.strokeStyle = TINTA; g.lineWidth = 2;
   g.beginPath(); g.arc(px(SALIDA), py(SALIDA), 5, 0, Math.PI * 2); g.fill(); g.stroke();
-  const mx = px(META - 1), my = py(META - 1);
+  const mx = px(LARGO_VUELTA ? SALIDA : META - 1), my = py(LARGO_VUELTA ? SALIDA : META - 1);
   for (let a = 0; a < 2; a++) for (let b = 0; b < 2; b++) { g.fillStyle = (a + b) % 2 ? '#fff' : TINTA; g.fillRect(mx - 5 + a * 5, my - 5 + b * 5, 5, 5); }
   g.strokeRect(mx - 5, my - 5, 10, 10);
 }
@@ -2493,6 +2589,7 @@ function bucle(ahora) {
   previo = ahora;
   if (estado === 'premio') { requestAnimationFrame(bucle); return; }
   if (estado === 'menu' || estado === 'cargando' || estado === 'titulo' || estado === 'elegir' || estado === 'podio') {
+    if (!N) { requestAnimationFrame(bucle); return; }
     if (cocheJ) dibujaMundo(dt);
     if (estado === 'elegir') dibujaPortada(ahora / 1000);
     else if (estado === 'podio') dibujaPodio(ahora / 1000);
@@ -2515,14 +2612,14 @@ function bucle(ahora) {
 async function carga() {
   const texto = $('#start span');
   const nombres = ['base-chico', 'base-chica', 'generico', 'policia', 'ministro', 'animaciones', 'quito'];
+  const reales = [...new Set(PISTAS.filter((p) => p.real).map((p) => p.real))];
   let listos = 0;
+  const total = nombres.length + reales.length;
+  const avanza = () => { listos++; texto.textContent = `Cargando… ${Math.round((listos / total) * 100)}%`; };
   const cargador = new GLTFLoader();
-  const pide = (n) => cargador.loadAsync(modeloUrl(n)).then((g) => {
-    listos++;
-    texto.textContent = `Cargando… ${Math.round((listos / nombres.length) * 100)}%`;
-    return g;
-  });
-  const [chico, chica, generico, policia, ministro, anim, quito] = await Promise.all(nombres.map(pide));
+  const pide = (n) => cargador.loadAsync(modeloUrl(n)).then((g) => { avanza(); return g; });
+  const pideCalle = (n) => fetch(new URL(`pistas/${n}.json${SELLO}`, import.meta.url)).then((r) => r.json()).then((d) => { DATOS_REALES[n] = d; avanza(); });
+  const [chico, chica, generico, policia, ministro, anim, quito] = await Promise.all([...nombres.map(pide), ...reales.map(pideCalle)]);
   Object.assign(MODELOS, { 'base-chico': chico, 'base-chica': chica, generico, policia, ministro });
   for (const n of ['montado', 'correr', 'rol', 'golpe', 'salto', 'arrancar']) {
     const clip = anim.animations.find((a) => a.name === n);
@@ -2567,6 +2664,9 @@ window.coches = {
   // Avanza la simulación sin dibujar, para las pruebas automáticas.
   volcar: () => volcar(),
   pista: (id) => cargaPista(id),
+  // Mete una calle de verdad y su pista sin pasar por la red, para probar.
+  pistaReal: (datos, def) => { DATOS_REALES[datos.id] = datos; if (!PISTAS.some((p) => p.id === def.id)) PISTAS.push(def); return cargaPista(def.id); },
+  vuelta: () => vueltaActual, largoVuelta: () => LARGO_VUELTA, mapa: dibujaMapa,
   progreso: () => prog,
   copa: () => copa,
   peatones: () => peatones.filter((p) => p.estado !== 'libre').map((p) => ({ estado: p.estado, ds: +(p.s - j.s).toFixed(1), x: +p.x.toFixed(1) })),
