@@ -1,0 +1,232 @@
+/* ══════════════════════════════════════════════════════════════
+   COCHES DE MADERA · variante del tema JUEGOS de mal-ds
+   ──────────────────────────────────────────────────────────────
+   No es otro sistema: es el tema `juegos` con otra piel. Va DESPUÉS
+   de mal.css y se enciende con dos atributos en el <html>:
+
+       <html data-marca="juegos" data-variante="coches" data-tema="claro">
+
+   `data-tema="claro"` es parte del trato: el juego es de día —el
+   cielo de Quito, la cal de las casas— y no tiene versión oscura.
+
+   Como el resto del sistema, va en capas:
+     1 REFERENCIA  se redefinen los --ref-* del tema juegos. Con eso
+                   ya cambian solos los botones, los campos, el premio…
+     2 MATERIA     tres materiales con nombre: --madera, --cal y la
+                   tinta. Todo lo que se pinta sale de ahí.
+     3 PIEZAS      solo las que el juego usa, y solo en lo que el
+                   material no alcanza (la letra del rótulo, los clavos).
+
+   DE DÓNDE SALE
+     · La madera: la del coche (#C8955A y su veta #9E6D3A), la misma
+       que pintan los modelos y los dibujos del premio.
+     · La cal, el ocre, el azul añil y el verde de puerta: las
+       fachadas del centro histórico que se ven en la carrera.
+     · El rojo y el azul de las Fiestas de Quito: las banderitas que
+       cruzan la calle.
+     · La tinta #2A2118: el contorno de los dibujos (TINTA en el JS).
+
+   LA LETRA — tres voces, como en el sistema, pero de feria:
+     Lilita One  títulos y cifras grandes (Juan Montoreano, OFL).
+                 Gorda y redonda: se lee a 3 m y en movimiento.
+     Bungee      rótulos, botones y etiquetas cortas (David Jonathan
+                 Ross, OFL). Letra de letrero pintado; solo mayúsculas,
+                 nunca para frases largas.
+     Inter       lo que se lee de corrido (heredada del sistema).
+     JetBrains Mono, solo para tiempos y tablas: cifras de ancho fijo.
+   ══════════════════════════════════════════════════════════════ */
+
+@font-face{font-family:"Lilita One";src:url("fuentes/lilita-one.woff2") format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Bungee";src:url("fuentes/bungee.woff2") format("woff2");font-weight:400;font-display:swap}
+
+/* ─── 1 · REFERENCIA ─────────────────────────────────────────── */
+:root[data-variante="coches"]{
+  /* la paleta de la calle */
+  --coches-rojo:#C8301E;      /* banderita roja de las Fiestas */
+  --coches-rojo-2:#9E2214;
+  --coches-azul:#1E4FA0;      /* banderita azul, el añil de las puertas */
+  --coches-azul-2:#153A78;
+  --coches-ocre:#E3A63A;      /* la fachada amarilla */
+  --coches-verde:#3E8E3A;     /* puerta verde; también «empujando» */
+  --coches-morado:#6B2D7B;    /* la colada morada */
+  --coches-madera:#C8955A;    /* la tabla del coche */
+  --coches-madera-clara:#E6C08A;
+  --coches-madera-oscura:#8A5A2E;
+  --coches-veta:#9E6D3A;
+  --coches-cal:#FFF8EA;       /* la pared encalada */
+  --coches-cal-2:#F3E6CB;
+  --coches-tinta:#2A2118;
+
+  --ref-marca:var(--coches-rojo); --ref-marca-2:var(--coches-rojo-2); --ref-marca-txt:#A8281A;
+  --ref-sobre-marca:var(--coches-cal);
+  --ref-acento:var(--coches-azul); --ref-acento-2:var(--coches-ocre);
+  --ref-n0:#F4EBD7; --ref-n1:#E7D8B9; --ref-n2:var(--coches-cal); --ref-n3:var(--coches-cal-2);
+  --ref-t0:var(--coches-tinta); --ref-t1:#5A4330; --ref-t2:#6B5440;
+  --ref-borde-rgb:42,33,24; --ref-marca-rgb:200,48,30;
+
+  --ref-display:"Lilita One","Syne",system-ui,sans-serif;
+  --ref-peso-display:400;     /* Lilita tiene un solo peso: nada de negrita falsa */
+  --ref-tracking:.005em;
+
+  /* EXPRESIÓN: madera clavada, no plástico. Menos radio que juegos,
+     borde de tinta grueso y la sombra dura en tinta, no en rosa. */
+  --ref-radio:.6;
+  --ref-borde:3px;
+  --ref-linea:var(--coches-tinta);
+  --ref-tap:52px;
+  --ref-elev-1:0 4px 0 var(--coches-tinta);
+  --ref-elev-2:0 6px 0 var(--coches-tinta), 0 14px 24px rgba(42,33,24,.28);
+  --ref-salto:translateY(-2px);
+  --ref-presion:translateY(4px);   /* se hunde hasta su sombra */
+  --ref-relleno-marca:var(--rojo-pintado);
+  --ref-destello:transparent;      /* sin holograma: es pintura */
+  --mal-ok:var(--coches-verde); --mal-warn:var(--coches-ocre);
+
+  /* ─── 2 · MATERIA ──────────────────────────────────────────
+     La veta: dos rayados de periodo distinto para que no se note el
+     patrón, más una luz de arriba. Cero imágenes. */
+  --veta:
+    repeating-linear-gradient(176deg, transparent 0 9px, rgba(110,66,28,.16) 9px 10px, transparent 10px 23px),
+    repeating-linear-gradient(181deg, transparent 0 14px, rgba(110,66,28,.10) 14px 16px, transparent 16px 37px);
+  --madera:var(--veta), linear-gradient(180deg, #F0D2A2, var(--coches-madera-clara) 45%, #D9AE74);
+  --madera-media:var(--veta), linear-gradient(180deg, #D8A86C, var(--coches-madera) 55%, #B98450);
+  /* la rodaja: anillos de un tronco cortado, para los discos */
+  --rodaja:repeating-radial-gradient(circle at 48% 52%, #E9C893 0 5px, #DDB57C 5px 7px, #E4BE86 7px 12px, #D3A66C 12px 13px),
+    #E2BA80;
+  --rojo-pintado:linear-gradient(180deg, rgba(255,255,255,.16), transparent 45%), var(--veta), var(--coches-rojo);
+  --azul-pintado:linear-gradient(180deg, rgba(255,255,255,.16), transparent 45%), var(--veta), var(--coches-azul);
+  /* los cuatro clavos de una tabla: van como fondo, así no se mueven
+     cuando el panel hace scroll */
+  --clavo:radial-gradient(circle at 50% 50%, #F2EEE6 0 1.5px, #9A9286 2px 3px, var(--coches-tinta) 3.5px 4.5px, transparent 5px);
+  /* las banderitas: rojo, ocre, azul, verde. Cada una es un cono
+     que apunta abajo dentro de su baldosa. */
+  --banderitas:
+    conic-gradient(from 150deg at 7px 0, var(--coches-rojo) 0 60deg, transparent 0) 0 0/56px 12px repeat-x,
+    conic-gradient(from 150deg at 7px 0, var(--coches-ocre) 0 60deg, transparent 0) 14px 0/56px 12px repeat-x,
+    conic-gradient(from 150deg at 7px 0, var(--coches-azul) 0 60deg, transparent 0) 28px 0/56px 12px repeat-x,
+    conic-gradient(from 150deg at 7px 0, var(--coches-verde) 0 60deg, transparent 0) 42px 0/56px 12px repeat-x,
+    linear-gradient(var(--coches-tinta), var(--coches-tinta)) 0 0/100% 2px no-repeat;
+}
+
+/* ─── 3 · PIEZAS ─────────────────────────────────────────────── */
+:root[data-variante="coches"] body{background:#9CC3E0}
+
+/* el rótulo: Bungee, corto, en mayúsculas */
+[data-variante="coches"] :is(.micro,.kicker){font-family:"Bungee",var(--mal-texto);font-weight:400;letter-spacing:.04em;color:var(--mal-on-surface-2)}
+[data-variante="coches"] .kicker{color:var(--coches-azul);gap:.6rem}
+[data-variante="coches"] .kicker::before{width:28px;height:12px;background:var(--banderitas);border:0}
+[data-variante="coches"] :is(h1,h2){font-weight:400;letter-spacing:var(--ref-tracking)}
+[data-variante="coches"] .caption{color:var(--mal-on-surface-2)}
+
+/* El letrero: papel de cal en un marco de madera con cuatro clavos. */
+[data-variante="coches"] .coches-panel{
+  background:
+    var(--clavo) 2px 2px/10px 10px no-repeat border-box,
+    var(--clavo) calc(100% - 2px) 2px/10px 10px no-repeat border-box,
+    var(--clavo) 2px calc(100% - 2px)/10px 10px no-repeat border-box,
+    var(--clavo) calc(100% - 2px) calc(100% - 2px)/10px 10px no-repeat border-box,
+    linear-gradient(var(--coches-cal), var(--coches-cal)) padding-box,
+    var(--madera) border-box;
+  border:10px solid transparent;border-radius:calc(var(--mal-r) + 4px);
+  box-shadow:0 0 0 3px var(--coches-tinta), 0 9px 0 3px var(--coches-tinta), 0 18px 30px rgba(42,33,24,.35);
+  -webkit-backdrop-filter:none;backdrop-filter:none;
+}
+/* la portada lleva banderitas cruzando arriba */
+[data-variante="coches"] #portada .coches-panel::before{content:"";display:block;flex:none;height:14px;margin:calc(var(--mal-e2) * -1) 0 var(--mal-e1);
+  background:var(--banderitas)}
+[data-variante="coches"] .coches-titulo{color:var(--coches-rojo);font-weight:400;letter-spacing:.01em;
+  -webkit-text-stroke:2px var(--coches-tinta);paint-order:stroke fill;text-shadow:0 3px 0 var(--coches-tinta)}
+[data-variante="coches"] .coches-subtitulo,[data-variante="coches"] .coches-pareja-nombre{font-family:var(--mal-display);font-weight:400;color:var(--coches-tinta)}
+
+/* Los botones son tablas: madera clara con tinta; la de marca, pintada
+   de rojo. Al pulsar se hunden hasta su sombra. */
+[data-variante="coches"] .btn{
+  font-family:"Bungee",var(--mal-texto);font-weight:400;letter-spacing:.03em;
+  color:var(--coches-tinta);background:var(--madera);border:3px solid var(--coches-tinta);
+  border-radius:12px;box-shadow:0 4px 0 var(--coches-tinta);
+}
+[data-variante="coches"] .btn:hover{color:var(--coches-tinta);border-color:var(--coches-tinta);box-shadow:0 6px 0 var(--coches-tinta)}
+[data-variante="coches"] .btn:active{box-shadow:0 0 0 var(--coches-tinta)}
+[data-variante="coches"] .btn--rojo,[data-variante="coches"] .btn--rojo:hover{
+  background:var(--rojo-pintado);color:var(--coches-cal);border-color:var(--coches-tinta);
+  text-shadow:0 2px 0 rgba(42,33,24,.45)}
+[data-variante="coches"] .btn--rojo::before{display:none}
+[data-variante="coches"] .boton-juego{font-size:1rem;border-radius:14px}
+[data-variante="coches"] .coches-fila .btn{flex-basis:8em;font-size:.82rem;padding-inline:var(--mal-e3)}
+[data-variante="coches"] .btn-ghost,[data-variante="coches"] .btn-ghost:hover{
+  background:transparent;border-color:transparent;box-shadow:none;color:var(--mal-on-surface-2);text-decoration:underline;text-underline-offset:4px}
+[data-variante="coches"] .btn--icono{border-radius:50%;background:var(--madera-media)}
+[data-variante="coches"] .btn:focus-visible{outline:3px solid var(--coches-azul);outline-offset:3px}
+
+/* Las fichas: etiquetas de cal. La elegida, pintada de azul (el rojo
+   queda para el botón que arranca). Las cerradas, con raya. */
+[data-variante="coches"] .chip{
+  font-family:var(--mal-texto);font-weight:600;color:var(--coches-tinta);
+  background:var(--coches-cal);border:2px solid var(--coches-tinta);border-radius:8px;
+  box-shadow:0 3px 0 var(--coches-tinta);transition:transform .12s var(--mal-ease), box-shadow .12s}
+[data-variante="coches"] .chip:active{transform:translateY(3px);box-shadow:none}
+[data-variante="coches"] .chip[aria-checked="true"]{background:var(--azul-pintado);border-color:var(--coches-tinta);color:var(--coches-cal)}
+[data-variante="coches"] .chip.is-cerrada{background:var(--coches-cal-2);border-style:dashed;box-shadow:none;opacity:.75}
+
+/* Las cualidades: tacos de madera, llenos de ocre. */
+[data-variante="coches"] .medidor > i{height:12px;border-radius:3px;background:rgba(42,33,24,.08);border:2px solid rgba(42,33,24,.35)}
+[data-variante="coches"] .medidor > i.lleno{background:var(--coches-ocre);border-color:var(--coches-tinta)}
+[data-variante="coches"] .coches-stats dt{font-family:"Bungee",var(--mal-texto);letter-spacing:.03em}
+
+/* Las teclas, como teclas de madera. */
+/* (en Inter, no en Bungee: Bungee no trae flechas) */
+[data-variante="coches"] .coches-teclas dt{font-family:var(--mal-texto);font-weight:800;color:var(--coches-tinta)}
+
+/* La tabla de la Copa y el podio: un marcador de feria, a rayas. */
+[data-variante="coches"] .coches-podio li{padding:4px 10px;border-radius:6px;color:var(--coches-tinta)}
+[data-variante="coches"] .coches-podio li:nth-child(odd){background:rgba(42,33,24,.06)}
+[data-variante="coches"] .coches-podio li.es-tu{background:var(--coches-ocre);box-shadow:inset 0 0 0 2px var(--coches-tinta)}
+
+/* ─── el premio: rayos de feria y una rodaja de tronco ─────── */
+[data-variante="coches"] .premio{background:
+  radial-gradient(circle at 50% 44%, var(--coches-cal) 0%, color-mix(in srgb, var(--coches-cal) 80%, transparent) 18%, transparent 48%),
+  #F4EBD7}
+[data-variante="coches"] .premio__rayos{background:
+  repeating-conic-gradient(from 0deg at 50% 50%,
+    rgba(200,48,30,.16) 0deg 7.5deg, transparent 7.5deg 15deg,
+    rgba(40,100,210,.17) 15deg 22.5deg, transparent 22.5deg 30deg)}
+[data-variante="coches"] .premio__disco{background:var(--rodaja);border:4px solid var(--coches-tinta);
+  box-shadow:0 0 0 8px var(--coches-madera-oscura), 0 0 0 11px var(--coches-tinta), 0 12px 0 11px rgba(42,33,24,.35)}
+[data-variante="coches"] .premio__nombre{color:var(--coches-rojo);font-weight:400;
+  -webkit-text-stroke:2px var(--coches-tinta);paint-order:stroke fill;text-shadow:0 4px 0 var(--coches-tinta)}
+[data-variante="coches"] .premio__pie{font-family:"Bungee",var(--mal-texto);font-weight:400;color:var(--coches-tinta)}
+[data-variante="coches"] .premio .kicker{justify-content:center}
+
+/* ─── el HUD ─────────────────────────────────────────────────
+   Las cifras ya salen en Lilita (es el display del tema); aquí van
+   las etiquetas en Bungee y el carril de la carrera, de madera. */
+[data-variante="coches"] .coches-hud{--tinta:var(--coches-tinta)}
+[data-variante="coches"] .coches-vel small,
+[data-variante="coches"] :is(.coches-empujador,.coches-turbo){font-family:"Bungee",var(--mal-texto);font-weight:400;letter-spacing:.03em}
+[data-variante="coches"] .coches-hud .coches-ruta__titulo{font-family:"Bungee",var(--mal-texto);font-weight:400;letter-spacing:.03em}
+[data-variante="coches"] .coches-ruta__carril{height:10px;background:var(--madera-media);border-width:2px}
+[data-variante="coches"] .coches-empujador{background:var(--coches-cal)}
+[data-variante="coches"] .coches-empujador[data-estado="empujando"]{background:var(--coches-verde)}
+[data-variante="coches"] .coches-empujador[data-estado="piso"]{background:var(--coches-rojo)}
+[data-variante="coches"] .coches-turbo{background:var(--coches-morado)}
+
+/* Los mandos: perillas de madera; «Empuja», pintada de rojo. */
+[data-variante="coches"] .coches-mando{
+  font-family:"Bungee",var(--mal-texto);font-weight:400;font-size:.68rem;letter-spacing:.02em;
+  color:var(--coches-tinta);background:var(--madera);border:3px solid var(--coches-tinta);
+  box-shadow:0 5px 0 var(--coches-tinta);-webkit-backdrop-filter:none;backdrop-filter:none}
+[data-variante="coches"] .coches-mando.is-on{background:var(--madera-media);box-shadow:0 1px 0 var(--coches-tinta);transform:translateY(4px)}
+[data-variante="coches"] .coches-mando--empuja{background:var(--rojo-pintado);color:var(--coches-cal);border-color:var(--coches-tinta)}
+[data-variante="coches"] .coches-mando--empuja.is-on{background:var(--rojo-pintado);filter:brightness(.88)}
+
+/* La cuenta atrás, de colores: 3 rojo, 2 ocre, 1 azul y a bajar, verde. */
+[data-variante="coches"] .coches-cuenta,[data-variante="coches"] .coches-aviso{font-family:var(--mal-display);font-weight:400;
+  -webkit-text-stroke:3px var(--coches-tinta);text-shadow:0 6px 0 var(--coches-tinta)}
+[data-variante="coches"] .coches-cuenta[data-n="3"]{color:var(--coches-rojo)}
+[data-variante="coches"] .coches-cuenta[data-n="2"]{color:var(--coches-ocre)}
+[data-variante="coches"] .coches-cuenta[data-n="1"]{color:#3F7FD6}
+[data-variante="coches"] .coches-cuenta[data-n="0"]{color:#5DBB4F}
+
+/* Gira el teléfono: el cartel sobre tablas oscuras. */
+[data-variante="coches"] .coches-gira{background:var(--veta), var(--coches-madera-oscura);color:var(--coches-cal);font-family:var(--mal-display);font-weight:400}
+[data-variante="coches"] .coches-gira .micro{color:var(--coches-cal-2)}

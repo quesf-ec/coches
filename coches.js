@@ -1550,6 +1550,7 @@ function actualiza(dt) {
       const el = $('#cuenta');
       el.classList.remove('is-sale'); void el.offsetWidth;
       el.textContent = n > 0 ? String(n) : '¡A bajar!';
+      el.dataset.n = Math.max(0, n);
       el.classList.add('is-sale');
       tono(n > 0 ? 440 : 880, n > 0 ? 0.18 : 0.45, 'square', 0.12);
     }
