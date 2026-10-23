@@ -21,16 +21,18 @@
 <!-- El sello ?v= se sube a mano en cada cambio del juego (CSS, JS y, con el
      JS, los modelos, que heredan su sello): así el navegador no se queda con
      la versión anterior. -->
-<link rel="stylesheet" href="coches.css?v=9c917258c4">
+<link rel="stylesheet" href="coches.css?v=d68a83698c">
 <script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js", "three/addons/": "./vendor/addons/" } }</script>
 </head>
 <body class="coches">
 
 <canvas id="pista" role="img" aria-label="La carrera, vista desde atrás de tu coche de madera"></canvas>
 
-<!-- El HUD: la pausa arriba a la izquierda, las cifras arriba a la derecha,
-     lo que está activo abajo y nada en el centro, que por ahí se baja. -->
-<div class="hud-juego" id="hud" hidden>
+<!-- El HUD: arriba la pausa, la carrera entera en una línea y el puesto;
+     abajo, al centro y entre los pulgares, la velocidad y el empujador. Nada
+     en el centro de la pantalla, que por ahí se baja. Sin tarjetas: letras
+     con borde, como la cuenta atrás, para que se lean sobre cualquier fondo. -->
+<div class="hud-juego coches-hud" id="hud" hidden>
   <div class="hud-juego__arriba">
     <div class="fila coches-botones">
       <button class="btn btn--icono" id="b-pausa" type="button" aria-label="Pausa">
@@ -38,22 +40,24 @@
       <button class="btn btn--icono" id="b-sonido" type="button" aria-label="Silenciar" aria-pressed="false">
         <svg class="icono" aria-hidden="true"><use href="#i-altavoz"/></svg></button>
     </div>
-    <div class="hud-juego__cifras">
-      <p class="marcador" aria-live="polite"><span id="h-puesto">5</span><span class="coches-de">/5</span><small>puesto</small></p>
-      <p class="coches-tiempo tabular" id="h-tiempo">0:00.0</p>
-      <span class="badge" id="h-zona">El Panecillo</span>
+    <div class="coches-ruta">
+      <p class="coches-ruta__titulo" id="h-pista">La bajada del Panecillo</p>
+      <div class="coches-ruta__carril" id="h-ruta" role="img" aria-label="Por dónde va cada coche"></div>
+    </div>
+    <div class="coches-puesto">
+      <p class="coches-puesto__n" aria-live="polite"><span id="h-puesto">5</span><span class="coches-de">/5</span></p>
+      <p class="coches-tiempo" id="h-tiempo">0:00.0</p>
     </div>
   </div>
 
   <div class="hud-juego__abajo">
     <div class="coches-tablero">
-      <p class="marcador coches-vel"><span id="h-vel">0</span><small>km/h</small></p>
-      <span class="micro">Empujador</span>
-      <span class="badge coches-empujador" id="h-empujador" data-estado="empujando">Empujando</span>
-      <span class="micro">Hasta la meta</span>
-      <div class="medidor medidor--continuo medidor--fino" id="h-ruta" style="--mal-relleno-medidor:var(--mal-verde)"><i></i></div>
-      <span class="chip coches-turbo" id="h-turbo" hidden>
-        <svg class="icono icono--s" aria-hidden="true"><use href="#i-rayo"/></svg> Colada</span>
+      <p class="coches-vel"><span id="h-vel">0</span><small>km/h</small></p>
+      <div class="coches-tablero__fila">
+        <span class="coches-empujador" id="h-empujador" data-estado="empujando">Empujando</span>
+        <span class="coches-turbo" id="h-turbo" hidden>
+          <svg class="icono icono--s" aria-hidden="true"><use href="#i-rayo"/></svg> Colada</span>
+      </div>
     </div>
   </div>
 </div>
@@ -195,6 +199,6 @@
 </div>
 
 <script src="../ds/mal/mal.js?v=1.0.17" defer></script>
-<script type="module" src="coches.js?v=9c917258c4"></script>
+<script type="module" src="coches.js?v=d68a83698c"></script>
 </body>
 </html>

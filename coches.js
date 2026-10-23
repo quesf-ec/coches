@@ -1563,7 +1563,6 @@ function actualiza(dt) {
   const hw = m.hw, pend = m.pend, k = m.k, zona = m.zona;
   if (zona !== zonaActual) {
     zonaActual = zona;
-    $('#h-zona').textContent = ZONAS[zona].nombre;
     if (reloj > 1) avisa(ZONAS[zona].nombre);
   }
 
@@ -1885,8 +1884,24 @@ function dibujaPortada(t) {
 // ─── el HUD ────────────────────────────────────────────────────────
 const hud = {
   puesto: $('#h-puesto'), tiempo: $('#h-tiempo'), vel: $('#h-vel'),
-  empujador: $('#h-empujador'), ruta: $('#h-ruta > i'), turbo: $('#h-turbo'),
+  empujador: $('#h-empujador'), ruta: $('#h-ruta'), turbo: $('#h-turbo'),
+  caja: $('.coches-puesto'), puntos: [],
 };
+// Un punto por coche en la línea de la carrera, con su color y su número.
+function armaRuta() {
+  hud.ruta.textContent = '';
+  hud.puntos = [{ eq: eqJ, tu: true }, ...rivales.map((rv) => ({ eq: rv.cruce.eq, rv }))].map((q) => {
+    const el = document.createElement('i');
+    el.className = 'coches-punto' + (q.tu ? ' es-tu' : '');
+    el.style.setProperty('--c', q.eq.placa);
+    el.textContent = q.eq.num;
+    el.title = q.eq.nombre;
+    hud.ruta.append(el);
+    return { ...q, el, ultimo: '' };
+  });
+  $('#h-pista').textContent = modo === 'copa' && copa
+    ? `${pistaActual.nombre} · ${copa.k + 1} de ${COPA.length}` : pistaActual.nombre;
+}
 const formato = (t) => {
   const m = Math.floor(t / 60), s = t - m * 60;
   return `${m}:${s < 10 ? '0' : ''}${s.toFixed(1)}`;
@@ -1900,16 +1915,22 @@ function pintaHud() {
     tiempo: formato(estado === 'llegada' ? j.llegada : reloj),
     vel: String(Math.round(j.v * 3.6)),
     empujador: ESTADOS_EMPUJADOR[e.estado],
-    ruta: `${Math.round(limita((j.s - SALIDA) / (META - SALIDA), 0, 1) * 100)}%`,
   };
-  if (datos.puesto !== ultimoHud.puesto) hud.puesto.textContent = datos.puesto;
+  if (datos.puesto !== ultimoHud.puesto) {
+    // Al ganar un puesto, el número salta.
+    if (+datos.puesto < +ultimoHud.puesto) { hud.caja.classList.remove('is-sube'); void hud.caja.offsetWidth; hud.caja.classList.add('is-sube'); }
+    hud.puesto.textContent = datos.puesto;
+  }
   if (datos.tiempo !== ultimoHud.tiempo) hud.tiempo.textContent = datos.tiempo;
   if (datos.vel !== ultimoHud.vel) hud.vel.textContent = datos.vel;
   if (datos.empujador !== ultimoHud.empujador) {
     hud.empujador.textContent = datos.empujador;
     hud.empujador.dataset.estado = e.estado;
   }
-  if (datos.ruta !== ultimoHud.ruta) hud.ruta.style.width = datos.ruta;
+  for (const q of hud.puntos) {
+    const pos = `${(limita(((q.rv ? q.rv.s : j.s) - SALIDA) / (META - SALIDA), 0, 1) * 100).toFixed(1)}%`;
+    if (pos !== q.ultimo) { q.el.style.left = pos; q.ultimo = pos; }
+  }
   hud.turbo.hidden = !(j.turbo > 0);
   ultimoHud = datos;
 }
@@ -2248,7 +2269,8 @@ function empieza() {
   $('#hud').hidden = false;
   $('#mandos').hidden = !esTactil;
   estado = 'cuenta'; cuenta = 3; actualiza.n = null; llegadaVista = false;
-  $('#h-zona').textContent = ZONAS[P.zona[SALIDA]].nombre;
+  armaRuta();
+  ultimoHud = {};
   camS = j.s;
   punto(camS - 5.4, j.x * 0.8, 2.25, camara.position);
   camara.clearViewOffset();
@@ -2359,7 +2381,7 @@ function bucle(ahora) {
     dibujaCamara(dt);
     if (publico) publico.coloca(ahora / 1000, j.s);
     render.render(escena, camara);
-    if (estado === 'carrera' || estado === 'llegada') pintaHud();
+    if (estado === 'carrera' || estado === 'llegada' || estado === 'cuenta') pintaHud();
     sonidoRodar();
   }
   requestAnimationFrame(bucle);

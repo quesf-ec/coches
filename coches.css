@@ -12,33 +12,60 @@ body.coches{
 
 #pista{position:fixed;inset:0;width:100%;height:100%;display:block}
 
-/* El estado del empujador, de un vistazo: verde si empuja, gris a bordo,
-   rojo si se quedó o se cayó. */
-.coches-empujador{align-self:flex-start}
-.coches-empujador[data-estado="empujando"]{background:var(--mal-verde);border-color:var(--mal-verde);color:#fff}
-.coches-empujador[data-estado="piso"]{background:var(--mal-primary);border-color:var(--mal-primary);color:var(--mal-on-primary)}
-.boton-juego:disabled{opacity:.6;cursor:progress}
-
-/* Sobre el cielo y el empedrado las cifras sueltas no se leen: van sobre
-   el vidrio del sistema, en una tarjeta pequeña. */
-.coches .hud-juego__cifras,.coches-tablero{
-  padding:var(--mal-e3) var(--mal-e4);border-radius:var(--mal-r);
-  background:color-mix(in srgb, var(--mal-surface) 82%, transparent);
-  border:var(--mal-borde);box-shadow:var(--mal-elev-1);
-  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
-}
-.coches .hud-juego__cifras{gap:var(--mal-e1)}
-.coches-de{font-size:.5em;color:var(--mal-on-surface-3)}
-.coches-tiempo{margin:0;font-family:var(--mal-mono);font-weight:700;font-size:var(--mal-t-caption)}
+/* ─── el HUD ─────────────────────────────────────────────────
+   Letras de juego —blancas, con borde y sombra de tinta— directo sobre
+   la escena: se leen sobre el cielo y sobre el empedrado sin tapar nada. */
+.coches-hud{--tinta:#2b2129;--hud-borde:2px}
+.coches-hud .coches-ruta__titulo,.coches-puesto,.coches-vel,.coches-tiempo{
+  font-family:var(--mal-display);font-weight:800;color:#fff;margin:0;line-height:1;
+  -webkit-text-stroke:var(--hud-borde) var(--tinta);paint-order:stroke fill;
+  text-shadow:0 3px 0 var(--tinta)}
 .coches-botones{gap:var(--mal-e2)}
 .coches-botones .btn{background:var(--mal-surface)}
 
-.coches-tablero{display:flex;flex-direction:column;gap:var(--mal-e1);width:min(220px, 44vw)}
-.coches-vel{font-size:clamp(1.6rem, 1.1rem + 2vw, 2.4rem)}
-.coches-vel small{display:inline;margin-left:.35em}
-.coches-turbo{align-self:flex-start;margin-top:var(--mal-e1);
-  background:#6B2D7B;border-color:#6B2D7B;color:#fff;animation:coches-latir .5s ease-in-out infinite alternate}
-@keyframes coches-latir{to{transform:scale(1.06)}}
+/* El puesto, grande; el tiempo debajo. */
+.coches-puesto{display:flex;flex-direction:column;align-items:flex-end;gap:var(--mal-e1);text-align:right}
+.coches-puesto__n{margin:0;font-size:clamp(2.6rem, 1.6rem + 4vw, 4.4rem);letter-spacing:-.02em;--hud-borde:6px;text-shadow:0 4px 0 var(--tinta)}
+.coches-de{font-size:.42em;margin-left:.06em}
+.coches-hud .coches-tiempo{font-family:var(--mal-mono);font-weight:700;font-size:clamp(.85rem, .75rem + .5vw, 1.1rem);
+  font-variant-numeric:tabular-nums;-webkit-text-stroke:0;text-shadow:none;
+  padding:3px 10px;border-radius:99px;background:var(--tinta);box-shadow:0 2px 0 rgba(0,0,0,.25)}
+.coches-puesto.is-sube .coches-puesto__n{animation:coches-sube .45s var(--mal-ease)}
+@keyframes coches-sube{40%{transform:scale(1.25)}}
+
+/* La carrera en una línea: cada coche es un punto con su color y su
+   número; el tuyo, más grande y con aro. */
+.coches-ruta{flex:0 1 min(44vw, 440px);display:grid;gap:10px;justify-items:center;padding-top:4px}
+.coches-hud .coches-ruta__titulo{font-family:var(--mal-texto);font-weight:800;letter-spacing:.02em;font-size:clamp(.85rem, .75rem + .4vw, 1.05rem);--hud-borde:3px;text-shadow:0 2px 0 var(--tinta);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.coches-ruta__carril{position:relative;width:calc(100% - 28px);height:8px;margin:8px 14px;border-radius:99px;
+  background:rgba(255,255,255,.85);border:2px solid var(--tinta);box-shadow:0 2px 0 var(--tinta)}
+/* La meta: un cuadro de ajedrez al final. */
+.coches-ruta__carril::after{content:"";position:absolute;right:-12px;top:50%;width:16px;height:22px;transform:translateY(-50%);
+  border:2px solid var(--tinta);border-radius:3px;
+  background:conic-gradient(var(--tinta) 25%, #fff 0 50%, var(--tinta) 0 75%, #fff 0) 0 0/8px 8px}
+.coches-punto{position:absolute;top:50%;left:0;width:20px;height:20px;margin:-10px 0 0 -10px;border-radius:50%;
+  display:grid;place-items:center;background:var(--c);border:2px solid var(--tinta);
+  font:800 10px/1 var(--mal-mono);color:#fff}
+.coches-punto.es-tu{width:28px;height:28px;margin:-14px 0 0 -14px;font-size:12px;z-index:2;
+  box-shadow:0 0 0 3px #fff, 0 0 0 5px var(--tinta)}
+
+/* Abajo, al centro: la velocidad, el empujador y la colada. */
+.coches .hud-juego__abajo{justify-content:center}
+.coches-tablero{display:flex;flex-direction:column;align-items:center;gap:var(--mal-e2)}
+.coches-vel{font-size:clamp(2.4rem, 1.6rem + 3vw, 3.6rem);font-variant-numeric:tabular-nums;--hud-borde:6px;text-shadow:0 4px 0 var(--tinta)}
+.coches-vel small{font-family:var(--mal-mono);font-size:max(.3em, 12px);margin-left:.3em;letter-spacing:.06em;text-transform:uppercase;--hud-borde:3px;text-shadow:0 2px 0 var(--tinta)}
+.coches-tablero__fila{display:flex;gap:var(--mal-e2);align-items:center}
+.coches-empujador,.coches-turbo{display:inline-flex;align-items:center;gap:.35em;padding:4px 12px;border-radius:99px;
+  font:700 var(--mal-t-micro)/1.2 var(--mal-mono);letter-spacing:.06em;text-transform:uppercase;
+  border:2px solid var(--tinta,#2b2129);box-shadow:0 2px 0 var(--tinta,#2b2129);background:#fff;color:var(--tinta,#2b2129)}
+/* El empujador, de un vistazo: verde si empuja, blanco a bordo, rojo en el piso. */
+.coches-empujador[data-estado="empujando"]{background:var(--mal-verde);color:#fff}
+.coches-empujador[data-estado="piso"]{background:#D6382B;color:#fff;animation:coches-latir .35s ease-in-out infinite alternate}
+.coches-turbo{background:#6B2D7B;color:#fff;animation:coches-latir .5s ease-in-out infinite alternate}
+.coches-turbo[hidden]{display:none}
+@keyframes coches-latir{to{transform:scale(1.08)}}
+.boton-juego:disabled{opacity:.6;cursor:progress}
 
 /* ─── los mandos táctiles ──────────────────────────────────────
    Dirección a la izquierda, pies a la derecha, como un mando. Cada
@@ -65,8 +92,8 @@ body.coches{
   background:var(--mal-surface)}
 .coches-mando--empuja{background:var(--mal-primary);color:var(--mal-on-primary);border-color:var(--mal-primary-hover)}
 .coches-mando--empuja.is-on{background:var(--mal-primary-hover)}
-/* Con mandos, el tablero sube para no quedar debajo de los pulgares. */
-.coches.con-mandos .hud-juego__abajo{padding-bottom:calc(clamp(64px, 18vw, 84px) + var(--mal-e4))}
+/* Con mandos, el tablero queda entre los dos pulgares, a su altura. */
+.coches.con-mandos .hud-juego__abajo{padding-bottom:0}
 
 /* ─── la cuenta atrás y los avisos ─────────────────────────────
    Lo único que sale en el centro, y solo un segundo: es lo que hay
@@ -96,10 +123,6 @@ body.coches{
 .coches.tactil .coches-teclas{display:none}
 .coches-solo-tactil{display:none}
 .coches.tactil .coches-solo-tactil{display:block}
-@media (max-width:480px){
-  .coches-tablero{width:150px;padding:var(--mal-e2) var(--mal-e3)}
-  .coches .hud-juego__cifras{padding:var(--mal-e2) var(--mal-e3)}
-}
 .coches-subtitulo{margin:0;font-size:clamp(1.3rem, 1rem + 1.5vw, 1.7rem);line-height:1.1}
 .coches-progreso:empty{display:none}
 .coches-fila{gap:var(--mal-e2);flex-wrap:wrap}
@@ -150,7 +173,7 @@ body.coches{
 .coches-podio li.es-tu{color:var(--mal-on-surface);font-weight:700}
 
 @media (prefers-reduced-motion:reduce){
-  .coches-turbo{animation:none}
+  .coches-turbo,.coches-empujador{animation:none}
   .coches-cuenta.is-sale{animation:none}
 }
 
@@ -169,5 +192,12 @@ body.coches{
   .coches-capa .coches-panel.pila{gap:var(--mal-e2)}
   .coches-stats{gap:2px}
   .coches-teclas{font-size:var(--mal-t-micro)}
+  /* La carrera, más apretada: el HUD a ras de los bordes. */
+  .coches-hud{padding:calc(env(safe-area-inset-top, 0px) + 10px) calc(env(safe-area-inset-right, 0px) + 14px)
+    calc(env(safe-area-inset-bottom, 0px) + 10px) calc(env(safe-area-inset-left, 0px) + 14px)}
+  .coches-botones .btn{width:40px;height:40px;min-height:40px;padding:0}
+  .coches-puesto__n{font-size:2.6rem}
+  .coches-vel{font-size:2.2rem}
+  .coches-ruta{gap:6px}
 }
 
