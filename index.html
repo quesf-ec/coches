@@ -21,9 +21,9 @@
 <!-- El sello ?v= se sube a mano en cada cambio del juego (CSS, JS y, con el
      JS, los modelos, que heredan su sello): así el navegador no se queda con
      la versión anterior. -->
-<link rel="stylesheet" href="coches.css?v=5a276d75ed">
+<link rel="stylesheet" href="coches.css?v=248c4a3048">
 <!-- La piel del juego: variante del tema juegos (ver tema/LEEME.md). Va al final para mandar. -->
-<link rel="stylesheet" href="tema/tema.css?v=5a276d75ed">
+<link rel="stylesheet" href="tema/tema.css?v=248c4a3048">
 <script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js", "three/addons/": "./vendor/addons/" } }</script>
 </head>
 <body class="coches">
@@ -110,6 +110,8 @@
         <svg class="icono" aria-hidden="true"><use href="#i-play"/></svg> Carrera suelta</button>
       <button class="btn boton-juego btn-block" id="b-medallas" type="button" disabled>
         <svg class="icono" aria-hidden="true"><use href="#i-estrella"/></svg> Medallas y récords</button>
+      <button class="btn boton-juego btn-block" id="b-album" type="button" disabled>
+        <svg class="icono" aria-hidden="true"><use href="#i-etiqueta"/></svg> Álbum de estampitas</button>
       <button class="btn boton-juego btn-block" id="b-ayuda" type="button">
         <svg class="icono" aria-hidden="true"><use href="#i-mando"/></svg> Cómo se juega</button>
     </nav>
@@ -178,6 +180,18 @@
   </div>
 </div>
 
+<!-- El álbum de estampitas -->
+<div class="coches-capa" id="album" hidden>
+  <div class="coches-panel coches-menu coches-panel--ancho">
+    <p class="coches-banner">El álbum de las Fiestas</p>
+    <p class="caption">Hay estampitas escondidas por las pistas: tres en cada una. Tócalas al pasar.
+    Llevas <b id="album-cuenta">0 de 0</b>.</p>
+    <ul class="coches-album" id="album-lista"></ul>
+    <button class="btn btn-ghost btn-block" id="b-volver-album" type="button">
+      <svg class="icono" aria-hidden="true"><use href="#i-flecha-izq"/></svg> Volver</button>
+  </div>
+</div>
+
 <!-- La tabla de la Copa entre carrera y carrera -->
 <div class="coches-capa" id="copa" hidden>
   <div class="coches-panel coches-menu">
@@ -237,6 +251,6 @@
 </div>
 
 <script src="../ds/mal/mal.js?v=1.0.17" defer></script>
-<script type="module" src="coches.js?v=5a276d75ed"></script>
+<script type="module" src="coches.js?v=248c4a3048"></script>
 </body>
 </html>

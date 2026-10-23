@@ -269,6 +269,153 @@ const colada = () => lienzo(110, 140, (c, w, h) => {
   for (const x of [44, 56, 68]) { c.beginPath(); c.moveTo(x, 40); c.quadraticCurveTo(x - 6, 28, x, 18); c.stroke(); }
 });
 
+// ─── las estampitas ────────────────────────────────────────────────
+// El álbum de las Fiestas: estampitas escondidas por las pistas, tres por
+// pista, que se guardan al tocarlas. Cada una lleva un dibujo (uno de los
+// pintores de fachadas, o uno propio) y dónde está.
+const ICONOS = {
+  banderin: (c, w, h) => {
+    c.strokeStyle = TINTA; c.lineWidth = 4; c.beginPath(); c.moveTo(6, 20); c.quadraticCurveTo(w / 2, 46, w - 6, 20); c.stroke();
+    const col = ['#D6382B', '#1B5FAA', '#F5C518', '#2E7D4F', '#E01B6A', '#F3F1EC'];
+    for (let k = 0; k < 6; k++) {
+      const t = (k + 0.5) / 6, x = 6 + (w - 12) * t, y = 20 + 26 * 4 * t * (1 - t);
+      c.fillStyle = col[k]; c.beginPath(); c.moveTo(x - 9, y); c.lineTo(x + 9, y); c.lineTo(x, y + 26); c.closePath(); c.fill(); c.stroke();
+    }
+  },
+  guagua: (c, w, h) => {
+    c.fillStyle = '#E2B13C'; c.strokeStyle = TINTA; c.lineWidth = 4;
+    c.beginPath(); c.ellipse(w / 2, h * 0.62, w * 0.26, h * 0.3, 0, 0, 7); c.fill(); c.stroke();
+    c.beginPath(); c.arc(w / 2, h * 0.3, w * 0.18, 0, 7); c.fill(); c.stroke();
+    c.fillStyle = '#F3F1EC'; c.beginPath(); c.ellipse(w / 2, h * 0.64, w * 0.14, h * 0.2, 0, 0, 7); c.fill();
+    c.fillStyle = TINTA; c.beginPath(); c.arc(w / 2 - 7, h * 0.28, 2.5, 0, 7); c.arc(w / 2 + 7, h * 0.28, 2.5, 0, 7); c.fill();
+    c.strokeStyle = '#D6382B'; c.lineWidth = 3; c.beginPath(); c.moveTo(w / 2 - 12, h * 0.52); c.lineTo(w / 2 + 12, h * 0.52); c.stroke();
+  },
+  canelazo: (c, w, h) => {
+    c.fillStyle = '#C8955A'; c.strokeStyle = TINTA; c.lineWidth = 4;
+    c.beginPath(); c.moveTo(w * 0.28, h * 0.3); c.lineTo(w * 0.72, h * 0.3); c.lineTo(w * 0.66, h * 0.88); c.lineTo(w * 0.34, h * 0.88); c.closePath(); c.fill(); c.stroke();
+    c.fillStyle = '#E8862C'; c.fillRect(w * 0.31, h * 0.34, w * 0.38, h * 0.1);
+    c.beginPath(); c.moveTo(w * 0.72, h * 0.42); c.quadraticCurveTo(w * 0.95, h * 0.5, w * 0.7, h * 0.7); c.stroke();
+    c.strokeStyle = 'rgba(255,255,255,.8)'; c.lineWidth = 3; c.lineCap = 'round';
+    for (const x of [w * 0.42, w * 0.52, w * 0.62]) { c.beginPath(); c.moveTo(x, h * 0.24); c.quadraticCurveTo(x - 5, h * 0.15, x, h * 0.06); c.stroke(); }
+  },
+  chiva: (c, w, h) => {
+    c.fillStyle = '#D6382B'; c.strokeStyle = TINTA; c.lineWidth = 4;
+    c.fillRect(w * 0.1, h * 0.3, w * 0.8, h * 0.4); c.strokeRect(w * 0.1, h * 0.3, w * 0.8, h * 0.4);
+    c.fillStyle = '#F5C518'; c.fillRect(w * 0.1, h * 0.2, w * 0.8, h * 0.12); c.strokeRect(w * 0.1, h * 0.2, w * 0.8, h * 0.12);
+    c.fillStyle = '#1B5FAA'; for (let k = 0; k < 3; k++) c.fillRect(w * (0.18 + k * 0.24), h * 0.36, w * 0.16, h * 0.2);
+    c.fillStyle = '#2E7D4F'; c.fillRect(w * 0.1, h * 0.52, w * 0.8, h * 0.06);
+    c.fillStyle = '#333'; for (const x of [w * 0.28, w * 0.72]) { c.beginPath(); c.arc(x, h * 0.74, w * 0.09, 0, 7); c.fill(); c.stroke(); }
+  },
+  cohete: (c, w, h) => {
+    const cx = w / 2, cy = h * 0.4;
+    for (let k = 0; k < 12; k++) {
+      const a = k / 12 * Math.PI * 2;
+      c.strokeStyle = ['#F5C518', '#D6382B', '#43D9FF', '#E01B6A'][k % 4]; c.lineWidth = 4; c.lineCap = 'round';
+      c.beginPath(); c.moveTo(cx + Math.cos(a) * 8, cy + Math.sin(a) * 8); c.lineTo(cx + Math.cos(a) * 34, cy + Math.sin(a) * 34); c.stroke();
+      c.fillStyle = c.strokeStyle; c.beginPath(); c.arc(cx + Math.cos(a) * 40, cy + Math.sin(a) * 40, 4, 0, 7); c.fill();
+    }
+    c.strokeStyle = TINTA; c.lineWidth = 3; c.beginPath(); c.moveTo(cx, h * 0.95); c.quadraticCurveTo(cx + 10, h * 0.7, cx, cy + 10); c.stroke();
+  },
+  cometa: (c, w, h) => {
+    c.fillStyle = '#1B5FAA'; c.strokeStyle = TINTA; c.lineWidth = 4;
+    c.beginPath(); c.moveTo(w / 2, 8); c.lineTo(w * 0.85, h * 0.4); c.lineTo(w / 2, h * 0.7); c.lineTo(w * 0.15, h * 0.4); c.closePath(); c.fill(); c.stroke();
+    c.fillStyle = '#F5C518'; c.beginPath(); c.moveTo(w / 2, 8); c.lineTo(w * 0.85, h * 0.4); c.lineTo(w / 2, h * 0.4); c.closePath(); c.fill();
+    c.fillStyle = '#D6382B'; c.beginPath(); c.moveTo(w / 2, h * 0.7); c.lineTo(w * 0.15, h * 0.4); c.lineTo(w / 2, h * 0.4); c.closePath(); c.fill();
+    c.beginPath(); c.moveTo(w / 2, 8); c.lineTo(w / 2, h * 0.7); c.moveTo(w * 0.15, h * 0.4); c.lineTo(w * 0.85, h * 0.4); c.stroke();
+    c.lineWidth = 3; c.beginPath(); c.moveTo(w / 2, h * 0.7); c.quadraticCurveTo(w * 0.3, h * 0.85, w * 0.45, h * 0.98); c.stroke();
+  },
+  corona: (c, w, h) => {
+    c.fillStyle = '#E2B13C'; c.strokeStyle = TINTA; c.lineWidth = 4;
+    c.beginPath(); c.moveTo(w * 0.15, h * 0.8); c.lineTo(w * 0.12, h * 0.35); c.lineTo(w * 0.33, h * 0.55); c.lineTo(w / 2, h * 0.2); c.lineTo(w * 0.67, h * 0.55); c.lineTo(w * 0.88, h * 0.35); c.lineTo(w * 0.85, h * 0.8); c.closePath(); c.fill(); c.stroke();
+    c.fillStyle = '#D6382B'; for (const x of [w * 0.3, w / 2, w * 0.7]) { c.beginPath(); c.arc(x, h * 0.68, 5, 0, 7); c.fill(); c.stroke(); }
+  },
+  hornado: (c, w, h) => {
+    c.fillStyle = '#C8955A'; c.strokeStyle = TINTA; c.lineWidth = 4;
+    c.beginPath(); c.ellipse(w / 2, h * 0.7, w * 0.42, h * 0.16, 0, 0, 7); c.fill(); c.stroke();
+    c.fillStyle = '#D9A066'; c.beginPath(); c.ellipse(w / 2, h * 0.5, w * 0.3, h * 0.22, 0, 0, 7); c.fill(); c.stroke();
+    c.fillStyle = '#E8B98A'; c.beginPath(); c.ellipse(w * 0.72, h * 0.46, w * 0.12, h * 0.1, 0, 0, 7); c.fill(); c.stroke();
+    c.fillStyle = TINTA; c.beginPath(); c.arc(w * 0.76, h * 0.45, 2, 0, 7); c.arc(w * 0.8, h * 0.45, 2, 0, 7); c.fill();
+    c.fillStyle = '#F5C518'; for (const x of [w * 0.25, w * 0.4]) { c.beginPath(); c.arc(x, h * 0.72, 6, 0, 7); c.fill(); c.stroke(); }
+  },
+  capirote: (c, w, h) => {
+    c.fillStyle = '#5B2A86'; c.strokeStyle = TINTA; c.lineWidth = 4;
+    c.beginPath(); c.moveTo(w / 2, 6); c.lineTo(w * 0.8, h * 0.62); c.lineTo(w * 0.2, h * 0.62); c.closePath(); c.fill(); c.stroke();
+    c.fillRect(w * 0.26, h * 0.62, w * 0.48, h * 0.34); c.strokeRect(w * 0.26, h * 0.62, w * 0.48, h * 0.34);
+    c.fillStyle = TINTA; c.beginPath(); c.ellipse(w * 0.42, h * 0.5, 4, 6, 0, 0, 7); c.ellipse(w * 0.58, h * 0.5, 4, 6, 0, 0, 7); c.fill();
+  },
+  gallo: (c, w, h) => {
+    c.fillStyle = '#E2B13C'; c.strokeStyle = TINTA; c.lineWidth = 4;
+    c.beginPath(); c.ellipse(w * 0.46, h * 0.6, w * 0.28, h * 0.2, -0.3, 0, 7); c.fill(); c.stroke();
+    c.beginPath(); c.arc(w * 0.66, h * 0.32, w * 0.13, 0, 7); c.fill(); c.stroke();
+    c.fillStyle = '#D6382B'; c.beginPath(); c.moveTo(w * 0.58, h * 0.2); c.lineTo(w * 0.64, h * 0.08); c.lineTo(w * 0.7, h * 0.2); c.lineTo(w * 0.76, h * 0.1); c.lineTo(w * 0.78, h * 0.22); c.closePath(); c.fill(); c.stroke();
+    c.fillStyle = '#F5C518'; c.beginPath(); c.moveTo(w * 0.78, h * 0.33); c.lineTo(w * 0.92, h * 0.37); c.lineTo(w * 0.78, h * 0.41); c.closePath(); c.fill(); c.stroke();
+    c.fillStyle = '#1B5FAA'; c.beginPath(); c.moveTo(w * 0.2, h * 0.55); c.quadraticCurveTo(w * 0.02, h * 0.2, w * 0.18, h * 0.12); c.quadraticCurveTo(w * 0.3, h * 0.3, w * 0.3, h * 0.5); c.closePath(); c.fill(); c.stroke();
+    c.fillStyle = TINTA; c.beginPath(); c.arc(w * 0.68, h * 0.3, 2.5, 0, 7); c.fill();
+  },
+  chulla: (c, w, h) => {
+    c.fillStyle = '#2B2129'; c.strokeStyle = TINTA; c.lineWidth = 4;
+    c.beginPath(); c.ellipse(w / 2, h * 0.22, w * 0.3, h * 0.05, 0, 0, 7); c.fill(); c.stroke();
+    c.fillRect(w * 0.36, h * 0.06, w * 0.28, h * 0.16); c.strokeRect(w * 0.36, h * 0.06, w * 0.28, h * 0.16);
+    c.fillStyle = '#E8B98A'; c.beginPath(); c.arc(w / 2, h * 0.36, w * 0.13, 0, 7); c.fill(); c.stroke();
+    c.fillStyle = '#4A4A4A'; c.beginPath(); c.moveTo(w * 0.3, h * 0.52); c.lineTo(w * 0.7, h * 0.52); c.lineTo(w * 0.74, h * 0.95); c.lineTo(w * 0.26, h * 0.95); c.closePath(); c.fill(); c.stroke();
+    c.fillStyle = '#F3F1EC'; c.beginPath(); c.moveTo(w * 0.42, h * 0.52); c.lineTo(w * 0.58, h * 0.52); c.lineTo(w / 2, h * 0.72); c.closePath(); c.fill();
+    c.fillStyle = '#D6382B'; c.fillRect(w * 0.47, h * 0.54, w * 0.06, h * 0.16);
+    c.strokeStyle = TINTA; c.lineWidth = 3; c.beginPath(); c.moveTo(w * 0.72, h * 0.6); c.lineTo(w * 0.9, h * 0.9); c.stroke();
+  },
+  farol: (c, w, h) => {
+    c.strokeStyle = TINTA; c.lineWidth = 4; c.fillStyle = '#333';
+    c.beginPath(); c.moveTo(w / 2, h * 0.95); c.lineTo(w / 2, h * 0.3); c.stroke();
+    c.fillStyle = '#F5C518'; c.beginPath(); c.moveTo(w * 0.36, h * 0.12); c.lineTo(w * 0.64, h * 0.12); c.lineTo(w * 0.7, h * 0.42); c.lineTo(w * 0.3, h * 0.42); c.closePath(); c.fill(); c.stroke();
+    c.fillStyle = '#333'; c.beginPath(); c.moveTo(w * 0.3, h * 0.12); c.lineTo(w / 2, h * 0.02); c.lineTo(w * 0.7, h * 0.12); c.closePath(); c.fill(); c.stroke();
+    const halo = c.createRadialGradient(w / 2, h * 0.27, 4, w / 2, h * 0.27, 40); halo.addColorStop(0, 'rgba(255,230,120,.7)'); halo.addColorStop(1, 'rgba(255,230,120,0)');
+    c.fillStyle = halo; c.fillRect(0, 0, w, h);
+    c.fillStyle = '#F3F1EC'; c.fillRect(w * 0.44, h * 0.84, w * 0.12, h * 0.1);
+  },
+};
+const CROMOS = [
+  { id: 'virgen', nombre: 'La Virgen de Quito', desc: 'La única Virgen con alas: la del Panecillo, de aluminio y 41 metros.', pista: 'panecillo', zona: 'panecillo', d: 200, x: -2.2, fachada: 'virgen' },
+  { id: 'chulla', nombre: 'El Chulla Quiteño', desc: 'Terno, sombrero y bastón: el personaje de la canción y de la ciudad.', pista: 'panecillo', zona: 'ronda', d: 60, x: 1.8, icono: 'chulla' },
+  { id: 'farol', nombre: 'Los faroles de La Ronda', desc: 'La calle de los artesanos, con sus faroles encendidos en las Fiestas.', pista: 'panecillo', zona: 'garcia', d: 25, x: -1.9, icono: 'farol' },
+  { id: 'santuario', nombre: 'El santuario de Guápulo', desc: 'Del siglo XVII, al pie de la cuesta, mirando al valle.', pista: 'guapulo', zona: 'guapulo', d: 120, x: 2, fachada: 'santuario' },
+  { id: 'canelazo', nombre: 'El canelazo', desc: 'Naranjilla, canela y un chorro de puntas: lo que calienta la noche.', pista: 'guapulo', zona: 'mirador', d: 70, x: -1.6, icono: 'canelazo' },
+  { id: 'guagua', nombre: 'La guagua de pan', desc: 'El pan con forma de niño que se come en noviembre con la colada.', pista: 'guapulo', zona: 'guapulo', d: 280, x: -2.1, icono: 'guagua' },
+  { id: 'basilica', nombre: 'La Basílica del Voto Nacional', desc: 'Neogótica y con gárgolas de iguanas y tortugas, al norte del centro.', pista: 'sanjuan', zona: 'basilica', d: 30, x: 2.2, fachada: 'basilica' },
+  { id: 'colada', nombre: 'La colada morada', desc: 'Mora, mortiño, piña y harina de maíz negro: morada y espesa.', pista: 'sanjuan', zona: 'venezuela', d: 100, x: 1.7, fachada: 'colada' },
+  { id: 'chiva', nombre: 'La chiva', desc: 'El bus abierto, con banda arriba, que recorre la ciudad en las Fiestas.', pista: 'sanjuan', zona: 'rocafuerte', d: 110, x: -1.8, icono: 'chiva' },
+  { id: 'banderin', nombre: 'Los banderines', desc: 'Rojo y azul, los colores de Quito, cruzando las calles.', pista: 'vuelta', zona: 'panecillo', d: 100, x: 2.4, icono: 'banderin' },
+  { id: 'cometa', nombre: 'La cometa', desc: 'En agosto el Panecillo se llena de cometas; alguna queda para noviembre.', pista: 'vuelta', zona: 'mirador', d: 70, x: -2.4, icono: 'cometa' },
+  { id: 'hornado', nombre: 'El hornado', desc: 'Chancho entero al horno, con mote y agrio, en cualquier mercado.', pista: 'vuelta', zona: 'cumbre', d: 90, x: 2.2, icono: 'hornado' },
+  { id: 'capirote', nombre: 'El cucurucho', desc: 'El penitente morado de la procesión de Viernes Santo.', pista: 'subida', zona: 'subida', d: 60, x: 2.3, icono: 'capirote' },
+  { id: 'gallo', nombre: 'El Gallo de la Catedral', desc: 'La veleta de la Catedral que, según la leyenda, bajó a picotear a un borracho.', pista: 'subida', zona: 'subida', d: 160, x: -2.3, icono: 'gallo' },
+  { id: 'corona', nombre: 'La Reina de Quito', desc: 'Se elige cada noviembre desde 1955; la corona es lo de menos.', pista: 'subida', zona: 'cumbre', d: 25, x: 1.9, icono: 'corona' },
+  { id: 'cohete', nombre: 'Los fuegos artificiales', desc: 'La noche del 5 de diciembre el cielo de Quito se llena de luces.', pista: 'panecillo', zona: 'plaza', d: 10, x: 0, icono: 'cohete' },
+];
+const COLORES_PISTA = { panecillo: '#5B2A86', guapulo: '#1B5FAA', sanjuan: '#D6382B', vuelta: '#2E7D4F', subida: '#E8862C' };
+// La estampita dibujada: marco de color, el dibujo y el nombre abajo.
+const cromoCanvas = (cr) => lienzo(220, 300, (c, w, h) => {
+  const col = COLORES_PISTA[cr.pista] || '#5B2A86';
+  c.fillStyle = col; c.beginPath(); c.roundRect(0, 0, w, h, 16); c.fill();
+  c.fillStyle = '#FBF6E8'; c.beginPath(); c.roundRect(10, 10, w - 20, h - 20, 10); c.fill();
+  c.fillStyle = '#EFE6CF'; c.fillRect(18, 18, w - 36, h - 92);
+  c.strokeStyle = TINTA; c.lineWidth = 3; c.strokeRect(18, 18, w - 36, h - 92);
+  c.save(); c.beginPath(); c.rect(18, 18, w - 36, h - 92); c.clip();
+  if (cr.fachada) {
+    const f = { virgen, colada, torres, compania, catedral, palacio, basilica, santuario }[cr.fachada]();
+    const esc = Math.min((w - 52) / f.width, (h - 108) / f.height);
+    c.drawImage(f, w / 2 - f.width * esc / 2, 18 + (h - 92 - f.height * esc) / 2, f.width * esc, f.height * esc);
+  } else if (ICONOS[cr.icono]) {
+    c.translate(18 + (w - 36) / 2 - 55, 18 + (h - 92) / 2 - 55); ICONOS[cr.icono](c, 110, 110);
+  }
+  c.restore();
+  c.fillStyle = TINTA; c.font = '800 20px system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+  const palabras = cr.nombre.split(' '); const lineas = [];
+  let linea = '';
+  for (const p of palabras) { if (c.measureText(`${linea} ${p}`).width > w - 40 && linea) { lineas.push(linea); linea = p; } else linea = linea ? `${linea} ${p}` : p; }
+  lineas.push(linea);
+  lineas.forEach((l, k) => c.fillText(l, w / 2, h - 52 + (k - (lineas.length - 1) / 2) * 24));
+  c.fillStyle = col; c.font = '700 12px system-ui, sans-serif'; c.fillText('FIESTAS DE QUITO', w / 2, h - 18);
+});
+
 function textura(canvas, repite) {
   const t = new THREE.CanvasTexture(canvas);
   t.colorSpace = THREE.SRGBColorSpace;
@@ -1084,6 +1231,17 @@ function construyeDecorado(def) {
       obstaculos.push({ s, x, r: 0.4, largo: 0.5, tipo: 'colada', sp, base: sp.position.y });
     }
   }
+  // Las estampitas de esta pista, flotando y girando a un lado de la calle.
+  // Las que ya están en el álbum se ven apagadas.
+  for (const cr of CROMOS) {
+    if (cr.pista !== def.id) continue;
+    const s = enZona(cr.zona, cr.d);
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(0.75, 1.02), new THREE.MeshBasicMaterial({ map: textura(cromoCanvas(cr)), side: THREE.DoubleSide, transparent: true }));
+    m.position.copy(punto(s, cr.x, 1.05));
+    if (prog.album.includes(cr.id)) m.material.opacity = 0.35;
+    mundo.add(m);
+    obstaculos.push({ s, x: cr.x, r: 0.5, largo: 0.7, tipo: 'cromo', id: cr.id, mesh: m, base: m.position.y });
+  }
   // En un circuito, lo que hay en la calle está en cada vuelta: mismas
   // piezas, otro metro.
   if (LARGO_VUELTA) {
@@ -1535,6 +1693,7 @@ let peatones = [];
 let estado = 'cargando';      // cargando · titulo · menu · elegir · cuenta · carrera · llegada · pausa · premio · podio
 let antes = 'carrera';
 const foto = { s: 0, x: 0, h: 2, giro: 0 };
+const cromosNuevos = [];
 let reloj = 0, cuenta = 0, tLlegada = 0, zonaActual = '', sacudida = 0, tPeaton = 0, llegadaVista = false, vueltaActual = 1;
 const vueltaDe = (s) => LARGO_VUELTA ? limita(Math.floor((s - SALIDA) / LARGO_VUELTA) + 1, 1, pistaActual.vueltas) : 1;
 const teclas = { izq: false, der: false, empuja: false, freno: false };
@@ -1543,7 +1702,8 @@ let cocheJ, carros = [], eqJ;
 const ST = { tope: 1, empuje: 1, giro: 1 };
 
 function reinicia() {
-  for (const o of obstaculos) { o.tomada = false; o.golpe = -9; if (o.sp) o.sp.visible = true; }
+  for (const o of obstaculos) { o.tomada = false; o.golpe = -9; if (o.sp) o.sp.visible = true; if (o.mesh) { o.mesh.visible = true; o.mesh.material.opacity = prog.album.includes(o.id) ? 0.35 : 1; } }
+  cromosNuevos.length = 0;
   const grilla = (k) => ({ x: k % 2 ? 1.3 : -1.3, s: SALIDA - 2 - Math.floor(k / 2) * 4.5 - (k % 2) * 1.6 });
   // El jugador sale último, como en todo kart que se respete.
   rivales.forEach((rv, k) => {
@@ -1766,7 +1926,13 @@ function actualiza(dt) {
       if (o.s > j.s + 2) break;
       if (o.tomada || Math.abs(o.s - j.s) > (o.largo || 0.6)) continue;
       const dx = Math.abs(o.x - j.x);
-      if (o.tipo === 'colada' && dx < 0.8 && !j.aire) {
+      if (o.tipo === 'cromo' && dx < 1.0) {
+        o.tomada = true; o.mesh.visible = false;
+        const cr = CROMOS.find((q) => q.id === o.id);
+        if (!prog.album.includes(o.id)) { prog.album.push(o.id); cromosNuevos.push(o.id); guarda(); }
+        avisa(`¡Estampita: ${cr.nombre}!`, 1400);
+        jingle([784, 988, 1175, 1568], 0.07, 'triangle');
+      } else if (o.tipo === 'colada' && dx < 0.8 && !j.aire) {
         o.tomada = true; if (!LARGO_VUELTA) o.sp.visible = false; j.turbo = 1.6;
         tono(660, 0.12, 'triangle', 0.2); setTimeout(() => tono(990, 0.18, 'triangle', 0.2), 90);
         avisa('¡Colada morada!', 900);
@@ -1794,7 +1960,11 @@ function actualiza(dt) {
   actualizaPeatones(dt);
 
   sacudida = Math.max(0, sacudida - dt * 2.4);
-  for (const o of obstaculos) if (o.sp && o.sp.visible && Math.abs(o.s - j.s) < 120) o.sp.position.y = o.base + Math.sin(reloj * 4 + o.s) * 0.12;
+  for (const o of obstaculos) {
+    if (Math.abs(o.s - j.s) > 120) continue;
+    if (o.sp && o.sp.visible) o.sp.position.y = o.base + Math.sin(reloj * 4 + o.s) * 0.12;
+    if (o.mesh && o.mesh.visible) { o.mesh.position.y = o.base + Math.sin(reloj * 3 + o.s) * 0.1; o.mesh.rotation.y = reloj * 2.2; }
+  }
 
   if (estado === 'carrera' && j.s >= META) {
     j.llegada = reloj; estado = 'llegada'; tLlegada = 0;
@@ -2085,7 +2255,7 @@ function pintaHud() {
 // pista, las pistas que ya se corrieron, las parejas abiertas y el mejor
 // puesto en la Copa.
 const GUARDA = 'coches3d-progreso';
-const progresoBase = () => ({ medallas: {}, records: {}, parejas: ['cucuruchos', 'guarichas'], pistas: ['panecillo'], copa: 0 });
+const progresoBase = () => ({ medallas: {}, records: {}, parejas: ['cucuruchos', 'guarichas'], pistas: ['panecillo'], copa: 0, album: [] });
 let prog = progresoBase();
 try { const p = JSON.parse(localStorage.getItem(GUARDA) || 'null'); if (p) prog = Object.assign(progresoBase(), p); } catch (err) { /* sin almacenamiento */ }
 const guarda = () => { try { localStorage.setItem(GUARDA, JSON.stringify(prog)); } catch (err) { /* sin almacenamiento */ } };
@@ -2227,6 +2397,16 @@ function trasCarrera() {
       copa = null; modo = 'suelta';
     }
   }
+  // Las estampitas nuevas.
+  for (const id of cromosNuevos) {
+    const cr = CROMOS.find((q) => q.id === id);
+    premios.push({
+      disco: `<img src="${cromoCanvas(cr).toDataURL()}" width="110" height="150" alt="" style="border-radius:8px">`,
+      kicker: `Estampita ${prog.album.length} de ${CROMOS.length}`,
+      nombre: cr.nombre,
+      desc: cr.desc,
+    });
+  }
   // Lo que se abre.
   for (const d of DESBLOQUEOS) {
     if (abierta(d.tipo, d.id) || !d.cuando(prog)) continue;
@@ -2316,7 +2496,7 @@ function sigueCopa() {
 }
 
 // ─── las pantallas ─────────────────────────────────────────────────
-const CAPAS = ['titulo', 'portada', 'ayuda', 'elegir', 'medallas', 'copa', 'pausa', 'podio'];
+const CAPAS = ['titulo', 'portada', 'ayuda', 'elegir', 'medallas', 'album', 'copa', 'pausa', 'podio'];
 function pantalla(id, sinCortina) {
   for (const p of CAPAS) $('#' + p).hidden = p !== id;
   $('#premio').hidden = true;
@@ -2379,7 +2559,7 @@ function dibujaMapa() {
 function pintaPortada() {
   const medallas = PISTAS.filter((q) => prog.medallas[q.id] <= 3).length;
   const copaTxt = prog.copa ? ` · en la Copa: ${prog.copa}.º` : '';
-  $('#progreso').textContent = `Medallas: ${medallas} de ${PISTAS.length} · parejas: ${prog.parejas.length} de ${EQUIPOS.length}${copaTxt}`;
+  $('#progreso').textContent = `Medallas: ${medallas} de ${PISTAS.length} · parejas: ${prog.parejas.length} de ${EQUIPOS.length} · estampitas: ${prog.album.length} de ${CROMOS.length}${copaTxt}`;
 }
 function abreElegir() {
   const id = modo === 'copa' ? COPA[copa.k] : pistaSuelta;
@@ -2420,6 +2600,34 @@ function pintaElegir() {
   }
   const actual = PISTAS.find((q) => q.id === pistaSuelta);
   if (!enCopa) { $('#pista-lema').textContent = actual.lema; dibujaMapa(); }
+}
+// El álbum: todas las estampitas, las que faltan en sombra con una pista.
+function pintaAlbum() {
+  const caja = $('#album-lista');
+  caja.textContent = '';
+  for (const cr of CROMOS) {
+    const li = document.createElement('li');
+    const tiene = prog.album.includes(cr.id);
+    li.className = tiene ? 'coches-cromo' : 'coches-cromo is-cerrada';
+    const pista = PISTAS.find((p) => p.id === cr.pista);
+    if (tiene) {
+      const c = cromoCanvas(cr); c.setAttribute('role', 'img'); c.setAttribute('aria-label', cr.nombre);
+      li.append(c);
+    } else {
+      const c = lienzo(220, 300, (g, w, h) => {
+        g.fillStyle = '#2A2140'; g.beginPath(); g.roundRect(0, 0, w, h, 16); g.fill();
+        g.fillStyle = 'rgba(255,255,255,.08)'; g.beginPath(); g.roundRect(10, 10, w - 20, h - 20, 10); g.fill();
+        g.fillStyle = 'rgba(255,255,255,.35)'; g.font = '800 96px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('?', w / 2, h / 2 - 10);
+      });
+      li.append(c);
+    }
+    const p = document.createElement('p'); p.className = 'caption';
+    p.textContent = tiene ? cr.desc : `Está en ${pista ? pista.nombre : cr.pista}, por ${ZONAS[cr.zona].nombre}.`;
+    const b = document.createElement('b'); b.textContent = tiene ? cr.nombre : '¿?';
+    li.append(b, p);
+    caja.append(li);
+  }
+  $('#album-cuenta').textContent = `${prog.album.length} de ${CROMOS.length}`;
 }
 function pintaMedallas() {
   const ul = $('#lista-pistas');
@@ -2532,6 +2740,8 @@ $('#b-copa').addEventListener('click', () => {
 });
 $('#b-suelta').addEventListener('click', () => { modo = 'suelta'; abreElegir(); });
 $('#b-medallas').addEventListener('click', () => { pintaMedallas(); pantalla('medallas'); $('#b-volver-medallas').focus({ preventScroll: true }); });
+$('#b-album').addEventListener('click', () => { pintaAlbum(); pantalla('album'); $('#b-volver-album').focus({ preventScroll: true }); });
+$('#b-volver-album').addEventListener('click', aMenu);
 $('#b-ayuda').addEventListener('click', () => { pantalla('ayuda'); $('#b-volver-ayuda').focus({ preventScroll: true }); });
 $('#b-volver-ayuda').addEventListener('click', aMenu);
 $('#titulo').addEventListener('click', desdeTitulo);
@@ -2701,7 +2911,7 @@ async function carga() {
   eqJ = EQUIPOS.find((q) => q.id === (abierta('pareja', guardada) ? guardada : prog.parejas[0]));
   cargaPista('panecillo');
   eligePareja(eqJ.id);
-  for (const id of ['b-copa', 'b-suelta', 'b-medallas']) $('#' + id).disabled = false;
+  for (const id of ['b-copa', 'b-suelta', 'b-medallas', 'b-album']) $('#' + id).disabled = false;
   texto.textContent = tactilMQ.matches ? 'Toca para empezar' : 'Pulsa una tecla';
   $('#start').classList.add('is-lista');
   aTitulo();
@@ -2733,7 +2943,7 @@ window.coches = {
   vuelta: () => vueltaActual, largoVuelta: () => LARGO_VUELTA, mapa: dibujaMapa,
   camaraEn: (s, x, h, giro, mira) => { Object.assign(foto, { s, x, h, giro: giro || 0, mira: mira || null }); pantalla(null, true); estado = 'foto'; },
   punto: (s, x, h) => punto(s, x, h).toArray(),
-  progreso: () => prog,
+  progreso: () => prog, album: () => prog.album.slice(), cromos: () => CROMOS.map((c) => ({ id: c.id, pista: c.pista })),
   copa: () => copa,
   peatones: () => peatones.filter((p) => p.estado !== 'libre').map((p) => ({ estado: p.estado, ds: +(p.s - j.s).toFixed(1), x: +p.x.toFixed(1) })),
   simula: (seg, piloto) => { for (let k = 0; k < seg * 60; k++) { if (piloto) piloto(); actualiza(PASO); } },

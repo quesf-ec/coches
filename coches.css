@@ -133,6 +133,15 @@ body.coches{
 @keyframes coches-parpadeo{to{visibility:hidden}}
 .coches-pie-titulo{margin:0;font-size:var(--mal-t-micro);opacity:.8}
 
+/* El álbum: una cuadrícula de estampitas; las que faltan, en sombra. */
+.coches-panel--ancho{width:min(100%, 640px)}
+.coches-album{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill, minmax(118px, 1fr));gap:var(--mal-e3)}
+.coches-cromo{display:grid;gap:4px;justify-items:center;text-align:center}
+.coches-cromo canvas{width:110px;height:150px;border-radius:8px;box-shadow:0 4px 0 rgba(0,0,0,.35)}
+.coches-cromo b{font-size:var(--mal-t-caption)}
+.coches-cromo .caption{margin:0;font-size:var(--mal-t-mini);line-height:1.3}
+.coches-cromo.is-cerrada canvas{opacity:.8}
+
 /* El mapa de la pista, junto a su descripción. */
 .coches-pista{display:grid;grid-template-columns:120px 1fr;gap:var(--mal-e3);align-items:center}
 .coches-mapa{width:120px;height:84px;display:block}
