@@ -1891,7 +1891,7 @@ function reinicia() {
   if (fantasma.coche) { fantasma.coche.g.visible = false; fantasma.coche.conductor.obj.visible = false; fantasma.coche.empujador.obj.visible = false; }
   fantasma.datos = null;
   if (solo && pistaActual) {
-    try { fantasma.datos = JSON.parse(localStorage.getItem(fantasmaClave(pistaActual.id)) || 'null'); } catch (err) { /* sin almacenamiento */ }
+    try { if (prog.records[pistaActual.id]) fantasma.datos = JSON.parse(localStorage.getItem(fantasmaClave(pistaActual.id)) || 'null'); } catch (err) { /* sin almacenamiento */ }
     if (fantasma.datos && fantasma.datos.length > 2) {
       if (!fantasma.coche) fantasma.coche = construyeFantasma(eqJ);
       fantasma.coche.g.visible = true; fantasma.coche.conductor.obj.visible = true; fantasma.coche.empujador.obj.visible = true;
@@ -2559,6 +2559,8 @@ const GUARDA = 'coches3d-progreso';
 const progresoBase = () => ({ medallas: {}, records: {}, parejas: ['cucuruchos', 'guarichas'], pistas: ['panecillo'], copa: 0, copas: {}, album: [], pinturas: ['madera'], pintura: 'madera' });
 let prog = progresoBase();
 try { const p = JSON.parse(localStorage.getItem(GUARDA) || 'null'); if (p) prog = Object.assign(progresoBase(), p); } catch (err) { /* sin almacenamiento */ }
+// Guardados de antes de que hubiera varias copas.
+if (prog.copa && !prog.copas.fiestas) prog.copas.fiestas = prog.copa;
 const guarda = () => { try { localStorage.setItem(GUARDA, JSON.stringify(prog)); } catch (err) { /* sin almacenamiento */ } };
 
 // Qué se gana y cómo. Las pistas de la Copa se abren para la carrera suelta
@@ -2567,6 +2569,7 @@ const DESBLOQUEOS = [
   { tipo: 'pareja', id: 'cantuna', cuando: (p) => p.medallas.panecillo <= 3, como: 'una medalla en La bajada del Panecillo' },
   { tipo: 'pareja', id: 'gallo', cuando: (p) => p.medallas.guapulo <= 3, como: 'una medalla en La cuesta de Guápulo' },
   { tipo: 'pareja', id: 'mamanegra', cuando: (p) => p.medallas.sanjuan <= 3, como: 'una medalla en La bajada de San Juan' },
+  { tipo: 'pista', id: 'vuelta', cuando: (p) => p.copa >= 1, como: 'terminar la Copa de las Fiestas' },
   { tipo: 'pista', id: 'subida', cuando: (p) => p.copa === 1, como: 'ganar la Copa de las Fiestas' },
   { tipo: 'pintura', id: 'fiesta', cuando: (p) => p.album.length >= 4, como: 'cuatro estampitas' },
   { tipo: 'pintura', id: 'anil', cuando: (p) => p.album.length >= 9, como: 'nueve estampitas' },
@@ -2713,15 +2716,15 @@ function trasCarrera() {
     }
   }
   // Las estampitas nuevas.
-  for (const id of cromosNuevos) {
+  cromosNuevos.forEach((id, k) => {
     const cr = CROMOS.find((q) => q.id === id);
     premios.push({
       disco: `<img src="${cromoCanvas(cr).toDataURL()}" width="110" height="150" alt="" style="border-radius:8px">`,
-      kicker: `Estampita ${prog.album.length} de ${CROMOS.length}`,
+      kicker: `Estampita ${prog.album.length - cromosNuevos.length + k + 1} de ${CROMOS.length}`,
       nombre: cr.nombre,
       desc: cr.desc,
     });
-  }
+  });
   // Lo que se abre.
   for (const d of DESBLOQUEOS) {
     if (abierta(d.tipo, d.id) || !d.cuando(prog)) continue;
@@ -2805,10 +2808,10 @@ function trasContrarreloj(def) {
       : `${formato(j.llegada)}: ${formato(dif)} más que el récord (${formato(antes)}).`,
     lista: [{ texto: 'Este tiempo', valor: formato(j.llegada), tu: true }, { texto: 'El récord', valor: formato(prog.records[def.id]) }],
   }];
-  for (const id of cromosNuevos) {
+  cromosNuevos.forEach((id, k) => {
     const cr = CROMOS.find((q) => q.id === id);
-    premios.push({ disco: `<img src="${cromoCanvas(cr).toDataURL()}" width="110" height="150" alt="" style="border-radius:8px">`, kicker: `Estampita ${prog.album.length} de ${CROMOS.length}`, nombre: cr.nombre, desc: cr.desc });
-  }
+    premios.push({ disco: `<img src="${cromoCanvas(cr).toDataURL()}" width="110" height="150" alt="" style="border-radius:8px">`, kicker: `Estampita ${prog.album.length - cromosNuevos.length + k + 1} de ${CROMOS.length}`, nombre: cr.nombre, desc: cr.desc });
+  });
   for (const d of DESBLOQUEOS) {
     if (abierta(d.tipo, d.id) || !d.cuando(prog)) continue;
     listaDe(d.tipo).push(d.id);
@@ -2862,7 +2865,7 @@ function cortina() {
   el.classList.remove('is-on'); void el.offsetWidth; el.classList.add('is-on');
 }
 // La pantalla de título: pulsa start.
-let demoTimer = null;
+let demoTimer = null, demoAntes = null;
 function aTitulo() {
   estado = 'titulo';
   modo = 'suelta'; copa = null;
@@ -2877,9 +2880,10 @@ function empiezaDemo() {
   if (estado !== 'titulo') return;
   const r = azar(Math.floor(performance.now()));
   const pista = elige(r, PISTAS);
+  demoAntes = eqJ;
+  modo = 'demo';
   cargaPista(pista.id);
   eligePareja(elige(r, EQUIPOS).id);
-  modo = 'demo';
   empieza();
   $('#mandos').hidden = true;
   $('#demo').hidden = false;
@@ -2889,6 +2893,9 @@ function terminaDemo() {
   $('#demo').hidden = true;
   for (const k in teclas) teclas[k] = false;
   if (son.ctx) son.ctx.resume();
+  modo = 'suelta';
+  // La pareja del jugador vuelve a ser la suya.
+  if (demoAntes) { cargaPista(pistaSuelta); eligePareja(demoAntes.id); }
   aTitulo();
 }
 // El piloto de la demo: mira la curva que viene, esquiva lo que hay en la
@@ -3090,7 +3097,7 @@ function eligePareja(id) {
   // En la parrilla, los de atrás están listos para empujar.
   for (const cc of carros) { cc.cruce.conductor.pon('montado', { fundido: 0 }); cc.cruce.empujador.pon('correr', { fundido: 0 }); }
   Object.assign(e, { estado: 'empujando' });
-  try { localStorage.setItem('coches3d-pareja', id); } catch (err) { /* sin almacenamiento */ }
+  if (modo !== 'demo') try { localStorage.setItem('coches3d-pareja', id); } catch (err) { /* sin almacenamiento */ }
   for (const b of document.querySelectorAll('#parejas .chip')) b.setAttribute('aria-checked', String(b.dataset.id === id));
   $('#pareja-nombre').textContent = eqJ.nombre;
   $('#pareja-lema').textContent = eqJ.lema;
@@ -3217,7 +3224,8 @@ $('#b-borrar').addEventListener('click', (ev) => {
   const b = ev.currentTarget;
   if (b.dataset.seguro !== '1') { b.dataset.seguro = '1'; b.querySelector('span').textContent = '¿Seguro? Toca otra vez'; return; }
   prog = progresoBase(); guarda();
-  try { localStorage.removeItem('coches3d-pareja'); } catch (err) { /* sin almacenamiento */ }
+  try { localStorage.removeItem('coches3d-pareja'); for (const q of PISTAS) localStorage.removeItem(fantasmaClave(q.id)); } catch (err) { /* sin almacenamiento */ }
+  fantasma.datos = null;
   eligePareja(prog.parejas[0]); pistaSuelta = 'panecillo';
   b.dataset.seguro = ''; b.querySelector('span').textContent = 'Progreso borrado';
   pintaPortada();

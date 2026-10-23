@@ -156,6 +156,7 @@ body.pixel #pista{image-rendering:pixelated;image-rendering:crisp-edges}
 /* En el teléfono de lado, el menú en dos columnas. */
 @media (orientation:landscape) and (max-height:600px){
   .coches-opciones{grid-template-columns:1fr 1fr}
+  .coches-opciones .btn{font-size:.95rem;padding-inline:var(--mal-e3);min-height:46px}
   .coches-opciones .btn:first-child{grid-column:1 / -1}
   .coches-opciones .btn:nth-child(2){grid-column:1 / -1}
 }
