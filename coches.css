@@ -114,7 +114,50 @@ body.coches{
 .coches-capa{position:fixed;inset:0;z-index:30;display:grid;place-items:center;padding:var(--mal-e4);
   background:linear-gradient(to bottom, rgba(20,16,24,.05), rgba(20,16,24,.45))}
 .coches-capa[hidden]{display:none}
-.coches-panel{width:min(100%, 400px);padding:var(--mal-e5);max-height:calc(100dvh - 2rem);overflow:auto}
+.coches-panel{width:min(100%, 400px);padding:var(--mal-e5);max-height:calc(100dvh - 2rem);overflow:auto;
+  display:flex;flex-direction:column;gap:var(--mal-e4)}
+.coches-opciones{display:grid;gap:var(--mal-e2)}
+.coches-banner{margin:0}
+
+/* ─── la pantalla de título ───────────────────────────────────
+   El logo en el centro, «pulsa start» parpadeando debajo y el pie
+   abajo del todo, como en la consola. */
+.coches-capa--titulo{grid-template-rows:1fr auto auto;place-items:center;gap:var(--mal-e4);cursor:pointer;
+  padding-bottom:calc(env(safe-area-inset-bottom, 0px) + var(--mal-e4))}
+.coches-logo{text-align:center;align-self:end;display:grid;gap:var(--mal-e1)}
+.coches-logo__nombre{margin:0;font-size:clamp(2.6rem, 1.5rem + 7vw, 6.5rem);line-height:.92}
+.coches-logo__nombre span{display:block}
+.coches-logo__arriba,.coches-logo__abajo{margin:0}
+.coches-start{margin:0;text-align:center}
+.coches-start.is-lista span{animation:coches-parpadeo 1.1s steps(2, start) infinite}
+@keyframes coches-parpadeo{to{visibility:hidden}}
+.coches-pie-titulo{margin:0;font-size:var(--mal-t-micro);opacity:.8}
+
+/* El mapa de la pista, junto a su descripción. */
+.coches-pista{display:grid;grid-template-columns:120px 1fr;gap:var(--mal-e3);align-items:center}
+.coches-mapa{width:120px;height:84px;display:block}
+.coches-pista .caption{margin:0}
+
+/* El podio: título arriba, los tres nombres abajo, y la escena entre medio. */
+.coches-capa--podio{grid-template-rows:auto 1fr auto;cursor:pointer;background:none}
+.coches-podio-cab{text-align:center;display:grid;gap:var(--mal-e1);justify-items:center}
+.coches-podio-titulo{font-size:clamp(2.2rem, 1.4rem + 5vw, 4.5rem)}
+.coches-podio-nombres{list-style:none;margin:0;padding:0;display:flex;gap:var(--mal-e3);flex-wrap:wrap;justify-content:center;align-self:end}
+.coches-podio-nombres li{display:grid;grid-template-columns:auto 1fr;gap:0 var(--mal-e2);align-items:center}
+.coches-podio-nombres li b{grid-row:span 2;font-size:1.8rem;line-height:1}
+.coches-podio-nombres li em{font-style:normal;font-size:var(--mal-t-micro)}
+
+/* La cortina: un barrido en diagonal que tapa y destapa. */
+.coches-cortina{position:fixed;inset:-20%;z-index:55;pointer-events:none;visibility:hidden;
+  background:#1D1822;clip-path:polygon(0 0, 0 0, 0 100%, 0 100%)}
+.coches-cortina.is-on{visibility:visible;animation:coches-barrido .55s linear both}
+@keyframes coches-barrido{
+  0%{clip-path:polygon(0 0, 0 0, 0 100%, 0 100%)}
+  45%{clip-path:polygon(0 0, 100% 0, 100% 100%, 0 100%)}
+  55%{clip-path:polygon(0 0, 100% 0, 100% 100%, 0 100%)}
+  100%{clip-path:polygon(100% 0, 100% 0, 100% 100%, 100% 100%)}
+}
+@media (prefers-reduced-motion:reduce){.coches-cortina.is-on{animation:none;visibility:hidden}.coches-start.is-lista span{animation:none}}
 .coches-titulo{font-size:clamp(2rem, 1.4rem + 3vw, 2.8rem);line-height:1.02;margin:0}
 .coches-teclas{display:grid;gap:var(--mal-e1);margin:0;font-size:var(--mal-t-caption)}
 .coches-teclas div{display:grid;grid-template-columns:7.5em 1fr;gap:var(--mal-e2);align-items:baseline}
@@ -189,7 +232,9 @@ body.coches{
   .coches-capa .coches-panel{width:min(52vw, 420px);max-height:calc(100dvh - 1.5rem);overflow:auto;padding:var(--mal-e4)}
   .coches-titulo{font-size:1.6rem}
   .coches-subtitulo{font-size:1.15rem}
-  .coches-capa .coches-panel.pila{gap:var(--mal-e2)}
+  .coches-capa .coches-panel{gap:var(--mal-e2)}
+  .coches-logo__nombre{font-size:2.8rem}
+  .coches-capa--titulo{gap:var(--mal-e2)}
   .coches-stats{gap:2px}
   .coches-teclas{font-size:var(--mal-t-micro)}
   /* La carrera, más apretada: el HUD a ras de los bordes. */

@@ -1,9 +1,11 @@
 # La piel de Coches de madera
 
 Variante del tema `juegos` de [mal-ds](../../ds/). No es un sistema aparte:
-hereda todo `mal.css` —roles, escala, componentes— y cambia solo lo que
-hace falta para que el juego parezca hecho de lo mismo que su mundo:
-**madera, cal y pintura de fiesta**.
+hereda todo `mal.css` —roles, escala, componentes— y le cambia la piel para
+que parezca un juego de karts de PlayStation (Crash Team Racing, Sonic R):
+letras gordas, amarillas y en cursiva con contorno de tinta; paneles azul
+noche un poco torcidos; botones naranja que brillan al elegirlos; rayos
+detrás de todo lo que se gana.
 
 ```html
 <html lang="es" data-marca="juegos" data-variante="coches" data-tema="claro">
@@ -12,54 +14,46 @@ hace falta para que el juego parezca hecho de lo mismo que su mundo:
 <link rel="stylesheet" href="tema/tema.css">     <!-- la piel: va al final -->
 ```
 
-`data-tema="claro"` es parte del trato: la carrera es de día y la variante
-no tiene versión oscura.
+`data-tema="claro"` porque el mundo 3D es de día; los paneles son oscuros
+por decisión propia, no por el tema del sistema.
 
 ## Qué cambia
 
 | Capa | En `juegos` | En `coches` |
 |---|---|---|
-| Marca | rosa mexicano y talavera, en degradado holográfico | rojo y azul de las banderitas de las Fiestas, pintados sobre madera |
-| Fondo y superficies | crema y blanco | cal de las fachadas (`#FFF8EA`) y cal tostada |
-| Tinta | `#2b2129` | `#2A2118`, la del contorno de los dibujos del juego |
-| Display | Syne 800 | **Lilita One**: gorda, redonda, se lee en movimiento |
-| Rótulos | JetBrains Mono | **Bungee**: letra de letrero pintado |
+| Marca | rosa mexicano y talavera, en degradado holográfico | naranja con brillo arriba; azul para lo secundario; amarillo para lo elegido |
+| Superficies | crema y blanco | azul noche con rayas diagonales casi invisibles |
+| Tinta | `#2b2129` | `#180D3A`: el contorno de todas las letras |
+| Display | Syne 800 | **Bangers**: cómic y kart, siempre en mayúsculas y con contorno |
+| Rótulos | JetBrains Mono | **Bungee**: letra de letrero |
 | Texto | Inter | Inter (igual) |
-| Forma | radio ×1,3, borde 2 px | radio ×0,6, borde de tinta de 3 px: tablas, no plástico |
-| Sombra | dura, en rosa | dura, en tinta: la tabla se hunde hasta ella al pulsar |
-
-## Los materiales
-
-Todo sale de tres variables, sin una sola imagen:
-
-- `--madera` y `--madera-media`: la veta son dos rayados de periodo
-  distinto (para que no se vea la repetición) sobre el color de la tabla
-  del coche (`#C8955A`).
-- `--rodaja`: un tronco cortado, anillos con `repeating-radial-gradient`.
-  Es el disco del premio.
-- `--banderitas`: las banderas que cruzan la calle, cuatro conos con
-  `conic-gradient`. Van en el `kicker` y arriba de la portada.
-- `--clavo`: los cuatro clavos del letrero, como fondo, para que no se
-  muevan cuando el panel hace scroll.
+| Forma | radio ×1,3, borde 2 px | borde de tinta de 3 px, todo inclinado (`skewX(-6deg)`) y los paneles girados −1,2° |
+| Sombra | dura, en rosa | dura, en tinta: el botón se hunde hasta ella al pulsar |
 
 ## Las piezas
 
-- **Letrero** (`.coches-panel`): papel de cal en un marco de madera con
-  cuatro clavos.
-- **Botones**: tablas de madera clara; el de arrancar, pintado de rojo.
-- **Fichas**: etiquetas de cal; la elegida, pintada de azul (el rojo queda
-  para el botón que arranca); las cerradas, con raya discontinua.
-- **Cualidades** (`.medidor`): tacos de madera llenos de ocre.
-- **Premio**: rayos rojos y azules y una rodaja de tronco de disco.
-- **HUD**: cifras en Lilita con borde de tinta, etiquetas en Bungee, el
-  carril de la carrera de madera y los mandos como perillas.
-- **Cuenta atrás**: 3 en rojo, 2 en ocre, 1 en azul y «¡A bajar!» en verde.
+- **Pantalla de título**: el logo con degradado amarillo‑naranja y contorno
+  (por `background-clip:text` + `drop-shadow`), «pulsa una tecla» parpadeando
+  y el pie, sobre el sobrevuelo de la pista.
+- **Panel**: caja de noche, girada, con el banderín naranja del título
+  colgando por encima del borde. El scroll lo hace la capa, no el panel,
+  para que el banderín sobresalga.
+- **Botones**: inclinados; el que arranca, naranja; el resto, azul. Al
+  elegirlos con el teclado, un triángulo amarillo late a su izquierda.
+- **Fichas**: azules; la elegida, amarilla; las cerradas, a rayas.
+- **Cualidades**: tacos de cian inclinados.
+- **Premio**: rayos amarillos sobre morado y un disco de oro.
+- **Podio**: los tres primeros sobre tarjetas de noche; el tuyo, amarillo.
+- **HUD**: el puesto enorme con «º», el tiempo en una píldora de tinta, la
+  velocidad y las etiquetas inclinadas; los mandos, discos azules y uno
+  naranja.
+- **Cuenta atrás**: 3 rojo, 2 amarillo, 1 verde y «¡A bajar!» cian.
 
 ## Las fuentes
 
 En `fuentes/`, subconjunto latin de Google Fonts, con su licencia al lado:
 
-- Lilita One, de Juan Montoreano — SIL Open Font License 1.1.
+- Bangers, de Vernon Adams — SIL Open Font License 1.1.
 - Bungee, de David Jonathan Ross — SIL Open Font License 1.1.
 
-Bungee no trae flechas: donde hay teclas (← →) se queda Inter.
+Ninguna de las dos trae flechas: donde hay teclas (← →) se queda Inter.

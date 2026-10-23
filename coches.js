@@ -1401,7 +1401,7 @@ const e = {};          // su empujador
 const c = {};          // su conductor, cuando sale volando
 let rivales = [];
 let peatones = [];
-let estado = 'cargando';      // cargando · menu · elegir · cuenta · carrera · llegada · pausa · premio
+let estado = 'cargando';      // cargando · titulo · menu · elegir · cuenta · carrera · llegada · pausa · premio · podio
 let antes = 'carrera';
 let reloj = 0, cuenta = 0, tLlegada = 0, zonaActual = '', sacudida = 0, tPeaton = 0, llegadaVista = false;
 const teclas = { izq: false, der: false, empuja: false, freno: false };
@@ -2018,8 +2018,8 @@ function muestraPremio(p) {
   for (const id of ['portada', 'elegir', 'medallas', 'copa', 'pausa']) $('#' + id).hidden = true;
   $('#hud').hidden = true; $('#mandos').hidden = true;
   $('#premio').hidden = false;
-  $('#premio').focus();
-  tono(660, 0.12, 'triangle', 0.15);
+  $('#premio').focus({ preventScroll: true });
+  if (p.fanfarria) jingle(FANFARRIA, 0.11); else jingle([660, 880], 0.1, 'triangle');
 }
 function siguientePremio() {
   const p = colaPremios.shift();
@@ -2054,6 +2054,7 @@ function trasCarrera() {
   if (!prog.pistas.includes(def.id)) prog.pistas.push(def.id);
   const premios = [{
     disco: p <= 3 ? SVG.medalla(p) : SVG.coche(),
+    fanfarria: p <= 3,
     kicker: `${def.nombre} · ${recordNuevo ? '¡récord nuevo!' : `récord ${formato(record)}`}`,
     nombre: PUESTOS[p - 1],
     desc: `${def.premio ? 'Subieron' : 'Bajaron'} en ${formato(j.llegada)}. ${FRASES[p - 1]}`,
@@ -2078,7 +2079,7 @@ function trasCarrera() {
         creditos: true,
         pie: 'Toca para seguir',
       });
-      despues = aMenu;
+      despues = () => muestraPodio(tabla);
       copa = null; modo = 'suelta';
     }
   }
@@ -2098,6 +2099,49 @@ function trasCarrera() {
   colaPremios = premios;
   trasPremios = despues;
   siguientePremio();
+}
+
+// ─── el podio ──────────────────────────────────────────────────────
+// Al acabar la Copa, los tres primeros posan en la meta con la gente
+// saltando, y la cámara les da la vuelta. Los otros dos miran de lejos.
+let podioS = 0;
+function muestraPodio(tabla) {
+  estado = 'podio';
+  podioS = META - 7;
+  const sitio = [[0, 0], [-1.9, -2.6], [1.9, -3.4], [-1.2, -14], [1.4, -16]];
+  tabla.forEach((f, k) => {
+    const [x, ds] = sitio[k];
+    if (f.id === eqJ.id) { Object.assign(j, { s: podioS + ds, x, v: 0, volcado: 0, aire: false, h: 0, giro: 0 }); Object.assign(e, { estado: 'a_bordo' }); Object.assign(c, { suelto: false }); }
+    else { const rv = rivales.find((r) => r.cruce.eq.id === f.id); Object.assign(rv, { s: podioS + ds, x, v: 0, empuja: false }); }
+  });
+  for (const cc of [cocheJ, ...rivales.map((rv) => rv.cruce)]) { cc.conductor.pon('montado'); cc.empujador.pon('montado'); }
+  const ol = $('#podio-nombres');
+  ol.textContent = '';
+  tabla.slice(0, 3).forEach((f, k) => {
+    const li = document.createElement('li');
+    if (f.id === eqJ.id) li.className = 'es-tu';
+    li.innerHTML = `<b>${k + 1}</b><span></span><em>${f.puntos} pts</em>`;
+    li.querySelector('span').textContent = f.nombre;
+    ol.append(li);
+  });
+  $('#podio-titulo').textContent = tabla[0].id === eqJ.id ? '¡Campeones!' : 'El podio';
+  pantalla('podio');
+  $('#podio').focus({ preventScroll: true });
+  if (tabla[0].id === eqJ.id) jingle(FANFARRIA, 0.13);
+}
+function dibujaPodio(t) {
+  camara.clearViewOffset();
+  const centro = punto(podioS - 1, 0, 1.0);
+  // De frente, para verles la cara; se mece de un lado al otro.
+  const ang = Math.sin(t * 0.25) * 0.9;
+  const m = muestra(podioS);
+  const base = punto(podioS - 1, 0, 0);
+  camara.position.set(base.x + Math.sin(m.th + ang) * 7, base.y + 2.4, base.z + Math.cos(m.th + ang) * 7);
+  camara.lookAt(centro);
+  if (Math.abs(camara.fov - 50) > 0.1) { camara.fov = 50; camara.updateProjectionMatrix(); }
+  panorama.position.set(camara.position.x, camara.position.y + 30, camara.position.z);
+  sigueSol(centro);
+  if (publico) publico.coloca(t, podioS + 2);
 }
 
 // ─── la Copa ───────────────────────────────────────────────────────
@@ -2128,18 +2172,64 @@ function sigueCopa() {
 }
 
 // ─── las pantallas ─────────────────────────────────────────────────
-function pantalla(id) {
-  for (const p of ['portada', 'elegir', 'medallas', 'copa', 'pausa']) $('#' + p).hidden = p !== id;
+const CAPAS = ['titulo', 'portada', 'ayuda', 'elegir', 'medallas', 'copa', 'pausa', 'podio'];
+function pantalla(id, sinCortina) {
+  for (const p of CAPAS) $('#' + p).hidden = p !== id;
   $('#premio').hidden = true;
   $('#hud').hidden = true; $('#mandos').hidden = true;
+  if (!sinCortina) cortina();
 }
+// El barrido entre pantallas, como el de la consola.
+function cortina() {
+  const el = $('#cortina');
+  el.classList.remove('is-on'); void el.offsetWidth; el.classList.add('is-on');
+}
+// La pantalla de título: pulsa start.
+function aTitulo() {
+  estado = 'titulo';
+  pantalla('titulo');
+  $('#titulo').focus({ preventScroll: true });
+}
+function desdeTitulo() {
+  if (estado !== 'titulo' || $('#b-copa').disabled) return;
+  arrancaSonido();
+  jingle([523, 659, 784, 1047], 0.09);
+  aMenu();
+}
+// Un arpegio corto, para los menús y los premios.
+function jingle(notas, paso, tipo) {
+  notas.forEach((f, k) => setTimeout(() => tono(f, paso * 2.2, tipo || 'square', 0.09), k * paso * 1000));
+}
+const FANFARRIA = [523, 523, 523, 659, 784, 659, 784, 1047];
 function aMenu() {
   estado = 'menu';
   copa = null; modo = 'suelta';
   if (son.ctx) son.ctx.resume();
   pintaPortada();
   pantalla('portada');
-  $('#b-copa').focus();
+  $('#b-copa').focus({ preventScroll: true });
+}
+// El mapa de la pista, en la pantalla de elegir: el trazado visto desde
+// arriba, con la salida en verde y la meta a cuadros.
+function dibujaMapa() {
+  const cv = $('#mapa'); if (!cv) return;
+  const g = cv.getContext('2d'), W = cv.width, H = cv.height;
+  g.clearRect(0, 0, W, H);
+  let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+  for (let i = SALIDA; i <= META; i++) { x0 = Math.min(x0, P.x[i]); x1 = Math.max(x1, P.x[i]); z0 = Math.min(z0, P.z[i]); z1 = Math.max(z1, P.z[i]); }
+  const esc = Math.min((W - 24) / Math.max(1, x1 - x0), (H - 24) / Math.max(1, z1 - z0));
+  const px = (i) => 12 + (P.x[i] - x0) * esc + ((W - 24) - (x1 - x0) * esc) / 2;
+  const py = (i) => 12 + (P.z[i] - z0) * esc + ((H - 24) - (z1 - z0) * esc) / 2;
+  const traza = () => { g.beginPath(); for (let i = SALIDA; i <= META; i += 2) i === SALIDA ? g.moveTo(px(i), py(i)) : g.lineTo(px(i), py(i)); };
+  g.lineCap = 'round'; g.lineJoin = 'round';
+  traza(); g.strokeStyle = TINTA; g.lineWidth = 9; g.stroke();
+  traza(); g.strokeStyle = '#F3F1EC'; g.lineWidth = 5; g.stroke();
+  traza(); g.strokeStyle = '#E2B13C'; g.lineWidth = 1; g.setLineDash([3, 4]); g.stroke(); g.setLineDash([]);
+  g.fillStyle = '#5DBB4F'; g.strokeStyle = TINTA; g.lineWidth = 2;
+  g.beginPath(); g.arc(px(SALIDA), py(SALIDA), 5, 0, Math.PI * 2); g.fill(); g.stroke();
+  const mx = px(META - 1), my = py(META - 1);
+  for (let a = 0; a < 2; a++) for (let b = 0; b < 2; b++) { g.fillStyle = (a + b) % 2 ? '#fff' : TINTA; g.fillRect(mx - 5 + a * 5, my - 5 + b * 5, 5, 5); }
+  g.strokeRect(mx - 5, my - 5, 10, 10);
 }
 function pintaPortada() {
   const medallas = PISTAS.filter((q) => prog.medallas[q.id] <= 3).length;
@@ -2154,7 +2244,7 @@ function abreElegir() {
   pintaElegir();
   estado = 'elegir';
   pantalla('elegir');
-  $('#b-empezar').focus();
+  $('#b-empezar').focus({ preventScroll: true });
 }
 function pintaElegir() {
   const enCopa = modo === 'copa';
@@ -2184,7 +2274,7 @@ function pintaElegir() {
     caja.append(b);
   }
   const actual = PISTAS.find((q) => q.id === pistaSuelta);
-  if (!enCopa) $('#pista-lema').textContent = actual.lema;
+  if (!enCopa) { $('#pista-lema').textContent = actual.lema; dibujaMapa(); }
 }
 function pintaMedallas() {
   const ul = $('#lista-pistas');
@@ -2281,7 +2371,7 @@ function pausa() {
   if (estado !== 'carrera' && estado !== 'cuenta') return;
   antes = estado; estado = 'pausa';
   $('#pausa').hidden = false;
-  $('#b-seguir').focus();
+  $('#b-seguir').focus({ preventScroll: true });
   if (son.ctx) son.ctx.suspend();
 }
 function sigue() {
@@ -2296,7 +2386,37 @@ $('#b-copa').addEventListener('click', () => {
   abreElegir();
 });
 $('#b-suelta').addEventListener('click', () => { modo = 'suelta'; abreElegir(); });
-$('#b-medallas').addEventListener('click', () => { pintaMedallas(); pantalla('medallas'); });
+$('#b-medallas').addEventListener('click', () => { pintaMedallas(); pantalla('medallas'); $('#b-volver-medallas').focus({ preventScroll: true }); });
+$('#b-ayuda').addEventListener('click', () => { pantalla('ayuda'); $('#b-volver-ayuda').focus({ preventScroll: true }); });
+$('#b-volver-ayuda').addEventListener('click', aMenu);
+$('#titulo').addEventListener('click', desdeTitulo);
+$('#podio').addEventListener('click', aMenu);
+$('#podio').addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); aMenu(); } });
+// Los menús suenan: un blip al moverse, otro al elegir.
+document.addEventListener('focusin', (ev) => { if (ev.target.matches('.btn, .chip') && estado !== 'carrera') tono(1100, 0.04, 'square', 0.05); });
+document.addEventListener('click', (ev) => { if (ev.target.closest('.btn, .chip') && estado !== 'carrera') tono(620, 0.1, 'square', 0.07, 1240); });
+// Y se recorren con las flechas, como con el mando: arriba y abajo entre
+// botones, izquierda y derecha dentro de una fila de fichas.
+function navegaMenu(ev) {
+  const capa = CAPAS.map((id) => $('#' + id)).find((el) => !el.hidden);
+  if (!capa) return false;
+  const todos = [...capa.querySelectorAll('button:not(:disabled)')].filter((b) => b.offsetParent !== null);
+  if (!todos.length) return false;
+  const act = document.activeElement;
+  const grupo = act && act.matches('.chip') ? [...act.parentElement.querySelectorAll('.chip')] : null;
+  const lateral = ev.code === 'ArrowLeft' || ev.code === 'ArrowRight';
+  const atras = ev.code === 'ArrowLeft' || ev.code === 'ArrowUp';
+  let lista = todos, k = todos.indexOf(act);
+  if (grupo && lateral) { lista = grupo; k = grupo.indexOf(act); }
+  else if (grupo) {
+    // Salta la fila de fichas entera.
+    const fuera = todos.filter((b) => !grupo.includes(b) || b === act);
+    lista = fuera; k = fuera.indexOf(act);
+  }
+  const sig = lista[(k + (atras ? -1 : 1) + lista.length) % lista.length];
+  if (sig) { sig.focus({ preventScroll: true }); if (sig.matches('.chip') && lateral) sig.click(); }
+  return true;
+}
 $('#b-volver-medallas').addEventListener('click', aMenu);
 $('#b-volver-elegir').addEventListener('click', aMenu);
 $('#b-empezar').addEventListener('click', empieza);
@@ -2322,7 +2442,9 @@ const MAPA = {
   ArrowUp: 'empuja', KeyW: 'empuja', Space: 'empuja', ArrowDown: 'freno', KeyS: 'freno',
 };
 addEventListener('keydown', (ev) => {
+  if (estado === 'titulo') { if (!['ShiftLeft', 'ShiftRight', 'ControlLeft', 'ControlRight', 'AltLeft', 'AltRight', 'MetaLeft', 'MetaRight', 'Tab'].includes(ev.code)) { ev.preventDefault(); desdeTitulo(); } return; }
   if (ev.code === 'Escape' || ev.code === 'KeyP') { if (estado === 'pausa') sigue(); else pausa(); return; }
+  if ((estado === 'menu' || estado === 'elegir' || estado === 'pausa') && ev.code.startsWith('Arrow')) { if (navegaMenu(ev)) ev.preventDefault(); return; }
   const t = MAPA[ev.code];
   if (!t || (estado !== 'carrera' && estado !== 'cuenta')) return;
   ev.preventDefault();
@@ -2370,9 +2492,10 @@ function bucle(ahora) {
   const dt = Math.min(0.1, (ahora - previo) / 1000);
   previo = ahora;
   if (estado === 'premio') { requestAnimationFrame(bucle); return; }
-  if (estado === 'menu' || estado === 'cargando' || estado === 'elegir') {
+  if (estado === 'menu' || estado === 'cargando' || estado === 'titulo' || estado === 'elegir' || estado === 'podio') {
     if (cocheJ) dibujaMundo(dt);
     if (estado === 'elegir') dibujaPortada(ahora / 1000);
+    else if (estado === 'podio') dibujaPodio(ahora / 1000);
     else dibujaVuelo(ahora / 1000);
     render.render(escena, camara);
   } else if (estado !== 'pausa') {
@@ -2390,8 +2513,7 @@ function bucle(ahora) {
 
 // ─── la carga ──────────────────────────────────────────────────────
 async function carga() {
-  const boton = $('#b-copa');
-  const texto = boton.querySelector('span');
+  const texto = $('#start span');
   const nombres = ['base-chico', 'base-chica', 'generico', 'policia', 'ministro', 'animaciones', 'quito'];
   let listos = 0;
   const cargador = new GLTFLoader();
@@ -2419,8 +2541,9 @@ async function carga() {
   cargaPista('panecillo');
   eligePareja(eqJ.id);
   for (const id of ['b-copa', 'b-suelta', 'b-medallas']) $('#' + id).disabled = false;
-  texto.textContent = 'Copa de las Fiestas';
-  aMenu();
+  texto.textContent = tactilMQ.matches ? 'Toca para empezar' : 'Pulsa una tecla';
+  $('#start').classList.add('is-lista');
+  aTitulo();
 }
 
 preparaMateriales();
@@ -2428,10 +2551,11 @@ cargaPista('panecillo');
 construyePanorama();
 mide();
 pintaPortada();
+pantalla('titulo', true);
 requestAnimationFrame(bucle);
 carga().catch((err) => {
   console.error(err);
-  $('#b-copa').querySelector('span').textContent = 'No cargó: recarga la página';
+  $('#start span').textContent = 'No cargó: recarga la página';
 });
 
 // Para probar desde la consola sin jugar entero.
