@@ -133,6 +133,29 @@ body.coches{
 @keyframes coches-parpadeo{to{visibility:hidden}}
 .coches-pie-titulo{margin:0;font-size:var(--mal-t-micro);opacity:.8}
 
+/* Opciones y créditos */
+.coches-ajustes{display:flex;flex-wrap:wrap;gap:var(--mal-e2)}
+.coches-ajustes .chip[aria-pressed="true"]{background:var(--mal-primary);border-color:var(--mal-primary);color:var(--mal-on-primary)}
+.coches-ajustes .chip::before{content:"";width:10px;height:10px;border-radius:50%;background:currentColor;opacity:.35;margin-right:.3em}
+.coches-ajustes .chip[aria-pressed="true"]::before{opacity:1}
+.coches-creditos-lista{display:grid;gap:var(--mal-e2);margin:0;font-size:var(--mal-t-caption)}
+.coches-creditos-lista div{display:grid;grid-template-columns:9em 1fr;gap:var(--mal-e2)}
+.coches-creditos-lista dt{font-family:var(--mal-mono);text-transform:uppercase;letter-spacing:.06em;font-size:var(--mal-t-micro);color:var(--mal-on-surface-2)}
+.coches-creditos-lista dd{margin:0}
+/* Modo píxel: el lienzo se escala sin suavizar. */
+body.pixel #pista{image-rendering:pixelated;image-rendering:crisp-edges}
+/* La demo */
+.coches-demo{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom, 0px) + 18%);transform:translateX(-50%);z-index:26;margin:0;
+  font-family:var(--mal-display);font-weight:800;font-size:1.4rem;color:#fff;text-align:center;pointer-events:none;
+  -webkit-text-stroke:2px #2b2129;paint-order:stroke fill;text-shadow:0 4px 0 #2b2129;animation:coches-parpadeo 1.2s steps(2, start) infinite}
+.coches-demo small{display:block;font-size:.55em}
+.coches-demo[hidden]{display:none}
+/* En el teléfono de lado, el menú en dos columnas. */
+@media (orientation:landscape) and (max-height:600px){
+  .coches-opciones{grid-template-columns:1fr 1fr}
+  .coches-opciones .btn:first-child{grid-column:1 / -1}
+}
+
 /* El álbum: una cuadrícula de estampitas; las que faltan, en sombra. */
 .coches-panel--ancho{width:min(100%, 640px)}
 .coches-album{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill, minmax(118px, 1fr));gap:var(--mal-e3)}

@@ -1727,7 +1727,7 @@ function arrancaSonido() {
   if (!AC) return;
   const a = new AC();
   son.ctx = a;
-  son.salida = a.createGain(); son.salida.gain.value = son.mudo ? 0 : 0.8; son.salida.connect(a.destination);
+  son.salida = a.createGain(); son.salida.gain.value = ajustes.sonido ? 0.8 : 0; son.salida.connect(a.destination);
   const ruido = a.createBuffer(1, a.sampleRate * 2, a.sampleRate);
   const d = ruido.getChannelData(0);
   for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
@@ -1786,7 +1786,7 @@ const musica = { nombre: null, paso: 0, t: 0, timer: null, gain: null, ctx: null
 function musicaInstrumentos() {
   if (musica.gain) return;
   const a = musica.ctx || son.ctx;
-  musica.gain = a.createGain(); musica.gain.gain.value = 0.32; musica.gain.connect(musica.ctx ? a.destination : son.salida);
+  musica.gain = a.createGain(); musica.gain.gain.value = ajustes.musica || musica.ctx ? 0.32 : 0; musica.gain.connect(musica.ctx ? a.destination : son.salida);
 }
 function musicaNota(f, t, dur, tipo, vol, filtro) {
   const a = musica.ctx || son.ctx, o = a.createOscillator(), g = a.createGain();
@@ -1921,6 +1921,7 @@ function actualizaEmpujador(dt) {
 }
 
 function actualiza(dt) {
+  if (modo === 'demo' && (estado === 'carrera' || estado === 'cuenta')) pilotoDemo();
   if (estado === 'cuenta') {
     cuenta -= dt;
     const n = Math.ceil(cuenta);
@@ -2015,7 +2016,7 @@ function actualiza(dt) {
       if (o.tipo === 'cromo' && dx < 1.0) {
         o.tomada = true; o.mesh.visible = false;
         const cr = CROMOS.find((q) => q.id === o.id);
-        if (!prog.album.includes(o.id)) { prog.album.push(o.id); cromosNuevos.push(o.id); guarda(); }
+        if (modo !== 'demo' && !prog.album.includes(o.id)) { prog.album.push(o.id); cromosNuevos.push(o.id); guarda(); }
         avisa(`¡Estampita: ${cr.nombre}!`, 1400);
         jingle([784, 988, 1175, 1568], 0.07, 'triangle');
       } else if (o.tipo === 'colada' && dx < 0.8 && !j.aire) {
@@ -2059,7 +2060,7 @@ function actualiza(dt) {
   }
   if (estado === 'llegada') {
     tLlegada += dt;
-    if (tLlegada > 2.4 && !llegadaVista) { llegadaVista = true; trasCarrera(); }
+    if (tLlegada > 2.4 && !llegadaVista) { llegadaVista = true; if (modo === 'demo') terminaDemo(); else trasCarrera(); }
   }
 }
 
@@ -2340,6 +2341,23 @@ function pintaHud() {
 // Lo ganado se guarda en el navegador: la mejor medalla y el récord de cada
 // pista, las pistas que ya se corrieron, las parejas abiertas y el mejor
 // puesto en la Copa.
+// Los ajustes: sonido, música y el modo píxel. Se guardan aparte del progreso.
+const AJUSTES = 'coches3d-ajustes';
+const ajustes = { sonido: true, musica: true, pixel: false };
+try { Object.assign(ajustes, JSON.parse(localStorage.getItem(AJUSTES) || '{}')); } catch (err) { /* sin almacenamiento */ }
+const guardaAjustes = () => { try { localStorage.setItem(AJUSTES, JSON.stringify(ajustes)); } catch (err) { /* sin almacenamiento */ } };
+function aplicaAjustes() {
+  son.mudo = !ajustes.sonido;
+  if (son.salida) son.salida.gain.value = son.mudo ? 0 : 0.8;
+  if (musica.gain) musica.gain.gain.value = ajustes.musica ? 0.32 : 0;
+  const b = $('#b-sonido');
+  b.setAttribute('aria-pressed', String(son.mudo));
+  b.setAttribute('aria-label', son.mudo ? 'Activar el sonido' : 'Silenciar');
+  b.style.opacity = son.mudo ? 0.5 : '';
+  document.body.classList.toggle('pixel', ajustes.pixel);
+  mide();
+  for (const el of document.querySelectorAll('#opciones [data-ajuste]')) el.setAttribute('aria-pressed', String(!!ajustes[el.dataset.ajuste]));
+}
 const GUARDA = 'coches3d-progreso';
 const progresoBase = () => ({ medallas: {}, records: {}, parejas: ['cucuruchos', 'guarichas'], pistas: ['panecillo'], copa: 0, album: [] });
 let prog = progresoBase();
@@ -2584,7 +2602,7 @@ function sigueCopa() {
 }
 
 // ─── las pantallas ─────────────────────────────────────────────────
-const CAPAS = ['titulo', 'portada', 'ayuda', 'elegir', 'medallas', 'album', 'copa', 'pausa', 'podio'];
+const CAPAS = ['titulo', 'portada', 'ayuda', 'elegir', 'medallas', 'album', 'opciones', 'creditos', 'copa', 'pausa', 'podio'];
 function pantalla(id, sinCortina) {
   for (const p of CAPAS) $('#' + p).hidden = p !== id;
   $('#premio').hidden = true;
@@ -2597,13 +2615,56 @@ function cortina() {
   el.classList.remove('is-on'); void el.offsetWidth; el.classList.add('is-on');
 }
 // La pantalla de título: pulsa start.
+let demoTimer = null;
 function aTitulo() {
   estado = 'titulo';
+  modo = 'suelta'; copa = null;
+  tocaMusica(null);
   pantalla('titulo');
   $('#titulo').focus({ preventScroll: true });
+  // Si nadie toca nada, al rato la consola se pone a jugar sola.
+  clearTimeout(demoTimer);
+  if (cocheJ) demoTimer = setTimeout(empiezaDemo, 25000);
+}
+function empiezaDemo() {
+  if (estado !== 'titulo') return;
+  const r = azar(Math.floor(performance.now()));
+  const pista = elige(r, PISTAS);
+  cargaPista(pista.id);
+  eligePareja(elige(r, EQUIPOS).id);
+  modo = 'demo';
+  empieza();
+  $('#mandos').hidden = true;
+  $('#demo').hidden = false;
+}
+function terminaDemo() {
+  if (modo !== 'demo') return;
+  $('#demo').hidden = true;
+  for (const k in teclas) teclas[k] = false;
+  if (son.ctx) son.ctx.resume();
+  aTitulo();
+}
+// El piloto de la demo: mira la curva que viene, esquiva lo que hay en la
+// calle y empuja cuando va lento.
+function pilotoDemo() {
+  let peor = 0;
+  for (let d = 0; d < 35; d += 2) peor = Math.max(peor, Math.abs(P.k[limita(Math.floor(j.s + d), 0, N - 1)]));
+  let objetivo = -Math.sign(P.k[limita(Math.floor(j.s + 10), 0, N - 1)]) * 0.8;
+  for (const o of obstaculos) {
+    if (o.s < j.s + 2) continue;
+    if (o.s > j.s + 25) break;
+    if (o.tipo === 'colada' || o.tipo === 'cromo') { objetivo = o.x; continue; }
+    if (o.tipo === 'farol') continue;
+    if (Math.abs(o.x - objetivo) < 1.4) objetivo = o.x > 0 ? o.x - 1.8 : o.x + 1.8;
+  }
+  const hw = muestra(j.s).hw; objetivo = limita(objetivo, -(hw - 0.9), hw - 0.9);
+  teclas.izq = j.x > objetivo + 0.15 && !j.aire; teclas.der = j.x < objetivo - 0.15 && !j.aire;
+  teclas.freno = j.v > GIRO / (CENTRIFUGA * Math.max(peor, 1e-4)) * 0.95;
+  teclas.empuja = j.v < 5.5 && !teclas.freno;
 }
 function desdeTitulo() {
   if (estado !== 'titulo' || $('#b-copa').disabled) return;
+  clearTimeout(demoTimer);
   arrancaSonido();
   jingle([523, 659, 784, 1047], 0.09);
   aMenu();
@@ -2812,6 +2873,7 @@ function empieza() {
   camara.fov = 60; camara.updateProjectionMatrix();
 }
 function pausa() {
+  if (modo === 'demo') { terminaDemo(); return; }
   if (estado !== 'carrera' && estado !== 'cuenta') return;
   antes = estado; estado = 'pausa';
   $('#pausa').hidden = false;
@@ -2874,13 +2936,24 @@ $('#b-copa-sigue').addEventListener('click', sigueCopa);
 $('#b-copa-deja').addEventListener('click', aMenu);
 $('#premio').addEventListener('click', siguientePremio);
 $('#premio').addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); siguientePremio(); } });
-$('#b-sonido').addEventListener('click', (ev) => {
-  son.mudo = !son.mudo;
-  ev.currentTarget.setAttribute('aria-pressed', String(son.mudo));
-  ev.currentTarget.setAttribute('aria-label', son.mudo ? 'Activar el sonido' : 'Silenciar');
-  ev.currentTarget.style.opacity = son.mudo ? 0.5 : '';
-  if (son.salida) son.salida.gain.value = son.mudo ? 0 : 0.8;
+$('#b-sonido').addEventListener('click', () => { ajustes.sonido = !ajustes.sonido; guardaAjustes(); aplicaAjustes(); });
+for (const el of document.querySelectorAll('#opciones [data-ajuste]')) {
+  el.addEventListener('click', () => { ajustes[el.dataset.ajuste] = !ajustes[el.dataset.ajuste]; guardaAjustes(); aplicaAjustes(); });
+}
+// Borrar el progreso pide dos toques: el primero cambia el texto del botón.
+$('#b-borrar').addEventListener('click', (ev) => {
+  const b = ev.currentTarget;
+  if (b.dataset.seguro !== '1') { b.dataset.seguro = '1'; b.querySelector('span').textContent = '¿Seguro? Toca otra vez'; return; }
+  prog = progresoBase(); guarda();
+  try { localStorage.removeItem('coches3d-pareja'); } catch (err) { /* sin almacenamiento */ }
+  eligePareja(prog.parejas[0]); pistaSuelta = 'panecillo';
+  b.dataset.seguro = ''; b.querySelector('span').textContent = 'Progreso borrado';
+  pintaPortada();
 });
+$('#b-opciones').addEventListener('click', () => { const b = $('#b-borrar'); b.dataset.seguro = ''; b.querySelector('span').textContent = 'Borrar el progreso'; pantalla('opciones'); $('#opciones [data-ajuste]').focus({ preventScroll: true }); });
+$('#b-volver-opciones').addEventListener('click', aMenu);
+$('#b-creditos').addEventListener('click', () => { pantalla('creditos'); $('#b-volver-creditos').focus({ preventScroll: true }); });
+$('#b-volver-creditos').addEventListener('click', aMenu);
 document.addEventListener('visibilitychange', () => { if (document.hidden) pausa(); });
 
 const MAPA = {
@@ -2888,6 +2961,7 @@ const MAPA = {
   ArrowUp: 'empuja', KeyW: 'empuja', Space: 'empuja', ArrowDown: 'freno', KeyS: 'freno',
 };
 addEventListener('keydown', (ev) => {
+  if (modo === 'demo') { ev.preventDefault(); terminaDemo(); return; }
   if (estado === 'titulo') { if (!['ShiftLeft', 'ShiftRight', 'ControlLeft', 'ControlRight', 'AltLeft', 'AltRight', 'MetaLeft', 'MetaRight', 'Tab'].includes(ev.code)) { ev.preventDefault(); desdeTitulo(); } return; }
   if (ev.code === 'Escape' || ev.code === 'KeyP') { if (estado === 'pausa') sigue(); else pausa(); return; }
   if ((estado === 'menu' || estado === 'elegir' || estado === 'pausa') && ev.code.startsWith('Arrow')) { if (navegaMenu(ev)) ev.preventDefault(); return; }
@@ -2896,7 +2970,8 @@ addEventListener('keydown', (ev) => {
   ev.preventDefault();
   teclas[t] = true;
 });
-addEventListener('keyup', (ev) => { const t = MAPA[ev.code]; if (t) teclas[t] = false; });
+addEventListener('keyup', (ev) => { if (modo === 'demo') return; const t = MAPA[ev.code]; if (t) teclas[t] = false; });
+document.addEventListener('pointerdown', () => { if (modo === 'demo') terminaDemo(); });
 addEventListener('blur', () => { for (const k in teclas) teclas[k] = false; });
 
 const marcaTactil = () => {
@@ -2921,7 +2996,9 @@ for (const b of document.querySelectorAll('.coches-mando')) {
 }
 
 function mide() {
-  render.setPixelRatio(Math.min(window.devicePixelRatio || 1, tactilMQ.matches ? 1.5 : 2));
+  // En modo píxel se dibuja a un cuarto de resolución y se escala sin
+  // suavizar: los dientes de sierra de la consola.
+  render.setPixelRatio(ajustes.pixel ? 0.5 : Math.min(window.devicePixelRatio || 1, tactilMQ.matches ? 1.5 : 2));
   render.setSize(innerWidth, innerHeight, false);
   camara.aspect = innerWidth / innerHeight;
   // En vertical se abre el ángulo para que quepa la calzada entera.
@@ -3003,6 +3080,7 @@ async function carga() {
   cargaPista('panecillo');
   eligePareja(eqJ.id);
   for (const id of ['b-copa', 'b-suelta', 'b-medallas', 'b-album']) $('#' + id).disabled = false;
+  aplicaAjustes();
   texto.textContent = tactilMQ.matches ? 'Toca para empezar' : 'Pulsa una tecla';
   $('#start').classList.add('is-lista');
   aTitulo();
@@ -3033,6 +3111,7 @@ window.coches = {
   pistaReal: (datos, def) => { DATOS_REALES[datos.id] = datos; if (!PISTAS.some((p) => p.id === def.id)) PISTAS.push(def); return cargaPista(def.id); },
   vuelta: () => vueltaActual, largoVuelta: () => LARGO_VUELTA, mapa: dibujaMapa,
   musica: () => ({ nombre: musica.nombre, paso: musica.paso, ctx: !!son.ctx }),
+  demo: empiezaDemo, ajustes,
   // Pinta unos segundos de una canción sin sonar, para medir que suena.
   rindeMusica: async (nombre, seg) => {
     const off = new OfflineAudioContext(1, 44100 * seg, 44100);

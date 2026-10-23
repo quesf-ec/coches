@@ -21,9 +21,9 @@
 <!-- El sello ?v= se sube a mano en cada cambio del juego (CSS, JS y, con el
      JS, los modelos, que heredan su sello): así el navegador no se queda con
      la versión anterior. -->
-<link rel="stylesheet" href="coches.css?v=c9896a4b15">
+<link rel="stylesheet" href="coches.css?v=23551ba82f">
 <!-- La piel del juego: variante del tema juegos (ver tema/LEEME.md). Va al final para mandar. -->
-<link rel="stylesheet" href="tema/tema.css?v=c9896a4b15">
+<link rel="stylesheet" href="tema/tema.css?v=23551ba82f">
 <script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js", "three/addons/": "./vendor/addons/" } }</script>
 </head>
 <body class="coches">
@@ -80,6 +80,8 @@
 </div>
 
 <p class="coches-cuenta" id="cuenta" aria-live="assertive"></p>
+<!-- La demo: la consola juega sola si nadie toca el título. -->
+<p class="coches-demo" id="demo" hidden><span>Demo</span> <small>Toca para volver</small></p>
 <p class="coches-aviso" id="aviso" aria-live="polite"></p>
 
 <!-- En el teléfono de pie, se pide girarlo: la carrera se juega de lado. -->
@@ -114,6 +116,10 @@
         <svg class="icono" aria-hidden="true"><use href="#i-etiqueta"/></svg> Álbum de estampitas</button>
       <button class="btn boton-juego btn-block" id="b-ayuda" type="button">
         <svg class="icono" aria-hidden="true"><use href="#i-mando"/></svg> Cómo se juega</button>
+      <button class="btn boton-juego btn-block" id="b-opciones" type="button">
+        <svg class="icono" aria-hidden="true"><use href="#i-ajustes"/></svg> Opciones</button>
+      <button class="btn boton-juego btn-block" id="b-creditos" type="button">
+        <svg class="icono" aria-hidden="true"><use href="#i-usuario"/></svg> Créditos</button>
     </nav>
     <p class="micro coches-progreso" id="progreso"></p>
   </div>
@@ -136,6 +142,45 @@
     <p class="caption">En las rampas no se gira en el aire. Las coladas moradas dan turbo.
     Las medallas abren parejas nuevas y ganar la Copa abre la subida del Panecillo.</p>
     <button class="btn btn-ghost btn-block" id="b-volver-ayuda" type="button">
+      <svg class="icono" aria-hidden="true"><use href="#i-flecha-izq"/></svg> Volver</button>
+  </div>
+</div>
+
+<!-- Opciones -->
+<div class="coches-capa" id="opciones" hidden>
+  <div class="coches-panel coches-menu">
+    <p class="coches-banner">Opciones</p>
+    <div class="coches-ajustes">
+      <button class="chip" type="button" data-ajuste="sonido" aria-pressed="true">Sonido</button>
+      <button class="chip" type="button" data-ajuste="musica" aria-pressed="true">Música</button>
+      <button class="chip" type="button" data-ajuste="pixel" aria-pressed="false">Modo píxel</button>
+    </div>
+    <p class="caption">El modo píxel dibuja a un cuarto de resolución, con los dientes de sierra de la consola.
+    Si el juego va a tirones, también ayuda.</p>
+    <button class="btn boton-juego btn-block" id="b-borrar" type="button">
+      <svg class="icono" aria-hidden="true"><use href="#i-papelera"/></svg> <span>Borrar el progreso</span></button>
+    <button class="btn btn-ghost btn-block" id="b-volver-opciones" type="button">
+      <svg class="icono" aria-hidden="true"><use href="#i-flecha-izq"/></svg> Volver</button>
+  </div>
+</div>
+
+<!-- Créditos -->
+<div class="coches-capa" id="creditos" hidden>
+  <div class="coches-panel coches-menu">
+    <p class="coches-banner">Créditos</p>
+    <dl class="coches-creditos-lista">
+      <div><dt>Un juego de</dt><dd>MAL, en una.red</dd></div>
+      <div><dt>Los cuerpos</dt><dd>Modo Incógnito (César, Manu y Fran)</dd></div>
+      <div><dt>La gente, las animaciones y las casas</dt><dd>Estado Decepción</dd></div>
+      <div><dt>Las parejas</dt><dd>las leyendas y las fiestas de Quito: los cucuruchos, Cantuña y el Diablo, el Gallo de la Catedral y Don Ramón, las guarichas, la Mamá Negra y el Ángel de la Estrella</dd></div>
+      <div><dt>La música</dt><dd>un sanjuanito, sintetizado en el navegador</dd></div>
+      <div><dt>Las letras</dt><dd>Bangers (Vernon Adams) y Bungee (David Jonathan Ross), con licencia OFL</dd></div>
+      <div><dt>El motor</dt><dd>Three.js</dd></div>
+      <div><dt>El sistema de diseño</dt><dd>mal-ds, tema juegos, variante arcade</dd></div>
+    </dl>
+    <p class="caption">Hecho en Quito. Las carreras de coches de madera de verdad se corren
+    en las Fiestas, en diciembre, y nadie lleva casco tampoco.</p>
+    <button class="btn btn-ghost btn-block" id="b-volver-creditos" type="button">
       <svg class="icono" aria-hidden="true"><use href="#i-flecha-izq"/></svg> Volver</button>
   </div>
 </div>
@@ -251,6 +296,6 @@
 </div>
 
 <script src="../ds/mal/mal.js?v=1.0.17" defer></script>
-<script type="module" src="coches.js?v=c9896a4b15"></script>
+<script type="module" src="coches.js?v=23551ba82f"></script>
 </body>
 </html>
