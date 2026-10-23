@@ -1757,6 +1757,92 @@ function golpe(vol, corte) {
   g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
   s.connect(f); f.connect(g); g.connect(son.salida); s.start(t, Math.random()); s.stop(t + 0.3);
 }
+// ─── la música ─────────────────────────────────────────────────────
+// Un sanjuanito de chip: melodía pentatónica en la menor con un rondador
+// (triángulo con vibrato), bajo de sierra, bombo y chasquido. Las notas se
+// escriben por corcheas («-» alarga, «.» calla) y se programan con un poco
+// de adelanto sobre el reloj del AudioContext, que es como se hace.
+const NOTAS = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+const hz = (t) => { const m = /^([A-G])(#?)(\d)$/.exec(t); return 440 * Math.pow(2, ((NOTAS[m[1]] + (m[2] ? 1 : 0) + (m[3] - 4) * 12) - 9) / 12); };
+const CANCIONES = {
+  menu: {
+    bpm: 100,
+    melodia: 'E5 E5 D5 C5 A4 A4 C5 D5 E5 E5 G5 E5 D5 C5 A4 - C5 C5 D5 E5 G5 E5 D5 C5 A4 C5 D5 C5 A4 - - . ' +
+      'E5 G5 A5 G5 E5 D5 C5 D5 E5 E5 D5 C5 A4 C5 A4 G4 A4 A4 C5 D5 E5 D5 C5 A4 G4 A4 C5 A4 A4 - - . ',
+    bajo: 'A2 - A2 - A2 - A2 - G2 - G2 - A2 - A2 - C3 - C3 - G2 - G2 - A2 - E2 - A2 - A2 - ' +
+      'A2 - A2 - G2 - G2 - A2 - A2 - F2 - E2 - A2 - A2 - G2 - G2 - A2 - E2 - A2 - A2 - ',
+    bombo: 'x . x . ', chas: '. x . x ',
+  },
+  carrera: {
+    bpm: 136,
+    melodia: 'A4 C5 E5 E5 D5 C5 D5 E5 A4 C5 E5 G5 E5 D5 C5 - A4 C5 E5 E5 D5 C5 D5 E5 G5 E5 D5 C5 A4 - - . ' +
+      'E5 G5 A5 A5 G5 E5 G5 A5 E5 G5 A5 C6 A5 G5 E5 - D5 E5 D5 C5 A4 C5 D5 E5 C5 A4 G4 A4 A4 - - . ',
+    bajo: 'A2 A2 A2 - A2 A2 A2 - G2 G2 G2 - G2 G2 G2 - C3 C3 C3 - C3 C3 C3 - A2 A2 E2 - E2 E2 E2 - ' +
+      'A2 A2 A2 - A2 A2 A2 - F2 F2 F2 - G2 G2 G2 - A2 A2 A2 - D3 D3 D3 - E2 E2 E2 - A2 A2 A2 - ',
+    bombo: 'x . x x ', chas: '. x . x ',
+  },
+};
+const musica = { nombre: null, paso: 0, t: 0, timer: null, gain: null, ctx: null };  // ctx: otro contexto, para las pruebas
+function musicaInstrumentos() {
+  if (musica.gain) return;
+  const a = musica.ctx || son.ctx;
+  musica.gain = a.createGain(); musica.gain.gain.value = 0.32; musica.gain.connect(musica.ctx ? a.destination : son.salida);
+}
+function musicaNota(f, t, dur, tipo, vol, filtro) {
+  const a = musica.ctx || son.ctx, o = a.createOscillator(), g = a.createGain();
+  o.type = tipo; o.frequency.setValueAtTime(f, t);
+  if (tipo === 'triangle') { const v = a.createOscillator(), vg = a.createGain(); v.frequency.value = 5.5; vg.gain.value = f * 0.006; v.connect(vg); vg.connect(o.frequency); v.start(t); v.stop(t + dur + 0.05); }
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.015); g.gain.setValueAtTime(vol, t + dur * 0.6); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  if (filtro) { const fl = a.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = filtro; o.connect(fl); fl.connect(g); } else o.connect(g);
+  g.connect(musica.gain); o.start(t); o.stop(t + dur + 0.05);
+}
+function musicaGolpe(t, bombo) {
+  const a = musica.ctx || son.ctx;
+  if (bombo) {
+    const o = a.createOscillator(), g = a.createGain();
+    o.frequency.setValueAtTime(140, t); o.frequency.exponentialRampToValueAtTime(45, t + 0.12);
+    g.gain.setValueAtTime(0.5, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.16);
+    o.connect(g); g.connect(musica.gain); o.start(t); o.stop(t + 0.2);
+  } else {
+    const sr = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+    if (!musica.ruido || musica.ruido.sampleRate !== a.sampleRate) { musica.ruido = a.createBuffer(1, a.sampleRate * 2, a.sampleRate); const d = musica.ruido.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
+    sr.buffer = musica.ruido; f.type = 'highpass'; f.frequency.value = 5000;
+    g.gain.setValueAtTime(0.12, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+    sr.connect(f); f.connect(g); g.connect(musica.gain); sr.start(t, Math.random() * 1.5); sr.stop(t + 0.06);
+  }
+}
+function musicaTick() {
+  const a = musica.ctx || son.ctx;
+  if (!a) return;
+  musicaTickHasta(a.currentTime + 0.15);
+}
+function musicaTickHasta(limite) {
+  const c = CANCIONES[musica.nombre];
+  if (!c) return;
+  const corchea = 30 / c.bpm;
+  const mel = c.melodia.trim().split(/\s+/), bajo = c.bajo.trim().split(/\s+/), bombo = c.bombo.trim().split(/\s+/), chas = c.chas.trim().split(/\s+/);
+  const largo = (tok, i) => { let n = 1; while (tok[(i + n) % tok.length] === '-') n++; return n; };
+  while (musica.t < limite) {
+    const i = musica.paso % mel.length, t = musica.t;
+    if (mel[i] !== '-' && mel[i] !== '.') musicaNota(hz(mel[i]), t, corchea * largo(mel, i) * 0.95, 'triangle', 0.22);
+    const b = bajo[musica.paso % bajo.length];
+    if (b !== '-' && b !== '.') musicaNota(hz(b), t, corchea * largo(bajo, musica.paso % bajo.length) * 0.9, 'sawtooth', 0.16, 420);
+    if (bombo[musica.paso % bombo.length] === 'x') musicaGolpe(t, true);
+    if (chas[musica.paso % chas.length] === 'x') musicaGolpe(t, false);
+    musica.paso++; musica.t += corchea;
+  }
+}
+// Toca una canción (si no es la que suena ya); con null, se calla.
+function tocaMusica(nombre) {
+  if (musica.nombre === nombre) return;
+  if (musica.timer) { clearInterval(musica.timer); musica.timer = null; }
+  musica.nombre = nombre;
+  if (!nombre || !(musica.ctx || son.ctx)) return;
+  musicaInstrumentos();
+  musica.paso = 0; musica.t = (musica.ctx || son.ctx).currentTime + 0.08;
+  musica.timer = setInterval(musicaTick, 40);
+}
+
 function sonidoRodar() {
   if (!son.ctx) return;
   const sp = (estado === 'carrera' || estado === 'llegada') && !j.aire ? j.v / TOPE : 0;
@@ -2312,6 +2398,7 @@ const SVG = {
 let colaPremios = [], trasPremios = null;
 function muestraPremio(p) {
   estado = 'premio';             // tapa la pantalla entera: no se dibuja nada detrás
+  tocaMusica(null);
   $('#p-disco').innerHTML = p.disco;
   $('#p-kicker').textContent = p.kicker || '';
   $('#p-nombre').textContent = p.nombre;
@@ -2450,6 +2537,7 @@ function muestraPodio(tabla) {
   });
   $('#podio-titulo').textContent = tabla[0].id === eqJ.id ? '¡Campeones!' : 'El podio';
   pantalla('podio');
+  tocaMusica('menu');
   $('#podio').focus({ preventScroll: true });
   if (tabla[0].id === eqJ.id) jingle(FANFARRIA, 0.13);
 }
@@ -2529,6 +2617,7 @@ function aMenu() {
   estado = 'menu';
   copa = null; modo = 'suelta';
   if (son.ctx) son.ctx.resume();
+  tocaMusica('menu');
   pintaPortada();
   pantalla('portada');
   $('#b-copa').focus({ preventScroll: true });
@@ -2562,6 +2651,7 @@ function pintaPortada() {
   $('#progreso').textContent = `Medallas: ${medallas} de ${PISTAS.length} · parejas: ${prog.parejas.length} de ${EQUIPOS.length} · estampitas: ${prog.album.length} de ${CROMOS.length}${copaTxt}`;
 }
 function abreElegir() {
+  tocaMusica('menu');
   const id = modo === 'copa' ? COPA[copa.k] : pistaSuelta;
   if (!pistaActual || pistaActual.id !== id) cargaPista(id);
   if (!abierta('pareja', eqJ.id)) eligePareja(prog.parejas[0]);
@@ -2713,6 +2803,7 @@ function empieza() {
   $('#hud').hidden = false;
   $('#mandos').hidden = !esTactil;
   estado = 'cuenta'; cuenta = 3; actualiza.n = null; llegadaVista = false;
+  tocaMusica('carrera');
   armaRuta();
   ultimoHud = {};
   camS = j.s;
@@ -2941,6 +3032,20 @@ window.coches = {
   // Mete una calle de verdad y su pista sin pasar por la red, para probar.
   pistaReal: (datos, def) => { DATOS_REALES[datos.id] = datos; if (!PISTAS.some((p) => p.id === def.id)) PISTAS.push(def); return cargaPista(def.id); },
   vuelta: () => vueltaActual, largoVuelta: () => LARGO_VUELTA, mapa: dibujaMapa,
+  musica: () => ({ nombre: musica.nombre, paso: musica.paso, ctx: !!son.ctx }),
+  // Pinta unos segundos de una canción sin sonar, para medir que suena.
+  rindeMusica: async (nombre, seg) => {
+    const off = new OfflineAudioContext(1, 44100 * seg, 44100);
+    const antes = { ctx: musica.ctx, gain: musica.gain, nombre: musica.nombre, paso: musica.paso, t: musica.t };
+    musica.ctx = off; musica.gain = null; musica.nombre = nombre; musica.paso = 0; musica.t = 0.05;
+    musicaInstrumentos();
+    const c = CANCIONES[nombre];
+    musicaTickHasta(seg);
+    const buf = await off.startRendering();
+    const d = buf.getChannelData(0); let e = 0; for (let i = 0; i < d.length; i++) e += d[i] * d[i];
+    Object.assign(musica, antes);
+    return { rms: Math.sqrt(e / d.length), pico: d.reduce((m, v) => Math.max(m, Math.abs(v)), 0), pasos: Math.round(seg / (30 / c.bpm)) };
+  },
   camaraEn: (s, x, h, giro, mira) => { Object.assign(foto, { s, x, h, giro: giro || 0, mira: mira || null }); pantalla(null, true); estado = 'foto'; },
   punto: (s, x, h) => punto(s, x, h).toArray(),
   progreso: () => prog, album: () => prog.album.slice(), cromos: () => CROMOS.map((c) => ({ id: c.id, pista: c.pista })),
