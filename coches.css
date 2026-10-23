@@ -100,7 +100,10 @@ body.coches{
   .coches-tablero{width:150px;padding:var(--mal-e2) var(--mal-e3)}
   .coches .hud-juego__cifras{padding:var(--mal-e2) var(--mal-e3)}
 }
-.coches-record:empty{display:none}
+.coches-subtitulo{margin:0;font-size:clamp(1.3rem, 1rem + 1.5vw, 1.7rem);line-height:1.1}
+.coches-progreso:empty{display:none}
+.coches-fila{gap:var(--mal-e2);flex-wrap:wrap}
+.coches-fila .btn{flex:1 1 9em}
 
 /* ─── elegir pareja ───────────────────────────────────────────
    En pantalla ancha el panel se va a la izquierda: a la derecha la
@@ -116,16 +119,28 @@ body.coches{
 .coches-stats dt{font-family:var(--mal-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--mal-on-surface-2)}
 .coches-stats dd{margin:0}
 .coches-stats .medidor{height:8px}
+/* Lo cerrado se ve, pero apagado y con su candado. */
+.coches-candado{display:none;margin-right:.3em}
+.is-cerrada .coches-candado{display:inline-block}
+.coches-parejas .chip.is-cerrada{opacity:.55;border-style:dashed}
+.coches-parejas .chip svg:not(.icono){vertical-align:-4px}
+.coches-lista{list-style:none;margin:0;padding:0;display:grid;gap:var(--mal-e2)}
+.coches-lista li{display:grid;grid-template-columns:44px 1fr;gap:var(--mal-e3);align-items:center}
+.coches-lista li .caption{margin:0}
+.coches-lista__icono{display:grid;place-items:center;width:44px;height:44px}
+.coches-lista li.is-cerrada{opacity:.6}
+.coches-tabla{margin:0;min-width:0}
+.coches-creditos{margin:var(--mal-e3) 0 0;max-width:34em;color:var(--mal-on-surface-2)}
 @media (min-width:900px){
-  #portada{justify-items:start;padding-left:clamp(24px, 5vw, 72px);background:linear-gradient(to right, rgba(20,16,24,.35), transparent 55%)}
+  #portada,#elegir{justify-items:start;padding-left:clamp(24px, 5vw, 72px);background:linear-gradient(to right, rgba(20,16,24,.35), transparent 55%)}
 }
 /* En el teléfono el panel deja ver la pareja arriba. */
 @media (max-width:899px){
-  #portada{align-items:end}
-  #portada .coches-panel{max-height:68dvh}
+  #elegir{align-items:end}
+  #elegir .coches-panel{max-height:68dvh}
 }
 
-/* ─── la llegada ──────────────────────────────────────────── */
+/* ─── el premio ──────────────────────────────────────────── */
 .coches-premio{position:fixed;inset:0;z-index:40}
 .coches-premio[hidden]{display:none}
 .coches-podio{list-style:none;margin:var(--mal-e3) 0 0;padding:0;display:grid;gap:2px;
@@ -147,10 +162,12 @@ body.coches{
 @media (orientation:portrait) and (pointer:coarse){.coches-gira{display:grid}}
 /* De lado: el panel a la izquierda y la pareja a la derecha. */
 @media (orientation:landscape) and (max-height:600px){
-  #portada{align-items:center;justify-items:start;padding:var(--mal-e3) var(--mal-e4);background:linear-gradient(to right, rgba(20,16,24,.4), transparent 60%)}
-  #portada .coches-panel{width:min(52vw, 420px);max-height:calc(100dvh - 1.5rem);overflow:auto;padding:var(--mal-e4)}
+  #portada,#elegir{align-items:center;justify-items:start;padding:var(--mal-e3) var(--mal-e4);background:linear-gradient(to right, rgba(20,16,24,.4), transparent 60%)}
+  .coches-capa .coches-panel{width:min(52vw, 420px);max-height:calc(100dvh - 1.5rem);overflow:auto;padding:var(--mal-e4)}
   .coches-titulo{font-size:1.6rem}
+  .coches-subtitulo{font-size:1.15rem}
+  .coches-capa .coches-panel.pila{gap:var(--mal-e2)}
+  .coches-stats{gap:2px}
   .coches-teclas{font-size:var(--mal-t-micro)}
 }
 
-/* Cambio de prueba del hook de sello. */

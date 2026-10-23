@@ -179,6 +179,47 @@ const palacio = () => lienzo(600, 380, (c, w, h) => {
 
 
 
+// La Basílica del Voto Nacional: gótica, de piedra gris, con dos torres de aguja.
+const basilica = () => lienzo(480, 720, (c, w, h) => {
+  const piedra = '#A39F97', sombra = '#827E76';
+  const torre = (x) => {
+    c.fillStyle = piedra; c.fillRect(x, 180, 110, h - 180);
+    c.fillStyle = sombra; c.fillRect(x + 84, 180, 26, h - 180);
+    for (const y of [250, 380]) {
+      c.fillStyle = '#3B3633'; c.beginPath();
+      c.moveTo(x + 35, y + 80); c.lineTo(x + 35, y + 24); c.lineTo(x + 55, y); c.lineTo(x + 75, y + 24); c.lineTo(x + 75, y + 80); c.fill();
+    }
+    c.fillStyle = sombra; c.beginPath(); c.moveTo(x - 4, 184); c.lineTo(x + 55, 6); c.lineTo(x + 114, 184); c.fill();
+    c.fillStyle = piedra; c.beginPath(); c.moveTo(x + 8, 184); c.lineTo(x + 55, 36); c.lineTo(x + 66, 184); c.fill();
+  };
+  torre(10); torre(w - 120);
+  c.fillStyle = piedra; c.fillRect(120, 300, w - 240, h - 300);
+  c.fillStyle = sombra; c.beginPath(); c.moveTo(114, 304); c.lineTo(w / 2, 214); c.lineTo(w - 114, 304); c.fill();
+  // el rosetón
+  c.fillStyle = '#3F6F8F'; c.beginPath(); c.arc(w / 2, 390, 46, 0, 7); c.fill();
+  c.strokeStyle = '#D9A93A'; c.lineWidth = 3;
+  for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4; c.beginPath(); c.moveTo(w / 2, 390); c.lineTo(w / 2 + Math.cos(a) * 46, 390 + Math.sin(a) * 46); c.stroke(); }
+  c.strokeStyle = TINTA; c.lineWidth = 4; c.beginPath(); c.arc(w / 2, 390, 46, 0, 7); c.stroke();
+  // la puerta ojival
+  c.fillStyle = '#4A3424'; c.beginPath();
+  c.moveTo(w / 2 - 50, h); c.lineTo(w / 2 - 50, h - 120); c.lineTo(w / 2, h - 196); c.lineTo(w / 2 + 50, h - 120); c.lineTo(w / 2 + 50, h); c.fill();
+  c.fillStyle = '#B5AE9F'; c.fillRect(0, h - 24, w, 24);
+});
+
+// El Santuario de Guápulo: fachada blanca, la torre a un lado y la cúpula detrás.
+const santuario = () => lienzo(460, 560, (c, w, h) => {
+  cupula(c, w * 0.42, 220, 100, '#C8742E', '#E8DCC6');
+  c.fillStyle = '#F4F1EA'; c.fillRect(30, 236, w - 150, h - 236);
+  c.fillStyle = '#E9E4D8'; c.beginPath(); c.moveTo(24, 240); c.lineTo((w - 120) / 2 + 15, 176); c.lineTo(w - 114, 240); c.fill();
+  c.fillStyle = '#F4F1EA'; c.fillRect(w - 120, 116, 100, h - 116);
+  c.fillStyle = 'rgba(0,0,0,.07)'; c.fillRect(w - 44, 116, 24, h - 116);
+  arcos(c, w - 110, 236, 80, 70, 2, '#3B3633');
+  cupula(c, w - 70, 122, 46, '#C8742E', '#E8DCC6');
+  c.fillStyle = '#5A3A1E'; c.beginPath(); c.moveTo(150, h); c.lineTo(150, h - 130); c.arc(195, h - 130, 45, Math.PI, 0); c.lineTo(240, h); c.fill();
+  c.fillStyle = '#3F6F8F'; c.beginPath(); c.arc(195, 310, 26, 0, 7); c.fill();
+  c.fillStyle = '#B5AE9F'; c.fillRect(0, h - 22, w, 22);
+});
+
 // La Virgen del Panecillo: aluminio, alas abiertas, sobre el mundo.
 const virgen = () => lienzo(360, 640, (c, w, h) => {
   c.fillStyle = '#8D8A85'; c.fillRect(70, h - 120, 220, 120);
@@ -283,22 +324,93 @@ function texturasSuelo() {
 }
 
 // ─── la pista ──────────────────────────────────────────────────────
+// Cada zona dice cómo es su calle y qué hay a los lados: casas, faroles,
+// puestos, cajones, árboles, banderines, peatones y cuánto público (cada
+// cuántos metros una fila, y de cuántos).
 const ZONAS = {
-  panecillo: { nombre: 'El Panecillo', calle: 'asfalto', lado: 'pasto', hw: 4.0 },
-  ambato: { nombre: 'La bajada de la Ambato', calle: 'asfalto', lado: 'vereda', hw: 3.6 },
-  bulevar: { nombre: 'Bulevar 24 de Mayo', calle: 'asfalto', lado: 'vereda', hw: 4.5 },
-  ronda: { nombre: 'La Ronda', calle: 'adoquin', lado: 'vereda', hw: 3.4 },
-  garcia: { nombre: 'La García Moreno', calle: 'adoquin', lado: 'vereda', hw: 3.4 },
-  plaza: { nombre: 'Plaza Grande', calle: 'adoquin', lado: 'plaza', hw: 5.0 },
+  panecillo: { nombre: 'El Panecillo', calle: 'asfalto', lado: 'pasto', hw: 4.0, arboles: true, publico: [40, 4] },
+  ambato: { nombre: 'La bajada de la Ambato', calle: 'asfalto', lado: 'vereda', hw: 3.6, casas: true, faroles: true, banderas: true, peatones: true, publico: [22, 4] },
+  bulevar: { nombre: 'Bulevar 24 de Mayo', calle: 'asfalto', lado: 'vereda', hw: 4.5, casas: true, faroles: true, banderas: true, peatones: true, puestos: 34, publico: [8, 6] },
+  ronda: { nombre: 'La Ronda', calle: 'adoquin', lado: 'vereda', hw: 3.4, casas: true, faroles: true, banderas: true, peatones: true, puestos: 40, publico: [10, 4] },
+  garcia: { nombre: 'La García Moreno', calle: 'adoquin', lado: 'vereda', hw: 3.4, casas: true, faroles: true, banderas: true, peatones: true, cajones: 3, publico: [14, 4] },
+  plaza: { nombre: 'Plaza Grande', calle: 'adoquin', lado: 'plaza', hw: 5.0, casas: true, faroles: true, banderas: true, peatones: true, puestos: 20, publico: [5, 7] },
+  mirador: { nombre: 'El Mirador de Guápulo', calle: 'asfalto', lado: 'pasto', hw: 3.8, arboles: true, publico: [30, 4] },
+  guapulo: { nombre: 'La cuesta de Guápulo', calle: 'adoquin', lado: 'vereda', hw: 3.0, casas: true, faroles: true, banderas: true, peatones: true, publico: [12, 4] },
+  plazaguapulo: { nombre: 'Plaza de Guápulo', calle: 'adoquin', lado: 'plaza', hw: 4.6, casas: true, faroles: true, banderas: true, peatones: true, puestos: 18, publico: [5, 6] },
+  basilica: { nombre: 'La Basílica', calle: 'adoquin', lado: 'plaza', hw: 4.6, casas: true, faroles: true, publico: [6, 6] },
+  venezuela: { nombre: 'La bajada de la Venezuela', calle: 'asfalto', lado: 'vereda', hw: 3.6, casas: true, faroles: true, banderas: true, peatones: true, publico: [16, 4] },
+  rocafuerte: { nombre: 'La Rocafuerte', calle: 'adoquin', lado: 'vereda', hw: 3.2, casas: true, faroles: true, banderas: true, peatones: true, puestos: 22, cajones: 2, publico: [10, 4] },
+  sanfrancisco: { nombre: 'Plaza de San Francisco', calle: 'adoquin', lado: 'plaza', hw: 5.5, casas: true, faroles: true, banderas: true, peatones: true, publico: [5, 7] },
+  subida: { nombre: 'La subida del Panecillo', calle: 'asfalto', lado: 'pasto', hw: 3.8, arboles: true, publico: [14, 5] },
+  cumbre: { nombre: 'La cumbre', calle: 'asfalto', lado: 'pasto', hw: 4.2, arboles: true, publico: [6, 6] },
 };
-const CENTRO = new Set(['ambato', 'bulevar', 'ronda', 'garcia', 'plaza']);
 
-const P = { x: [], z: [], y: [], th: [], k: [], hw: [], zona: [], pend: [] };
+// Las pistas. Cada una es una lista de tramos: el nombre de una zona la
+// empieza; [entrada, sostén, salida, curva, desnivel] es un tramo en metros
+// (curva de −7 a 7, desnivel total en metros); ['salida', s] y ['meta', d]
+// marcan dónde se sale y a cuántos metros de ahí está la meta. Los hitos,
+// las rampas y las coladas se dan por zona y metros desde que empieza.
+const PISTAS = [
+  {
+    id: 'panecillo', nombre: 'La bajada del Panecillo', salida: 'EL PANECILLO', meta: 'PLAZA GRANDE',
+    lema: 'De la Virgen a la Plaza Grande: las curvas del Panecillo, la Ambato empinada, La Ronda y la subida de la García Moreno.',
+    tramos: ['panecillo', [0, 40, 0, 0, 0], ['salida', 34], [12, 20, 12, 0, -5], [14, 22, 14, -5, -6], [14, 22, 14, 6, -6],
+      [16, 30, 16, 7, -10], [14, 20, 14, -5, -5], [10, 14, 10, 2, -3],
+      'ambato', [18, 56, 18, 0, -26], [10, 10, 10, 0, 1.2], [15, 24, 15, 3, -3],
+      'bulevar', [18, 54, 18, -2, -3], [15, 24, 15, 3, -1],
+      'ronda', [9, 15, 9, -4, 0.8], [9, 15, 9, 5, -2.5], [9, 15, 9, -4, 0.6], [9, 15, 9, 4, -2.5], [9, 12, 9, -2, 0],
+      'garcia', [12, 36, 12, 0, 2.6], [10, 14, 10, 3, 0],
+      'plaza', ['meta', 40], [6, 66, 6, 0, 0], [0, 160, 0, 0, 0]],
+    hitos: [['virgen', 'panecillo', 89, -32], ['torres', 'bulevar', 70, 1], ['compania', 'garcia', 80, -1], ['arco', 'garcia', 40],
+      ['catedral', 'plaza', 16, 1], ['palacio', 'plaza', 20, -1]],
+    rampas: [['ambato', 150, 0], ['bulevar', 40, -1.6], ['bulevar', 120, 1.4], ['ronda', 40, 0], ['panecillo', 62, 1.2]],
+    coladas: [['panecillo', 150], ['panecillo', 262], ['ambato', 110], ['bulevar', 80], ['ronda', 90], ['garcia', 15], ['garcia', 60]],
+  },
+  {
+    id: 'guapulo', nombre: 'La cuesta de Guápulo', salida: 'MIRADOR DE GUÁPULO', meta: 'SANTUARIO DE GUÁPULO',
+    lema: 'Del mirador al santuario por la cuesta más empinada de Quito: horquillas de piedra y una recta que da miedo.',
+    tramos: ['mirador', [0, 40, 0, 0, 0], ['salida', 34], [10, 30, 10, 0, -4], [12, 20, 12, -4, -5],
+      'guapulo', [10, 14, 10, 6, -7], [10, 14, 10, -6, -7], [10, 16, 10, 7, -8], [10, 14, 10, -6, -7],
+      [12, 36, 12, 0, -18],
+      [10, 10, 10, 0, 1.5],
+      [10, 14, 10, 6, -7], [10, 14, 10, -5, -6], [10, 18, 10, 4, -6],
+      [10, 24, 10, 0, 2.5],
+      'plazaguapulo', ['meta', 40], [6, 60, 6, 0, 0], [0, 160, 0, 0, 0]],
+    hitos: [['santuario', 'plazaguapulo', 30, 1]],
+    rampas: [['guapulo', 182, 0], ['mirador', 60, -1.2]],
+    coladas: [['mirador', 50], ['guapulo', 60], ['guapulo', 232], ['guapulo', 300]],
+  },
+  {
+    id: 'sanjuan', nombre: 'La bajada de San Juan', salida: 'LA BASÍLICA', meta: 'SAN FRANCISCO',
+    lema: 'De la Basílica a la Plaza de San Francisco: la Venezuela en picada y los puestos de la Rocafuerte.',
+    tramos: ['basilica', [0, 40, 0, 0, 0], ['salida', 34], [10, 20, 10, 0, -2],
+      'venezuela', [14, 50, 14, 0, -22], [10, 20, 10, -3, -4], [12, 40, 12, 0, -12], [10, 16, 10, 4, -4],
+      'rocafuerte', [9, 15, 9, 4, -2], [9, 15, 9, -4, -2], [9, 22, 9, 0, 2.2], [9, 15, 9, 3, -3], [9, 15, 9, -2, -1],
+      'sanfrancisco', ['meta', 45], [6, 70, 6, 0, 0], [0, 160, 0, 0, 0]],
+    hitos: [['basilica', 'basilica', 18, -1], ['torres', 'sanfrancisco', 30, 1]],
+    rampas: [['venezuela', 70, 0], ['venezuela', 150, 1.4], ['rocafuerte', 80, -1]],
+    coladas: [['basilica', 50], ['venezuela', 30], ['venezuela', 120], ['rocafuerte', 60], ['rocafuerte', 140]],
+  },
+  {
+    id: 'subida', nombre: 'La subida del Panecillo', salida: 'LA AMBATO', meta: 'LA VIRGEN', premio: true,
+    lema: 'Al revés: de la Ambato a la Virgen, cuesta arriba todo el rato. Aquí el que empuja es el motor.',
+    tramos: ['ambato', [0, 40, 0, 0, 0], ['salida', 34], [10, 20, 10, 0, 2],
+      'subida', [12, 22, 12, -6, 7], [12, 22, 12, 6, 7], [12, 26, 12, 0, 6], [12, 22, 12, -5, 6], [10, 16, 10, 3, 3],
+      'cumbre', ['meta', 30], [0, 60, 0, 0, 0], [0, 160, 0, 0, 0]],
+    hitos: [['virgen', 'cumbre', 70, -18]],
+    rampas: [],
+    coladas: [['subida', 40], ['subida', 120], ['subida', 190]],
+  },
+];
+
+let P = {};
 const tramos = [];
 let N = 0, SALIDA = 0, META = 0;
 
-function construyePista() {
-  let x = 0, z = 0, y = 0, th = 0, zona = 'panecillo';
+function construyePista(def) {
+  P = { x: [], z: [], y: [], th: [], k: [], hw: [], zona: [], pend: [] };
+  tramos.length = 0;
+  let x = 0, z = 0, y = 0, th = 0, zona = def.tramos[0];
   const metro = (k, dy) => {
     P.x.push(x); P.z.push(z); P.y.push(y); P.th.push(th); P.k.push(k); P.zona.push(zona); P.hw.push(ZONAS[zona].hw);
     th -= k; x += Math.sin(th); z += Math.cos(th); y += dy;
@@ -309,37 +421,12 @@ function construyePista() {
     for (let n = 0; n < sost; n++) metro(c * KAPPA, paso);
     for (let n = 0; n < sal; n++) metro(suave(c, 0, n / sal) * KAPPA, paso);
   };
-  const nueva = (zz) => { zona = zz; tramos.push({ zona: zz, i: P.x.length }); };
-
-  nueva('panecillo');
-  tramo(0, 40, 0, 0, 0);
-  SALIDA = 34;
-  tramo(12, 20, 12, 0, -5);
-  tramo(14, 22, 14, -5, -6);
-  tramo(14, 22, 14, 6, -6);
-  tramo(16, 30, 16, 7, -10);      // la horquilla: se frena antes o se sale
-  tramo(14, 20, 14, -5, -5);
-  tramo(10, 14, 10, 2, -3);
-  nueva('ambato');
-  tramo(18, 56, 18, 0, -26);      // la empinada: casi 30 % de bajada
-  tramo(10, 10, 10, 0, 1.2);      // el lomo del final
-  tramo(15, 24, 15, 3, -3);
-  nueva('bulevar');
-  tramo(18, 54, 18, -2, -3);
-  tramo(15, 24, 15, 3, -1);
-  nueva('ronda');
-  tramo(9, 15, 9, -4, 0.8);
-  tramo(9, 15, 9, 5, -2.5);
-  tramo(9, 15, 9, -4, 0.6);
-  tramo(9, 15, 9, 4, -2.5);
-  tramo(9, 12, 9, -2, 0);
-  nueva('garcia');
-  tramo(12, 36, 12, 0, 2.6);      // la subida: aquí se empuja
-  tramo(10, 14, 10, 3, 0);
-  nueva('plaza');
-  META = P.x.length + 40;
-  tramo(6, 66, 6, 0, 0);
-  tramo(0, 160, 0, 0, 0);
+  for (const p of def.tramos) {
+    if (typeof p === 'string') { zona = p; tramos.push({ zona: p, i: P.x.length }); }
+    else if (p[0] === 'salida') SALIDA = p[1];
+    else if (p[0] === 'meta') META = P.x.length + p[1];
+    else tramo(...p);
+  }
   N = P.x.length;
 
   // Las alturas y los anchos se suavizan: la pendiente cambia sin escalones
@@ -414,6 +501,14 @@ const mate = (o) => new THREE.MeshStandardMaterial(Object.assign({ roughness: 0.
 
 let TEX;
 const MAT = {};
+// Todo lo que es de la pista (calle, casas, público, rampas…) va aquí, y se
+// vacía al cambiar de pista. Los coches, la gente y el fondo se quedan.
+const mundo = new THREE.Group();
+escena.add(mundo);
+function limpiaMundo() {
+  mundo.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
+  mundo.clear();
+}
 
 // Una cinta a lo largo de la calle entre dos bordes (x, altura) que dependen
 // de la muestra. Con ella salen la calzada, los bordillos, las veredas y el
@@ -441,18 +536,20 @@ function cinta(i0, i1, borde, uv, mat) {
   g.computeVertexNormals();
   const m = new THREE.Mesh(g, mat);
   m.receiveShadow = true;
-  escena.add(m);
+  mundo.add(m);
   return m;
 }
 
-function construyeCalle() {
+function preparaMateriales() {
   TEX = texturasSuelo();
   const lam = (t, extra) => mate(Object.assign({ map: t, side: THREE.DoubleSide }, extra));
   MAT.asfalto = lam(TEX.asfalto); MAT.adoquin = lam(TEX.adoquin); MAT.vereda = lam(TEX.vereda);
   MAT.pasto = lam(TEX.pasto); MAT.plaza = lam(TEX.plaza);
   MAT.bordillo = mate({ color: 0xB9B0A0, side: THREE.DoubleSide });
   MAT.madera = mate({ map: TEX.madera });
+}
 
+function construyeCalle() {
   // Por tramos de zona: cada una con su calzada y su lado.
   const uvCalle = { asfalto: (i, x) => [x / 10 + 0.5, i / 8], adoquin: (i, x) => [x / 2, i / 2] };
   let i0 = 0;
@@ -575,7 +672,7 @@ class Fundidor {
       for (let k = 0; k < gs.length; k += 400) {
         const m = new THREE.Mesh(mergeGeometries(gs.slice(k, k + 400)), mat);
         m.receiveShadow = true;
-        escena.add(m);
+        mundo.add(m);
       }
     }
     this.cubos.clear();
@@ -598,26 +695,35 @@ function matrizEn(s, x, h, mira, extraGiro) {
 // Lo que hay en la calle y se puede chocar: { s, x, r, tipo }.
 const obstaculos = [];
 
-function construyeDecorado(quito) {
-  const r = azar(2024);
-  const casas = [];
-  const piezas = {};
+// Las piezas de quito.glb se asientan una vez: las dieciséis casas, el
+// puesto y el cajón.
+let CASAS = [], PIEZAS = {};
+function preparaQuito(quito) {
   quito.scene.updateMatrixWorld(true);
   quito.scene.traverse((o) => {
     if (/^casa_colonial/.test(o.name) && o.parent && /centro_historico/.test(o.parent.name)) {
       const b = new THREE.Box3().setFromObject(o);
-      casas.push(asienta(o, (b.min.x + b.max.x) / 2 < 0 ? -Math.PI / 2 : Math.PI / 2));
+      CASAS.push(asienta(o, (b.min.x + b.max.x) / 2 < 0 ? -Math.PI / 2 : Math.PI / 2));
     }
-    for (const n of ['obstaculo_muro', 'obstaculo_salto']) if (!piezas[n] && o.name.startsWith(n)) piezas[n] = asienta(o, 0);
+    for (const n of ['obstaculo_muro', 'obstaculo_salto']) if (!PIEZAS[n] && o.name.startsWith(n)) PIEZAS[n] = asienta(o, 0);
   });
   quito.scene.traverse((o) => { if (o.isMesh) for (const m of [].concat(o.material)) { m.metalness = 0; m.roughness = Math.max(m.roughness, 0.8); } });
-  const f = new Fundidor();
-  const zonaDe = (z) => {
-    const t = tramos.findIndex((q) => q.zona === z);
-    return [tramos[t].i, t + 1 < tramos.length ? tramos[t + 1].i : N];
-  };
+}
 
-  // Las fachadas grandes, pintadas en lienzo: van en cajas y dejan hueco.
+// Las fachadas grandes pintadas en lienzo: [pintor, ancho, alto, fondo].
+const FACHADAS = {
+  torres: [() => torres(), 16, 21, 12], compania: [() => compania(), 15, 19, 14], catedral: [() => catedral(), 26, 19.5, 14],
+  palacio: [() => palacio(), 30, 19, 14], basilica: [() => basilica(), 20, 30, 16], santuario: [() => santuario(), 18, 22, 14],
+};
+
+function construyeDecorado(def) {
+  const r = azar(2024 + def.id.length * 97);
+  const f = new Fundidor();
+  const corridas = tramos.map((t, k) => ({ zona: t.zona, z0: t.i, z1: k + 1 < tramos.length ? tramos[k + 1].i : N }));
+  const enZona = (z, d) => { const t = tramos.find((q) => q.zona === z); return (t ? t.i : 0) + d; };
+  const hasta = (z1, extra) => Math.min(z1, META + extra, N - 5);
+
+  // Las fachadas grandes: van en cajas y dejan hueco entre las casas.
   const reservas = [];
   const fachada = (canvas, s, lado, ancho, alto, fondo) => {
     const mat = [mate({ color: 0xEDE7DA }), mate({ color: 0xEDE7DA }),
@@ -627,34 +733,33 @@ function construyeDecorado(quito) {
     const hw = muestra(s).hw;
     caja.applyMatrix4(new THREE.Matrix4().makeTranslation(0, alto / 2 - 0.4, -fondo / 2));
     caja.applyMatrix4(matrizEn(s, lado * (hw + ACERA), BORDILLO, -lado));
-    escena.add(caja);
+    mundo.add(caja);
     reservas.push({ s0: s - ancho / 2 - 2, s1: s + ancho / 2 + 2, lado });
   };
-  const [b0] = zonaDe('bulevar');
-  const [g0, g1] = zonaDe('garcia');
-  const [pl0] = zonaDe('plaza');
-  fachada(torres(), b0 + 70, 1, 16, 21, 12);
-  fachada(compania(), g0 + 100, -1, 15, 19, 14);
-  fachada(catedral(), pl0 + 16, 1, 26, 19.5, 14);
-  fachada(palacio(), pl0 + 20, -1, 30, 19, 14);
+  for (const [tipo, z, d, lado] of def.hitos) {
+    if (!FACHADAS[tipo]) continue;
+    const [pinta, ancho, alto, fondo] = FACHADAS[tipo];
+    fachada(pinta(), enZona(z, d), lado, ancho, alto, fondo);
+  }
 
-  // Las casas, seguidas a los dos lados de todo el centro.
-  const c0 = zonaDe('ambato')[0];
-  for (const lado of [-1, 1]) {
-    let s = c0 + 2;
-    while (s < N - 5) {
-      const casa = elige(r, casas);
-      const medio = s + casa.ancho / 2;
-      if (zonaEn(medio) === 'plaza' && medio > pl0 + 50) break;
-      if (!reservas.some((q) => q.lado === lado && medio > q.s0 && medio < q.s1)) {
-        const hw = muestra(medio).hw;
-        f.pon(casa.g, matrizEn(medio, lado * (hw + ACERA), -0.4, -lado));
+  // Las casas, seguidas a los dos lados donde la zona las tiene.
+  for (const cr of corridas) {
+    if (!ZONAS[cr.zona].casas) continue;
+    for (const lado of [-1, 1]) {
+      let s = cr.z0 + 2;
+      while (s < hasta(cr.z1, 60)) {
+        const casa = elige(r, CASAS);
+        const medio = s + casa.ancho / 2;
+        if (!reservas.some((q) => q.lado === lado && medio > q.s0 && medio < q.s1)) {
+          const hw = muestra(medio).hw;
+          f.pon(casa.g, matrizEn(medio, lado * (hw + ACERA), -0.4, -lado));
+        }
+        s += casa.ancho + 0.15;
       }
-      s += casa.ancho + 0.15;
     }
   }
 
-  // Faroles de hierro en todo el centro.
+  // Faroles de hierro.
   const poste = new THREE.CylinderGeometry(0.06, 0.09, 3.6, 6).translate(0, 1.8, 0);
   const brazo = new THREE.BoxGeometry(0.06, 0.06, 0.6).translate(0, 3.5, 0.3);
   const farol = new THREE.BoxGeometry(0.22, 0.32, 0.22).translate(0, 3.3, 0.58);
@@ -662,75 +767,83 @@ function construyeDecorado(quito) {
   const negro = mate({ color: 0x1E1E22 });
   const luz = new THREE.MeshBasicMaterial({ color: 0xFFE08A });
   const fF = new Fundidor();
-  for (let s = c0 + 6; s < META + 40; s += 13) {
-    for (const lado of [-1, 1]) {
-      const ss = s + (lado > 0 ? 6 : 0);
-      const hw = muestra(ss).hw;
-      const m = matrizEn(ss, lado * (hw + 0.35), BORDILLO, -lado);
-      fF.pon(new THREE.Mesh(geoFarol, negro), m);
-      fF.pon(new THREE.Mesh(farol, luz), m);
-      obstaculos.push({ s: ss, x: lado * (hw + 0.35), r: 0.15, tipo: 'farol' });
+  for (const cr of corridas) {
+    if (!ZONAS[cr.zona].faroles) continue;
+    for (let s = cr.z0 + 6; s < hasta(cr.z1, 40); s += 13) {
+      for (const lado of [-1, 1]) {
+        const ss = s + (lado > 0 ? 6 : 0);
+        if (ss < SALIDA + 4 && ss > SALIDA - 4) continue;
+        const hw = muestra(ss).hw;
+        const m = matrizEn(ss, lado * (hw + 0.35), BORDILLO, -lado);
+        fF.pon(new THREE.Mesh(geoFarol, negro), m);
+        fF.pon(new THREE.Mesh(farol, luz), m);
+        obstaculos.push({ s: ss, x: lado * (hw + 0.35), r: 0.15, tipo: 'farol' });
+      }
     }
   }
   fF.funde();
 
-  // Los puestos de la vereda, que se meten un poco en la calle.
-  for (const [z, paso] of [['bulevar', 34], ['ronda', 40], ['plaza', 20]]) {
-    const [z0, z1] = zonaDe(z);
-    for (let s = z0 + 12; s < Math.min(z1, META - 6); s += paso + r() * 12) {
-      const lado = r() < 0.5 ? -1 : 1, hw = muestra(s).hw;
-      const x = lado * (hw - 0.25);
-      f.pon(piezas.obstaculo_muro.g, matrizEn(s, x, 0, 0, Math.PI / 2 * lado));
-      obstaculos.push({ s, x, r: 0.6, largo: 1.0, tipo: 'puesto' });
+  // Los puestos de la vereda, que se meten un poco en la calle, y los cajones
+  // sueltos (girados: lo ancho va a lo largo de la calle; de lado ocupan 1,2 m).
+  for (const cr of corridas) {
+    const zz = ZONAS[cr.zona];
+    if (zz.puestos) {
+      for (let s = cr.z0 + 12; s < Math.min(cr.z1, META - 6); s += zz.puestos + r() * 12) {
+        const lado = r() < 0.5 ? -1 : 1, hw = muestra(s).hw;
+        const x = lado * (hw - 0.25);
+        f.pon(PIEZAS.obstaculo_muro.g, matrizEn(s, x, 0, 0, Math.PI / 2 * lado));
+        obstaculos.push({ s, x, r: 0.6, largo: 1.0, tipo: 'puesto' });
+      }
     }
-  }
-  // Cajones sueltos en la García Moreno. Girados, lo ancho va a lo largo de
-  // la calle: de lado ocupan 1,2 m.
-  for (const [z, n] of [['garcia', 3]]) {
-    const [z0, z1] = zonaDe(z);
-    for (let k = 0; k < n; k++) {
-      const s = z0 + 20 + (k + r() * 0.6) * (z1 - z0 - 40) / n, hw = muestra(s).hw;
+    for (let k = 0; k < (zz.cajones || 0); k++) {
+      const s = cr.z0 + 20 + (k + r() * 0.6) * (cr.z1 - cr.z0 - 40) / zz.cajones, hw = muestra(s).hw;
+      if (s > META - 6) continue;
       const x = (r() - 0.5) * (hw - 1) * 2;
-      f.pon(piezas.obstaculo_salto.g, matrizEn(s, x, 0, 0, Math.PI / 2));
+      f.pon(PIEZAS.obstaculo_salto.g, matrizEn(s, x, 0, 0, Math.PI / 2));
       obstaculos.push({ s, x, r: 0.6, largo: 0.8, tipo: 'cajon' });
     }
   }
   f.funde();
 
-  // El Panecillo: eucaliptos, muros de piedra y la Virgen.
-  const [p0, p1] = zonaDe('panecillo');
+  // Los cerros: eucaliptos y muros de piedra.
   const tronco = new THREE.CylinderGeometry(0.18, 0.28, 9, 6).translate(0, 4.5, 0);
   const copa = new THREE.IcosahedronGeometry(2.2, 0);
   const matTronco = mate({ color: 0xBFAE96 });
   const verdes = [0x5F7F62, 0x6E8F6C, 0x55745A, 0x7FA07A].map((c) => mate({ color: c, flatShading: true }));
+  const muro = new THREE.BoxGeometry(5.2, 0.7, 0.5).translate(0, 0.35, 0);
+  const matMuro = mate({ color: 0x9A9385 });
   const fP = new Fundidor();
-  for (let s = p0; s < p1 + 30; s += 7) {
-    if (s > SALIDA - 6 && s < SALIDA + 8) continue;
-    for (const lado of [-1, 1]) {
-      const hw = muestra(s).hw, x = lado * (hw + ACERA + 1.5 + r() * 9);
-      const m = matrizEn(s + r() * 4, x, BORDILLO - 0.2, 0, r() * 6);
-      fP.pon(new THREE.Mesh(tronco, matTronco), m);
-      for (let k = 0; k < 3; k++) {
-        const t = new THREE.Matrix4().makeTranslation((r() - 0.5) * 2.2, 8 + r() * 2.5, (r() - 0.5) * 2.2);
-        const e = 0.8 + r() * 0.6;
-        t.multiply(new THREE.Matrix4().makeScale(e, e * 1.25, e));
-        fP.pon(new THREE.Mesh(copa, elige(r, verdes)), m.clone().multiply(t));
+  for (const cr of corridas) {
+    if (!ZONAS[cr.zona].arboles) continue;
+    for (let s = cr.z0; s < Math.min(cr.z1 + 30, N - 5); s += 7) {
+      if (s > SALIDA - 6 && s < SALIDA + 8) continue;
+      for (const lado of [-1, 1]) {
+        const hw = muestra(s).hw, x = lado * (hw + ACERA + 1.5 + r() * 9);
+        const m = matrizEn(s + r() * 4, x, BORDILLO - 0.2, 0, r() * 6);
+        fP.pon(new THREE.Mesh(tronco, matTronco), m);
+        for (let k = 0; k < 3; k++) {
+          const t = new THREE.Matrix4().makeTranslation((r() - 0.5) * 2.2, 8 + r() * 2.5, (r() - 0.5) * 2.2);
+          const e = 0.8 + r() * 0.6;
+          t.multiply(new THREE.Matrix4().makeScale(e, e * 1.25, e));
+          fP.pon(new THREE.Mesh(copa, elige(r, verdes)), m.clone().multiply(t));
+        }
+      }
+    }
+    for (let s = Math.max(cr.z0, SALIDA + 11); s < cr.z1; s += 6) {
+      for (const lado of [-1, 1]) {
+        const hw = muestra(s).hw;
+        fP.pon(new THREE.Mesh(muro, matMuro), matrizEn(s, lado * (hw + ACERA + 0.25), BORDILLO, 0, Math.PI / 2));
       }
     }
   }
-  const muro = new THREE.BoxGeometry(5.2, 0.7, 0.5).translate(0, 0.35, 0);
-  const matMuro = mate({ color: 0x9A9385 });
-  for (let s = p0 + 45; s < p1; s += 6) {
-    for (const lado of [-1, 1]) {
-      const hw = muestra(s).hw;
-      fP.pon(new THREE.Mesh(muro, matMuro), matrizEn(s, lado * (hw + ACERA + 0.25), BORDILLO, 0, Math.PI / 2));
-    }
-  }
   fP.funde();
-  const v = new THREE.Sprite(new THREE.SpriteMaterial({ map: textura(virgen()), fog: false }));
-  v.scale.set(15, 26.7, 1);
-  v.position.copy(punto(SALIDA + 55, -32, 13.3));
-  escena.add(v);
+  for (const [tipo, z, d, x] of def.hitos) {
+    if (tipo !== 'virgen') continue;
+    const v = new THREE.Sprite(new THREE.SpriteMaterial({ map: textura(virgen()), fog: false }));
+    v.scale.set(15, 26.7, 1);
+    v.position.copy(punto(enZona(z, d), x, 13.3));
+    mundo.add(v);
+  }
 
   // La gente que mira, en filas sobre la vereda (o en el pasto, arriba).
   const lugares = [];
@@ -742,30 +855,36 @@ function construyeDecorado(quito) {
     }
   };
   for (let s = 4; s < SALIDA + 10; s += 5) { fila(s, -1, 5); fila(s + 2.5, 1, 5); }
-  for (const [z, paso, n] of [['panecillo', 40, 4], ['ambato', 22, 4], ['bulevar', 8, 6], ['ronda', 10, 4], ['garcia', 14, 4], ['plaza', 5, 7]]) {
-    const [z0, z1] = zonaDe(z);
-    for (let s = z0 + (z === 'panecillo' ? SALIDA + 30 : 4); s < Math.min(z1, META + 30); s += paso + r() * 4) fila(s, r() < 0.5 ? -1 : 1, n);
-  }
+  for (let s = META - 14; s < META + 16; s += 5) { fila(s, -1, 6); fila(s + 2.5, 1, 6); }
+  corridas.forEach((cr, k) => {
+    const [paso, n] = ZONAS[cr.zona].publico || [0, 0];
+    if (!paso) return;
+    for (let s = cr.z0 + (k === 0 ? SALIDA + 30 : 4); s < hasta(cr.z1, 30); s += paso + r() * 4) fila(s, r() < 0.5 ? -1 : 1, n);
+  });
   publico = construyePublico(lugares, r);
 
-  // Banderines de colores cruzando las calles del centro.
+  // Banderines de colores cruzando las calles.
   const tri = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-0.16, 0, 0), new THREE.Vector3(0.16, 0, 0), new THREE.Vector3(0, -0.38, 0)]);
   tri.computeVertexNormals();
   const banderas = [];
-  for (let s = c0 + 20; s < META + 30; s += 16 + r() * 8) {
-    const hw = muestra(s).hw, ancho = hw + ACERA - 0.3;
-    for (let k = 1; k < 18; k++) {
-      const f2 = k / 18, x = -ancho + f2 * ancho * 2;
-      const h = 6 - Math.sin(f2 * Math.PI) * 1.1;
-      banderas.push(matrizEn(s, x, h, 0));
+  for (const cr of corridas) {
+    if (!ZONAS[cr.zona].banderas) continue;
+    for (let s = cr.z0 + 12; s < hasta(cr.z1, 30); s += 16 + r() * 8) {
+      const hw = muestra(s).hw, ancho = hw + ACERA - 0.3;
+      for (let k = 1; k < 18; k++) {
+        const f2 = k / 18, x = -ancho + f2 * ancho * 2;
+        banderas.push(matrizEn(s, x, 6 - Math.sin(f2 * Math.PI) * 1.1, 0));
+      }
     }
   }
-  const mB = new THREE.InstancedMesh(tri, mate({ side: THREE.DoubleSide }), banderas.length);
-  const tonosB = ['#D6382B', '#1B5FAA', '#F5C518', '#2E7D4F', '#E01B6A', '#F3F1EC', '#6B2D7B'];
-  banderas.forEach((m, k) => { mB.setMatrixAt(k, m); mB.setColorAt(k, new THREE.Color(tonosB[k % tonosB.length])); });
-  escena.add(mB);
+  if (banderas.length) {
+    const mB = new THREE.InstancedMesh(tri, mate({ side: THREE.DoubleSide }), banderas.length);
+    const tonosB = ['#D6382B', '#1B5FAA', '#F5C518', '#2E7D4F', '#E01B6A', '#F3F1EC', '#6B2D7B'];
+    banderas.forEach((m, k) => { mB.setMatrixAt(k, m); mB.setColorAt(k, new THREE.Color(tonosB[k % tonosB.length])); });
+    mundo.add(mB);
+  }
 
-  // La salida, la meta y el Arco de la Reina, de lado a lado.
+  // La salida y la meta, de lado a lado.
   const portal = (s, texto, meta) => {
     const hw = muestra(s).hw, ancho = (hw + 0.6) * 2;
     const grupo = new THREE.Group();
@@ -775,7 +894,7 @@ function construyeDecorado(quito) {
     const c = lienzo(1024, 128, (c, w, h) => {
       if (meta) { for (let k = 0; k < 32; k++) for (let f2 = 0; f2 < 2; f2++) { c.fillStyle = (k + f2) % 2 ? '#fff' : TINTA; c.fillRect(k * 32, f2 * 64, 32, 64); } }
       else { c.fillStyle = '#D6382B'; c.fillRect(0, 0, w, h); c.fillStyle = '#1F4E9E'; c.fillRect(0, h - 22, w, 22); }
-      c.font = '800 64px system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.font = '800 56px system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
       const tw = c.measureText(texto).width;
       if (meta) { c.fillStyle = '#fff'; c.fillRect(w / 2 - tw / 2 - 24, 14, tw + 48, h - 28); }
       c.fillStyle = meta ? TINTA : '#fff'; c.fillText(texto, w / 2, h / 2 + 2);
@@ -784,18 +903,21 @@ function construyeDecorado(quito) {
     tela.position.y = 4.6;
     grupo.add(tela);
     grupo.applyMatrix4(matrizEn(s, 0, 0, 0, Math.PI));
-    escena.add(grupo);
+    mundo.add(grupo);
   };
-  portal(SALIDA, 'SALIDA · EL PANECILLO', false);
-  portal(META, 'META · PLAZA GRANDE', true);
-  {
-    const s = g0 + 55, hw = muestra(s).hw, ancho = (hw + ACERA) * 2 + 2;
+  portal(SALIDA, `SALIDA · ${def.salida}`, false);
+  portal(META, `META · ${def.meta}`, true);
+
+  // El Arco de la Reina, donde la pista lo tiene.
+  for (const [tipo, z, d] of def.hitos) {
+    if (tipo !== 'arco') continue;
+    const s = enZona(z, d), hw = muestra(s).hw, ancho = (hw + ACERA) * 2 + 2;
     const blanco = mate({ color: 0xF2EEE5 });
     const grupo = new THREE.Group();
     const pilar = new THREE.BoxGeometry(1.4, 9, 3.4).translate(0, 4.5, 0);
     for (const l of [-1, 1]) { const m = new THREE.Mesh(pilar, blanco); m.position.x = l * (hw + ACERA + 0.5); grupo.add(m); }
-    const cArco = lienzo(512, 160, (c, w, h) => {
-      c.fillStyle = '#F2EEE5'; c.fillRect(0, 0, w, h);
+    const cArco = lienzo(512, 160, (c, w) => {
+      c.fillStyle = '#F2EEE5'; c.fillRect(0, 0, w, 160);
       c.fillStyle = '#1F4E9E'; c.fillRect(w / 2 - 40, 24, 80, 46);
       c.fillStyle = TINTA; c.font = '800 30px system-ui, sans-serif'; c.textAlign = 'center';
       c.fillText('ARCO DE LA REINA', w / 2, 120);
@@ -808,7 +930,7 @@ function construyeDecorado(quito) {
     techo.position.y = 9.2;
     grupo.add(techo);
     grupo.applyMatrix4(matrizEn(s, 0, 0, 0));
-    escena.add(grupo);
+    mundo.add(grupo);
   }
 
   // En la calle: rampas de tabla y coladas.
@@ -819,27 +941,40 @@ function construyeDecorado(quito) {
     g.translate(0, 0, -0.9); g.rotateY(-Math.PI / 2);
     return g;
   })();
-  const rampas = [[zonaDe('ambato')[0] + 150, 0], [b0 + 40, -1.6], [b0 + 120, 1.4], [zonaDe('ronda')[0] + 40, 0], [p0 + 62, 1.2]];
-  for (const [s, x] of rampas) {
+  for (const [z, d, x] of def.rampas) {
+    const s = enZona(z, d);
     const m = new THREE.Mesh(rampa, MAT.madera);
     m.applyMatrix4(matrizEn(s, x, 0, 0));
-    escena.add(m);
+    mundo.add(m);
     obstaculos.push({ s, x, r: 0.9, largo: 1.2, tipo: 'rampa' });
   }
   const matColada = new THREE.SpriteMaterial({ map: textura(colada()) });
-  for (const s0 of [p0 + 150, p0 + 262, c0 + 110, b0 + 80, zonaDe('ronda')[0] + 90, g0 + 15, g0 + 75]) {
-    const lado = r() < 0.5 ? -1 : 1;
+  for (const [z, d] of def.coladas) {
+    const s0 = enZona(z, d), lado = r() < 0.5 ? -1 : 1;
     for (let k = 0; k < 3; k++) {
       const s = s0 + k * 3, x = lado * (k - 1) * 1.3;
       const sp = new THREE.Sprite(matColada);
       sp.scale.set(0.55, 0.7, 1);
       sp.position.copy(punto(s, x, 0.9));
-      escena.add(sp);
+      mundo.add(sp);
       obstaculos.push({ s, x, r: 0.4, largo: 0.5, tipo: 'colada', sp, base: sp.position.y });
     }
   }
   obstaculos.sort((a, b) => a.s - b.s);
-  void g1;
+}
+
+// Cambia de pista: vacía el mundo y lo arma de nuevo con la calle, el
+// decorado y la gente de la pista nueva, y pone a todos en la parrilla.
+let pistaActual = null;
+function cargaPista(id) {
+  const def = PISTAS.find((p) => p.id === id);
+  limpiaMundo();
+  obstaculos.length = 0;
+  construyePista(def);
+  construyeCalle();
+  if (CASAS.length) construyeDecorado(def);
+  pistaActual = def;
+  reinicia();
 }
 
 // ─── el público ────────────────────────────────────────────────────
@@ -870,7 +1005,7 @@ function construyePublico(lugares, r) {
     const m = new THREE.InstancedMesh(geo, mate({ roughness: 0.7 }), n);
     m.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     m.frustumCulled = false;
-    escena.add(m);
+    mundo.add(m);
     return m;
   };
   const mallas = [crea(gPiernas), crea(gCuerpo), crea(gPiel), crea(gSombrero)];
@@ -897,7 +1032,7 @@ function construyePublico(lugares, r) {
     let letrero = null;
     if (r() < 0.12) {
       letrero = new THREE.Mesh(geoCartel, elige(r, cartel));
-      escena.add(letrero);
+      mundo.add(letrero);
     }
     return { s: l.s, base, conSombrero, fase: r() * 7, ritmo: 6 + r() * 4, letrero };
   });
@@ -1266,9 +1401,9 @@ const e = {};          // su empujador
 const c = {};          // su conductor, cuando sale volando
 let rivales = [];
 let peatones = [];
-let estado = 'cargando';      // cargando · portada · cuenta · carrera · llegada · pausa
+let estado = 'cargando';      // cargando · menu · elegir · cuenta · carrera · llegada · pausa · premio
 let antes = 'carrera';
-let reloj = 0, cuenta = 0, tLlegada = 0, zonaActual = '', sacudida = 0, tPeaton = 0;
+let reloj = 0, cuenta = 0, tLlegada = 0, zonaActual = '', sacudida = 0, tPeaton = 0, llegadaVista = false;
 const teclas = { izq: false, der: false, empuja: false, freno: false };
 let cocheJ, carros = [], eqJ;
 // Lo que la pareja elegida cambia de la física: velocidad, empuje y giro.
@@ -1529,13 +1664,13 @@ function actualiza(dt) {
   }
   if (estado === 'llegada') {
     tLlegada += dt;
-    if (tLlegada > 2.4 && $('#llegada').hidden) muestraLlegada();
+    if (tLlegada > 2.4 && !llegadaVista) { llegadaVista = true; trasCarrera(); }
   }
 }
 
 function actualizaRival(rv, dt) {
   const m = muestra(rv.s);
-  const hab = rv.cruce.eq.hab;
+  const hab = rv.cruce.eq.hab * 0.97;
   let a = -G * CUESTA * m.pend - (ZONAS[m.zona].calle === 'adoquin' ? ROCE_PIEDRA : ROCE) - AIRE * rv.v * rv.v / hab;
   // Su empujador se baja en las subidas y cuando hay que arrancar.
   const debe = rv.v < CORRE - 1.2 && (m.pend > 0.01 || rv.v < 3);
@@ -1543,7 +1678,8 @@ function actualizaRival(rv, dt) {
     rv.empuja = debe;
     rv.cruce.empujador.pon(debe ? 'correr' : 'montado');
   }
-  if (rv.empuja) a += EMPUJE * 0.85 * hab * Math.max(0, 1 - rv.v / CORRE) + (rv.v < 1 ? 1 : 0);
+  // Cuesta arriba empujan con todo: si no, en la subida no hay carrera.
+  if (rv.empuja) a += EMPUJE * (m.pend > 0.01 ? 1 : 0.85) * hab * Math.max(0, 1 - rv.v / CORRE) + (rv.v < 1 ? 1 : 0);
   const ventaja = rv.s - j.s;
   if (estado === 'carrera') {
     if (ventaja > 40) a -= 1.2;
@@ -1581,7 +1717,7 @@ function actualizaRival(rv, dt) {
 // encima, casi siempre saltan a tiempo; si no, ruedan y se levantan.
 function actualizaPeatones(dt) {
   tPeaton -= dt;
-  if (tPeaton <= 0 && estado === 'carrera' && CENTRO.has(zonaEn(j.s + 30)) && j.s + 40 < META) {
+  if (tPeaton <= 0 && estado === 'carrera' && ZONAS[zonaEn(j.s + 30)].peatones && j.s + 40 < META) {
     tPeaton = 2.2 + Math.random() * 3;
     const pe = peatones.find((p) => p.estado === 'libre');
     if (pe) {
@@ -1715,9 +1851,21 @@ function dibujaCamara(dt) {
   sigueSol(cocheJ.g.position);
 }
 
-// La portada: la cámara gira despacio alrededor de la parrilla.
-// La portada: la cámara gira despacio alrededor de la pareja elegida,
-// como en la pantalla de selección de un kart.
+// En los menús, la cámara vuela despacio sobre la pista, de la salida a la meta.
+function dibujaVuelo(t) {
+  camara.clearViewOffset();
+  const largo = Math.max(60, META - SALIDA);
+  const s = SALIDA + (t * 7) % largo;
+  punto(s, Math.sin(t * 0.2) * 1.5, 5.5, camara.position);
+  camara.lookAt(punto(s + 20, 0, 1.2));
+  if (Math.abs(camara.fov - 55) > 0.1) { camara.fov = 55; camara.updateProjectionMatrix(); }
+  panorama.position.set(camara.position.x, camara.position.y + 30, camara.position.z);
+  sigueSol(punto(s, 0, 0));
+  if (publico) publico.coloca(t, s);
+}
+
+// Al elegir pareja, la cámara gira despacio alrededor de ella, como en la
+// pantalla de selección de un kart.
 function dibujaPortada(t) {
   const centro = cocheJ ? cocheJ.g.position.clone().add(_v.set(0, 0.75, 0)) : punto(SALIDA - 4, 0, 1);
   const ang = t * 0.35 + 0.6;
@@ -1766,47 +1914,284 @@ function pintaHud() {
   ultimoHud = datos;
 }
 
-// ─── la llegada ────────────────────────────────────────────────────
-const PUESTOS = ['Primer puesto', 'Segundo puesto', 'Tercer puesto', 'Cuarto puesto', 'Quinto puesto'];
-const FRASES = [
-  'Llegaste primero a la Plaza Grande. Ni el Chulla te vio pasar.',
-  'Segundo, por una tabla. La próxima, que el empujador se baje antes en la García Moreno.',
-  'Al podio. La horquilla del Panecillo se puede bajar más rápido, y con los dos arriba.',
-  'Cuarto. Los cajones de la García Moreno no perdonan.',
-  'Último, pero enteros los dos, que en coche de madera ya es bastante.',
+// ─── el progreso ───────────────────────────────────────────────────
+// Lo ganado se guarda en el navegador: la mejor medalla y el récord de cada
+// pista, las pistas que ya se corrieron, las parejas abiertas y el mejor
+// puesto en la Copa.
+const GUARDA = 'coches3d-progreso';
+const progresoBase = () => ({ medallas: {}, records: {}, parejas: ['cucuruchos', 'guarichas'], pistas: ['panecillo'], copa: 0 });
+let prog = progresoBase();
+try { const p = JSON.parse(localStorage.getItem(GUARDA) || 'null'); if (p) prog = Object.assign(progresoBase(), p); } catch (err) { /* sin almacenamiento */ }
+const guarda = () => { try { localStorage.setItem(GUARDA, JSON.stringify(prog)); } catch (err) { /* sin almacenamiento */ } };
+
+// Qué se gana y cómo. Las pistas de la Copa se abren para la carrera suelta
+// en cuanto se corren; la de premio, ganando la Copa.
+const DESBLOQUEOS = [
+  { tipo: 'pareja', id: 'cantuna', cuando: (p) => p.medallas.panecillo <= 3, como: 'una medalla en La bajada del Panecillo' },
+  { tipo: 'pareja', id: 'gallo', cuando: (p) => p.medallas.guapulo <= 3, como: 'una medalla en La cuesta de Guápulo' },
+  { tipo: 'pareja', id: 'mamanegra', cuando: (p) => p.medallas.sanjuan <= 3, como: 'una medalla en La bajada de San Juan' },
+  { tipo: 'pista', id: 'subida', cuando: (p) => p.copa === 1, como: 'ganar la Copa de las Fiestas' },
 ];
-function muestraLlegada() {
-  const p = j.puesto;
-  $('#l-puesto').textContent = PUESTOS[p - 1];
-  $('#l-desc').textContent = `Bajaste en ${formato(j.llegada)}. ${FRASES[p - 1]}`;
-  $('#disco-trofeo').style.display = p <= 3 ? '' : 'none';
-  $('#disco-coche').setAttribute('transform', p <= 3 ? '' : 'translate(-30 -86) scale(1.4)');
-  const filas = rivales.map((rv) => ({ nombre: rv.cruce.eq.nombre, t: rv.llegada || reloj + Math.max(0, META - rv.s) / Math.max(rv.v, 4) }));
-  filas.push({ nombre: `${eqJ.nombre} (tú)`, t: j.llegada, tu: true });
-  filas.sort((a, b) => a.t - b.t);
-  const lista = $('#l-podio');
+const COPA = ['panecillo', 'guapulo', 'sanjuan'];
+const PUNTOS = [10, 7, 5, 3, 1];
+const abierta = (tipo, id) => (tipo === 'pareja' ? prog.parejas : prog.pistas).includes(id);
+const comoSeGana = (tipo, id) => {
+  const d = DESBLOQUEOS.find((q) => q.tipo === tipo && q.id === id);
+  return d ? `Se gana con ${d.como}.` : 'Se abre corriéndola en la Copa de las Fiestas.';
+};
+
+// ─── los dibujos de los premios ────────────────────────────────────
+const METAL = { 1: ['#E2B13C', '#B88A2A'], 2: ['#C9CDD2', '#9AA0A6'], 3: ['#C98A4E', '#9C6630'] };
+const SVG = {
+  medalla: (n, tam = 150) => {
+    const [a, b] = METAL[n];
+    return `<svg width="${tam}" height="${tam}" viewBox="0 0 150 150" aria-hidden="true">
+      <path d="M50 8h22l14 46H64zM100 8H78L64 54h22z" fill="#D6382B" stroke="${TINTA}" stroke-width="3"/>
+      <circle cx="75" cy="95" r="42" fill="${a}" stroke="${TINTA}" stroke-width="4"/>
+      <circle cx="75" cy="95" r="30" fill="none" stroke="${b}" stroke-width="5"/>
+      <text x="75" y="109" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="800" font-size="40" fill="${TINTA}">${n}</text></svg>`;
+  },
+  trofeo: (n = 1, tam = 150) => {
+    const [a, b] = METAL[n] || METAL[1];
+    return `<svg width="${tam}" height="${tam}" viewBox="0 0 150 150" aria-hidden="true">
+      <path d="M44 22h62v26c0 22-14 38-31 38S44 70 44 48z" fill="${a}" stroke="${TINTA}" stroke-width="4"/>
+      <path d="M44 30H28c0 16 8 27 19 30M106 30h16c0 16-8 27-19 30" fill="none" stroke="${TINTA}" stroke-width="4"/>
+      <path d="M66 86h18v16H66zM52 102h46v14H52z" fill="${b}" stroke="${TINTA}" stroke-width="4"/>
+      <rect x="40" y="116" width="70" height="14" rx="3" fill="#6B4423" stroke="${TINTA}" stroke-width="4"/></svg>`;
+  },
+  coche: (tam = 150) => `<svg width="${tam}" height="${tam}" viewBox="0 0 150 150" aria-hidden="true">
+      <rect x="18" y="78" width="114" height="18" rx="3" fill="#C8955A" stroke="${TINTA}" stroke-width="3"/>
+      <path d="M26 83h98M26 90h98" stroke="#9E6D3A" stroke-width="1.5"/>
+      <circle cx="34" cy="104" r="10" fill="#8C9096" stroke="${TINTA}" stroke-width="3"/>
+      <circle cx="116" cy="104" r="10" fill="#8C9096" stroke="${TINTA}" stroke-width="3"/></svg>`,
+  candado: (tam = 150) => `<svg width="${tam}" height="${tam}" viewBox="0 0 150 150" aria-hidden="true">
+      <path d="M50 70V48a25 25 0 0 1 50 0" fill="none" stroke="${TINTA}" stroke-width="9" stroke-linecap="round" transform="rotate(-24 100 70)"/>
+      <rect x="38" y="66" width="74" height="60" rx="10" fill="#F5C518" stroke="${TINTA}" stroke-width="4"/>
+      <circle cx="75" cy="92" r="8" fill="${TINTA}"/><rect x="72" y="96" width="6" height="16" fill="${TINTA}"/></svg>`,
+  vacia: (tam) => `<svg width="${tam}" height="${tam}" viewBox="0 0 150 150" aria-hidden="true"><circle cx="75" cy="95" r="42" fill="none" stroke="currentColor" stroke-width="5" stroke-dasharray="10 9" opacity=".35"/></svg>`,
+};
+
+// ─── el premio: la llegada, lo que se abre y el final ──────────────
+// Se encolan y se muestran uno tras otro; tocar pasa al siguiente.
+let colaPremios = [], trasPremios = null;
+function muestraPremio(p) {
+  estado = 'premio';             // tapa la pantalla entera: no se dibuja nada detrás
+  $('#p-disco').innerHTML = p.disco;
+  $('#p-kicker').textContent = p.kicker || '';
+  $('#p-nombre').textContent = p.nombre;
+  $('#p-desc').textContent = p.desc || '';
+  const lista = $('#p-lista');
   lista.textContent = '';
-  filas.forEach((f, k) => {
+  for (const f of p.lista || []) {
     const li = document.createElement('li');
     if (f.tu) li.className = 'es-tu';
-    const n = document.createElement('span'); n.textContent = `${k + 1}. ${f.nombre}`;
-    const t = document.createElement('span'); t.textContent = formato(f.t);
+    const n = document.createElement('span'); n.textContent = f.texto;
+    const t = document.createElement('span'); t.textContent = f.valor;
     li.append(n, t); lista.append(li);
-  });
-  let record = null;
-  try { record = parseFloat(localStorage.getItem('coches3d-record')); } catch (err) { /* sin almacenamiento */ }
-  if (!record || j.llegada < record) {
-    try { localStorage.setItem('coches3d-record', String(j.llegada)); } catch (err) { /* sin almacenamiento */ }
-    $('#l-kicker').textContent = record ? 'Plaza Grande · ¡récord nuevo!' : 'Plaza Grande';
-  } else $('#l-kicker').textContent = `Plaza Grande · tu récord: ${formato(record)}`;
+  }
+  $('#p-creditos').hidden = !p.creditos;
+  $('#p-pie').textContent = p.pie || 'Toca para seguir';
+  const pieza = $('#p-pieza');
+  pieza.classList.remove('premio__pieza--entra'); void pieza.offsetWidth; pieza.classList.add('premio__pieza--entra');
+  for (const id of ['portada', 'elegir', 'medallas', 'copa', 'pausa']) $('#' + id).hidden = true;
   $('#hud').hidden = true; $('#mandos').hidden = true;
-  $('#llegada').hidden = false;
-  $('#llegada').focus();
+  $('#premio').hidden = false;
+  $('#premio').focus();
+  tono(660, 0.12, 'triangle', 0.15);
 }
-function muestraRecord() {
-  let record = null;
-  try { record = parseFloat(localStorage.getItem('coches3d-record')); } catch (err) { /* sin almacenamiento */ }
-  $('#record').textContent = record ? `Tu mejor bajada: ${formato(record)}` : '';
+function siguientePremio() {
+  const p = colaPremios.shift();
+  if (p) { muestraPremio(p); return; }
+  $('#premio').hidden = true;
+  const f = trasPremios; trasPremios = null;
+  if (f) f();
+}
+
+// ─── después de cada carrera ───────────────────────────────────────
+const PUESTOS = ['Primer puesto', 'Segundo puesto', 'Tercer puesto', 'Cuarto puesto', 'Quinto puesto'];
+const FRASES = [
+  'Ni el Chulla los vio pasar.',
+  'Segundos, por una tabla.',
+  'Al podio, que con coche de madera ya es hazaña.',
+  'Cuartos. La próxima, más empuje en la subida.',
+  'Últimos, pero enteros los dos, que en coche de madera ya es bastante.',
+];
+let modo = 'suelta', copa = null, pistaSuelta = 'panecillo';
+function trasCarrera() {
+  const def = pistaActual, p = j.puesto;
+  // El orden de llegada: a los que no llegaron se les calcula lo que les falta.
+  // Tu puesto manda: se te pone ahí aunque un rival haya cruzado en la misma décima.
+  const filas = rivales.map((rv) => ({ id: rv.cruce.eq.id, nombre: rv.cruce.eq.nombre, t: rv.llegada || reloj + Math.max(0, META - rv.s) / Math.max(rv.v, 4) }));
+  filas.sort((a, b) => a.t - b.t);
+  filas.splice(p - 1, 0, { id: eqJ.id, nombre: `${eqJ.nombre} (tú)`, t: j.llegada, tu: true });
+  // Lo que se guarda.
+  const record = prog.records[def.id];
+  const recordNuevo = !record || j.llegada < record;
+  if (recordNuevo) prog.records[def.id] = j.llegada;
+  if (p <= 3 && !(prog.medallas[def.id] <= p)) prog.medallas[def.id] = p;
+  if (!prog.pistas.includes(def.id)) prog.pistas.push(def.id);
+  const premios = [{
+    disco: p <= 3 ? SVG.medalla(p) : SVG.coche(),
+    kicker: `${def.nombre} · ${recordNuevo ? '¡récord nuevo!' : `récord ${formato(record)}`}`,
+    nombre: PUESTOS[p - 1],
+    desc: `${def.premio ? 'Subieron' : 'Bajaron'} en ${formato(j.llegada)}. ${FRASES[p - 1]}`,
+    lista: filas.map((f, k) => ({ texto: `${k + 1}. ${f.nombre}`, valor: formato(f.t), tu: f.tu })),
+  }];
+  let despues = abreElegir;
+  if (modo === 'copa') {
+    filas.forEach((f, k) => { copa.ultimos[f.id] = PUNTOS[k]; copa.puntos[f.id] += PUNTOS[k]; });
+    if (copa.k < COPA.length - 1) despues = muestraTablaCopa;
+    else {
+      const tabla = tablaCopa();
+      const puesto = tabla.findIndex((f) => f.id === eqJ.id) + 1;
+      if (!prog.copa || puesto < prog.copa) prog.copa = puesto;
+      premios.push({
+        disco: puesto <= 3 ? SVG.trofeo(puesto) : SVG.coche(),
+        kicker: 'Copa de las Fiestas · el final',
+        nombre: puesto === 1 ? '¡Campeones de las Fiestas!' : puesto <= 3 ? `${PUESTOS[puesto - 1]} en la Copa` : 'Fuera del podio de la Copa',
+        desc: puesto === 1
+          ? `Bajaron el Panecillo, Guápulo y San Juan, y ganaron con ${copa.puntos[eqJ.id]} puntos. Quito entero los vio pasar.`
+          : `Hicieron ${copa.puntos[eqJ.id]} puntos. La Copa se vuelve a correr cuando quieran.`,
+        lista: tabla.map((f, k) => ({ texto: `${k + 1}. ${f.nombre}`, valor: `${f.puntos} pts`, tu: f.id === eqJ.id })),
+        creditos: true,
+        pie: 'Toca para seguir',
+      });
+      despues = aMenu;
+      copa = null; modo = 'suelta';
+    }
+  }
+  // Lo que se abre.
+  for (const d of DESBLOQUEOS) {
+    if (abierta(d.tipo, d.id) || !d.cuando(prog)) continue;
+    (d.tipo === 'pareja' ? prog.parejas : prog.pistas).push(d.id);
+    const cosa = d.tipo === 'pareja' ? EQUIPOS.find((q) => q.id === d.id) : PISTAS.find((q) => q.id === d.id);
+    premios.push({
+      disco: SVG.candado(),
+      kicker: d.tipo === 'pareja' ? 'Pareja nueva' : 'Pista nueva',
+      nombre: cosa.nombre,
+      desc: cosa.lema,
+    });
+  }
+  guarda();
+  colaPremios = premios;
+  trasPremios = despues;
+  siguientePremio();
+}
+
+// ─── la Copa ───────────────────────────────────────────────────────
+function tablaCopa() {
+  return EQUIPOS.map((q) => ({ id: q.id, nombre: q.id === eqJ.id ? `${q.nombre} (tú)` : q.nombre, puntos: copa.puntos[q.id], ultimos: copa.ultimos[q.id] || 0 }))
+    .sort((a, b) => b.puntos - a.puntos);
+}
+function muestraTablaCopa() {
+  estado = 'menu';
+  $('#copa-kicker').textContent = `Copa de las Fiestas · después de la carrera ${copa.k + 1} de ${COPA.length}`;
+  const ol = $('#copa-tabla');
+  ol.textContent = '';
+  tablaCopa().forEach((f, k) => {
+    const li = document.createElement('li');
+    if (f.id === eqJ.id) li.className = 'es-tu';
+    const n = document.createElement('span'); n.textContent = `${k + 1}. ${f.nombre}`;
+    const t = document.createElement('span'); t.textContent = `${f.puntos} pts (+${f.ultimos})`;
+    li.append(n, t); ol.append(li);
+  });
+  const sig = PISTAS.find((q) => q.id === COPA[copa.k + 1]);
+  $('#b-copa-sigue span').textContent = `Siguiente: ${sig.nombre}`;
+  pantalla('copa');
+}
+function sigueCopa() {
+  copa.k++;
+  cargaPista(COPA[copa.k]);
+  empieza();
+}
+
+// ─── las pantallas ─────────────────────────────────────────────────
+function pantalla(id) {
+  for (const p of ['portada', 'elegir', 'medallas', 'copa', 'pausa']) $('#' + p).hidden = p !== id;
+  $('#premio').hidden = true;
+  $('#hud').hidden = true; $('#mandos').hidden = true;
+}
+function aMenu() {
+  estado = 'menu';
+  copa = null; modo = 'suelta';
+  if (son.ctx) son.ctx.resume();
+  pintaPortada();
+  pantalla('portada');
+  $('#b-copa').focus();
+}
+function pintaPortada() {
+  const medallas = PISTAS.filter((q) => prog.medallas[q.id] <= 3).length;
+  const copaTxt = prog.copa ? ` · en la Copa: ${prog.copa}.º` : '';
+  $('#progreso').textContent = `Medallas: ${medallas} de ${PISTAS.length} · parejas: ${prog.parejas.length} de ${EQUIPOS.length}${copaTxt}`;
+}
+function abreElegir() {
+  const id = modo === 'copa' ? COPA[copa.k] : pistaSuelta;
+  if (!pistaActual || pistaActual.id !== id) cargaPista(id);
+  if (!abierta('pareja', eqJ.id)) eligePareja(prog.parejas[0]);
+  else eligePareja(eqJ.id);
+  pintaElegir();
+  estado = 'elegir';
+  pantalla('elegir');
+  $('#b-empezar').focus();
+}
+function pintaElegir() {
+  const enCopa = modo === 'copa';
+  $('#elegir-kicker').textContent = enCopa ? `Copa de las Fiestas · carrera 1 de ${COPA.length}` : 'Carrera suelta';
+  $('#elegir-titulo').textContent = enCopa ? 'Elige tu pareja para toda la Copa' : 'Elige pareja y pista';
+  $('#elegir-pistas').hidden = enCopa;
+  for (const b of document.querySelectorAll('#parejas .chip')) {
+    const ok = abierta('pareja', b.dataset.id);
+    b.classList.toggle('is-cerrada', !ok);
+    b.setAttribute('aria-checked', String(b.dataset.id === eqJ.id));
+  }
+  const caja = $('#pistas');
+  caja.textContent = '';
+  for (const q of PISTAS) {
+    const b = document.createElement('button');
+    const ok = abierta('pista', q.id);
+    b.type = 'button'; b.className = 'chip' + (ok ? '' : ' is-cerrada');
+    b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', String(q.id === pistaSuelta));
+    b.innerHTML = (prog.medallas[q.id] ? SVG.medalla(prog.medallas[q.id], 18) + ' ' : '') + q.nombre;
+    b.addEventListener('click', () => {
+      if (!ok) { $('#pista-lema').textContent = `${q.nombre}: ${comoSeGana('pista', q.id)}`; return; }
+      pistaSuelta = q.id;
+      cargaPista(q.id);
+      eligePareja(eqJ.id);
+      pintaElegir();
+    });
+    caja.append(b);
+  }
+  const actual = PISTAS.find((q) => q.id === pistaSuelta);
+  if (!enCopa) $('#pista-lema').textContent = actual.lema;
+}
+function pintaMedallas() {
+  const ul = $('#lista-pistas');
+  ul.textContent = '';
+  for (const q of PISTAS) {
+    const li = document.createElement('li');
+    const med = prog.medallas[q.id];
+    const rec = prog.records[q.id];
+    li.innerHTML = `<span class="coches-lista__icono">${med ? SVG.medalla(med, 40) : SVG.vacia(40)}</span>
+      <span><b></b><br><span class="caption"></span></span>`;
+    li.querySelector('b').textContent = q.nombre;
+    li.querySelector('.caption').textContent = abierta('pista', q.id)
+      ? (rec ? `Récord: ${formato(rec)}${med ? ` · ${PUESTOS[med - 1].toLowerCase()}` : ' · sin medalla'}` : 'Sin correr todavía')
+      : comoSeGana('pista', q.id);
+    ul.append(li);
+  }
+  const ul2 = $('#lista-parejas');
+  ul2.textContent = '';
+  for (const q of EQUIPOS) {
+    const li = document.createElement('li');
+    const ok = abierta('pareja', q.id);
+    li.innerHTML = `<span class="coches-lista__icono">${ok ? '<svg class="icono" aria-hidden="true"><use href="#i-check"/></svg>' : '<svg class="icono" aria-hidden="true"><use href="#i-candado"/></svg>'}</span>
+      <span><b></b><br><span class="caption"></span></span>`;
+    li.querySelector('b').textContent = q.nombre;
+    li.querySelector('.caption').textContent = ok ? q.lema : comoSeGana('pareja', q.id);
+    if (!ok) li.classList.add('is-cerrada');
+    ul2.append(li);
+  }
+  $('#copa-mejor').textContent = prog.copa ? `Tu mejor Copa: ${PUESTOS[prog.copa - 1].toLowerCase()}.` : 'Todavía no has terminado la Copa.';
 }
 
 // ─── elegir pareja ─────────────────────────────────────────────────
@@ -1834,8 +2219,18 @@ function eligePareja(id) {
     const b = document.createElement('button');
     b.type = 'button'; b.className = 'chip'; b.dataset.id = q.id;
     b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', 'false');
-    b.textContent = q.nombre;
-    b.addEventListener('click', () => { if (estado === 'portada') eligePareja(q.id); });
+    b.innerHTML = '<svg class="icono icono--s coches-candado" aria-hidden="true"><use href="#i-candado"/></svg>';
+    b.append(q.nombre);
+    b.addEventListener('click', () => {
+      if (estado !== 'elegir') return;
+      if (!abierta('pareja', q.id)) {
+        $('#pareja-nombre').textContent = q.nombre;
+        $('#pareja-lema').textContent = comoSeGana('pareja', q.id);
+        $('#pareja-stats').textContent = '';
+        return;
+      }
+      eligePareja(q.id);
+    });
     caja.append(b);
   }
 }
@@ -1849,11 +2244,11 @@ function empieza() {
   for (const cc of [cocheJ, ...rivales.map((rv) => rv.cruce)]) cc.conductor.pon('montado');
   cocheJ.empujador.pon('correr');
   for (const rv of rivales) rv.cruce.empujador.pon('correr');
-  $('#portada').hidden = true; $('#pausa').hidden = true; $('#llegada').hidden = true;
+  pantalla(null);
   $('#hud').hidden = false;
   $('#mandos').hidden = !esTactil;
-  estado = 'cuenta'; cuenta = 3; actualiza.n = null;
-  $('#h-zona').textContent = ZONAS.panecillo.nombre;
+  estado = 'cuenta'; cuenta = 3; actualiza.n = null; llegadaVista = false;
+  $('#h-zona').textContent = ZONAS[P.zona[SALIDA]].nombre;
   camS = j.s;
   punto(camS - 5.4, j.x * 0.8, 2.25, camara.position);
   camara.clearViewOffset();
@@ -1872,12 +2267,24 @@ function sigue() {
   if (son.ctx) son.ctx.resume();
 }
 
+$('#b-copa').addEventListener('click', () => {
+  modo = 'copa';
+  copa = { k: 0, puntos: Object.fromEntries(EQUIPOS.map((q) => [q.id, 0])), ultimos: {} };
+  abreElegir();
+});
+$('#b-suelta').addEventListener('click', () => { modo = 'suelta'; abreElegir(); });
+$('#b-medallas').addEventListener('click', () => { pintaMedallas(); pantalla('medallas'); });
+$('#b-volver-medallas').addEventListener('click', aMenu);
+$('#b-volver-elegir').addEventListener('click', aMenu);
 $('#b-empezar').addEventListener('click', empieza);
 $('#b-pausa').addEventListener('click', pausa);
 $('#b-seguir').addEventListener('click', sigue);
-$('#b-reintentar').addEventListener('click', empieza);
-$('#llegada').addEventListener('click', empieza);
-$('#llegada').addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); empieza(); } });
+$('#b-reintentar').addEventListener('click', () => { if (son.ctx) son.ctx.resume(); empieza(); });
+$('#b-salir').addEventListener('click', aMenu);
+$('#b-copa-sigue').addEventListener('click', sigueCopa);
+$('#b-copa-deja').addEventListener('click', aMenu);
+$('#premio').addEventListener('click', siguientePremio);
+$('#premio').addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); siguientePremio(); } });
 $('#b-sonido').addEventListener('click', (ev) => {
   son.mudo = !son.mudo;
   ev.currentTarget.setAttribute('aria-pressed', String(son.mudo));
@@ -1894,7 +2301,7 @@ const MAPA = {
 addEventListener('keydown', (ev) => {
   if (ev.code === 'Escape' || ev.code === 'KeyP') { if (estado === 'pausa') sigue(); else pausa(); return; }
   const t = MAPA[ev.code];
-  if (!t || estado === 'portada' || estado === 'llegada' || estado === 'pausa' || estado === 'cargando') return;
+  if (!t || (estado !== 'carrera' && estado !== 'cuenta')) return;
   ev.preventDefault();
   teclas[t] = true;
 });
@@ -1939,9 +2346,11 @@ const PASO = 1 / 60;
 function bucle(ahora) {
   const dt = Math.min(0.1, (ahora - previo) / 1000);
   previo = ahora;
-  if (estado === 'portada' || estado === 'cargando') {
+  if (estado === 'premio') { requestAnimationFrame(bucle); return; }
+  if (estado === 'menu' || estado === 'cargando' || estado === 'elegir') {
     if (cocheJ) dibujaMundo(dt);
-    dibujaPortada(ahora / 1000);
+    if (estado === 'elegir') dibujaPortada(ahora / 1000);
+    else dibujaVuelo(ahora / 1000);
     render.render(escena, camara);
   } else if (estado !== 'pausa') {
     acum += dt;
@@ -1958,7 +2367,7 @@ function bucle(ahora) {
 
 // ─── la carga ──────────────────────────────────────────────────────
 async function carga() {
-  const boton = $('#b-empezar');
+  const boton = $('#b-copa');
   const texto = boton.querySelector('span');
   const nombres = ['base-chico', 'base-chica', 'generico', 'policia', 'ministro', 'animaciones', 'quito'];
   let listos = 0;
@@ -1974,7 +2383,7 @@ async function carga() {
     const clip = anim.animations.find((a) => a.name === n);
     if (clip) CLIPS[n] = limpiaClip(clip);
   }
-  construyeDecorado(quito);
+  preparaQuito(quito);
   carros = EQUIPOS.map((eq) => ({ cruce: construyeCoche(eq) }));
   peatones = ['generico', 'policia', 'ministro', 'generico', 'ministro', 'policia'].map((n) => {
     const p = new Persona(n, { altura: ADULTO * (n === 'ministro' ? 1.04 : 1) });
@@ -1983,31 +2392,36 @@ async function carga() {
   });
   let guardada = null;
   try { guardada = localStorage.getItem('coches3d-pareja'); } catch (err) { /* sin almacenamiento */ }
-  eligePareja(EQUIPOS.some((q) => q.id === guardada) ? guardada : EQUIPOS[0].id);
-  estado = 'portada';
-  boton.disabled = false;
-  texto.textContent = 'A bajar';
+  eqJ = EQUIPOS.find((q) => q.id === (abierta('pareja', guardada) ? guardada : prog.parejas[0]));
+  cargaPista('panecillo');
+  eligePareja(eqJ.id);
+  for (const id of ['b-copa', 'b-suelta', 'b-medallas']) $('#' + id).disabled = false;
+  texto.textContent = 'Copa de las Fiestas';
+  aMenu();
 }
 
-construyePista();
-construyeCalle();
+preparaMateriales();
+cargaPista('panecillo');
 construyePanorama();
 mide();
-muestraRecord();
+pintaPortada();
 requestAnimationFrame(bucle);
 carga().catch((err) => {
   console.error(err);
-  $('#b-empezar').querySelector('span').textContent = 'No cargó: recarga la página';
+  $('#b-copa').querySelector('span').textContent = 'No cargó: recarga la página';
 });
 
 // Para probar desde la consola sin jugar entero.
 window.coches = {
-  estado: () => ({ estado, reloj, v: j.v, s: j.s, x: j.x, h: j.h, aire: j.aire, volcado: j.volcado, empujador: e.estado, puesto: j.puesto, zona: zonaEn(j.s), meta: META }),
+  estado: () => ({ estado, pista: pistaActual && pistaActual.id, modo, reloj, v: j.v, s: j.s, x: j.x, h: j.h, aire: j.aire, volcado: j.volcado, empujador: e.estado, puesto: j.puesto, zona: zonaEn(j.s), meta: META }),
   // Dibuja un fotograma y devuelve el giro del coche, para las pruebas.
   yaw: () => { dibujaMundo(0.02); return cocheJ.g.rotation.y; },
   curva: (s) => P.k[limita(Math.floor(s), 0, N - 1)], tope: (k) => GIRO / (CENTRIFUGA * Math.max(k, 1e-4)), hw: (s) => muestra(s).hw, teclas, empieza,
   // Avanza la simulación sin dibujar, para las pruebas automáticas.
   volcar: () => volcar(),
+  pista: (id) => cargaPista(id),
+  progreso: () => prog,
+  copa: () => copa,
   peatones: () => peatones.filter((p) => p.estado !== 'libre').map((p) => ({ estado: p.estado, ds: +(p.s - j.s).toFixed(1), x: +p.x.toFixed(1) })),
   simula: (seg, piloto) => { for (let k = 0; k < seg * 60; k++) { if (piloto) piloto(); actualiza(PASO); } },
   obstaculos: () => obstaculos.map((o) => ({ s: o.s, x: o.x, tipo: o.tipo })),

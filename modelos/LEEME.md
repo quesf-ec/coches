@@ -30,5 +30,12 @@ La Mamá Negra va con la piel de la misma paleta que el resto: se la
 reconoce por el traje, el tocado de cintas y la muñeca, no por la cara
 pintada de negro.
 
+## Las pistas
+
+Las cuatro pistas (`PISTAS` en `coches.js`) se arman con el mismo
+material: las casas y puestos de `quito.glb` y las fachadas que se pintan
+en código (`FACHADAS`: la Compañía, la Catedral, el Palacio, la
+Basílica y el santuario de Guápulo). Ninguna trae modelo propio.
+
 Si uno de los dos juegos retoca un modelo, aquí no cambia solo: hay que volver
 a copiarlo.

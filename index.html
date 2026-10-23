@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Coches de madera · La bajada del Panecillo</title>
-<meta name="description" content="Una carrera de coches de madera en 3D desde la cima del Panecillo hasta la Plaza Grande: uno maneja y otro empuja, hay rampas, puestos en la vereda y gente que se cruza.">
+<title>Coches de madera · Copa de las Fiestas</title>
+<meta name="description" content="Carreras de coches de madera en 3D por Quito: uno maneja y otro empuja. La Copa de las Fiestas en tres bajadas, medallas, récords y parejas que se abren.">
 <link rel="canonical" href="https://franciscombp.github.io/mal/coches/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="UNA">
 <meta property="og:locale" content="es_EC">
-<meta property="og:title" content="Coches de madera · La bajada del Panecillo">
-<meta property="og:description" content="Uno maneja, el otro empuja. Una carrera de coches de madera en 3D desde el Panecillo hasta la Plaza Grande.">
+<meta property="og:title" content="Coches de madera · Copa de las Fiestas">
+<meta property="og:description" content="Uno maneja, el otro empuja. La Copa de las Fiestas en coches de madera: el Panecillo, Guápulo y San Juan.">
 <meta property="og:url" content="https://franciscombp.github.io/mal/coches/">
 <meta property="og:image" content="https://una.red/img/og.jpg">
 <meta name="twitter:card" content="summary_large_image">
@@ -21,7 +21,7 @@
 <!-- El sello ?v= se sube a mano en cada cambio del juego (CSS, JS y, con el
      JS, los modelos, que heredan su sello): así el navegador no se queda con
      la versión anterior. -->
-<link rel="stylesheet" href="coches.css?v=805325097f">
+<link rel="stylesheet" href="coches.css?v=9c917258c4">
 <script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js", "three/addons/": "./vendor/addons/" } }</script>
 </head>
 <body class="coches">
@@ -82,19 +82,21 @@
   <p class="micro">La carrera se juega de lado.</p>
 </div>
 
-<!-- La portada -->
+<!-- La portada: la Copa, la carrera suelta y lo ganado -->
 <div class="coches-capa" id="portada">
   <div class="vidrio pila coches-panel">
     <p class="kicker">Fiestas de Quito</p>
     <h1 class="coches-titulo">Coches de madera</h1>
-    <p class="caption">Cinco coches, cero motores y dos en cada uno: uno maneja y el otro
-    empuja. Desde la cima del Panecillo hasta la Plaza Grande.</p>
-    <div class="coches-elige">
-      <p class="micro">Elige tu pareja</p>
-      <div class="coches-parejas" id="parejas" role="radiogroup" aria-label="Pareja"></div>
-      <p class="coches-pareja-nombre" id="pareja-nombre"></p>
-      <p class="caption" id="pareja-lema"></p>
-      <dl class="coches-stats" id="pareja-stats"></dl>
+    <p class="caption">Cero motores y dos en cada coche: uno maneja y el otro
+    empuja. Tres bajadas por Quito, del Panecillo a San Juan, y una subida de premio.</p>
+    <p class="micro coches-progreso" id="progreso"></p>
+    <button class="btn btn--rojo boton-juego btn-block" id="b-copa" type="button" disabled>
+      <svg class="icono" aria-hidden="true"><use href="#i-trofeo"/></svg> <span>Cargando…</span></button>
+    <div class="fila coches-fila">
+      <button class="btn boton-juego" id="b-suelta" type="button" disabled>
+        <svg class="icono" aria-hidden="true"><use href="#i-play"/></svg> Carrera suelta</button>
+      <button class="btn boton-juego" id="b-medallas" type="button" disabled>
+        <svg class="icono" aria-hidden="true"><use href="#i-estrella"/></svg> Medallas</button>
     </div>
     <dl class="coches-teclas">
       <div><dt>← →</dt><dd>girar</dd></div>
@@ -103,10 +105,59 @@
     </dl>
     <p class="caption coches-solo-tactil">Abajo a la izquierda se gira. A la derecha, mantén
     «Empuja» para que el de atrás empuje y suéltalo para que se trepe; «Freno» para las curvas.</p>
-    <p class="caption">En las rampas no se gira en el aire. Las coladas dan turbo.</p>
-    <button class="btn btn--rojo boton-juego btn-block" id="b-empezar" type="button" disabled>
-      <svg class="icono" aria-hidden="true"><use href="#i-play"/></svg> <span>Cargando…</span></button>
-    <p class="micro coches-record" id="record"></p>
+    <p class="caption">En las rampas no se gira en el aire. Las coladas dan turbo. Las medallas
+    abren parejas nuevas.</p>
+  </div>
+</div>
+
+<!-- Elegir pareja (y pista, en la carrera suelta) -->
+<div class="coches-capa" id="elegir" hidden>
+  <div class="vidrio pila coches-panel">
+    <p class="kicker" id="elegir-kicker">Carrera suelta</p>
+    <h2 class="coches-subtitulo" id="elegir-titulo">Elige pareja y pista</h2>
+    <div class="coches-elige">
+      <div class="coches-parejas" id="parejas" role="radiogroup" aria-label="Pareja"></div>
+      <p class="coches-pareja-nombre" id="pareja-nombre"></p>
+      <p class="caption" id="pareja-lema"></p>
+      <dl class="coches-stats" id="pareja-stats"></dl>
+    </div>
+    <div class="coches-elige" id="elegir-pistas">
+      <p class="micro">Pista</p>
+      <div class="coches-parejas" id="pistas" role="radiogroup" aria-label="Pista"></div>
+      <p class="caption" id="pista-lema"></p>
+    </div>
+    <button class="btn btn--rojo boton-juego btn-block" id="b-empezar" type="button">
+      <svg class="icono" aria-hidden="true"><use href="#i-play"/></svg> A la salida</button>
+    <button class="btn btn-ghost btn-block" id="b-volver-elegir" type="button">
+      <svg class="icono" aria-hidden="true"><use href="#i-flecha-izq"/></svg> Volver</button>
+  </div>
+</div>
+
+<!-- Lo ganado -->
+<div class="coches-capa" id="medallas" hidden>
+  <div class="vidrio pila coches-panel">
+    <p class="kicker">Lo ganado</p>
+    <h2 class="coches-subtitulo">Medallas y parejas</h2>
+    <p class="micro">Pistas</p>
+    <ul class="coches-lista" id="lista-pistas"></ul>
+    <p class="micro">Parejas</p>
+    <ul class="coches-lista" id="lista-parejas"></ul>
+    <p class="caption" id="copa-mejor"></p>
+    <button class="btn btn-ghost btn-block" id="b-volver-medallas" type="button">
+      <svg class="icono" aria-hidden="true"><use href="#i-flecha-izq"/></svg> Volver</button>
+  </div>
+</div>
+
+<!-- La tabla de la Copa entre carrera y carrera -->
+<div class="coches-capa" id="copa" hidden>
+  <div class="vidrio pila coches-panel">
+    <p class="kicker" id="copa-kicker">Copa de las Fiestas</p>
+    <h2 class="coches-subtitulo">La tabla</h2>
+    <ol class="coches-podio coches-tabla" id="copa-tabla"></ol>
+    <button class="btn btn--rojo boton-juego btn-block" id="b-copa-sigue" type="button">
+      <svg class="icono" aria-hidden="true"><use href="#i-flecha-der"/></svg> <span>Siguiente</span></button>
+    <button class="btn btn-ghost btn-block" id="b-copa-deja" type="button">
+      <svg class="icono" aria-hidden="true"><use href="#i-salir"/></svg> Dejar la Copa</button>
   </div>
 </div>
 
@@ -119,42 +170,31 @@
       <svg class="icono" aria-hidden="true"><use href="#i-play"/></svg> Seguir</button>
     <button class="btn boton-juego btn-block" id="b-reintentar" type="button">
       <svg class="icono" aria-hidden="true"><use href="#i-reiniciar"/></svg> Otra vez desde arriba</button>
+    <button class="btn btn-ghost btn-block" id="b-salir" type="button">
+      <svg class="icono" aria-hidden="true"><use href="#i-salir"/></svg> Salir al menú</button>
   </div>
 </div>
 
-<!-- La llegada: el premio del sistema, con el coche en el disco -->
-<div class="premio coches-premio" id="llegada" hidden role="button" tabindex="0" aria-label="Otra bajada">
+<!-- El premio del sistema: la llegada, lo que se abre y el final de la Copa -->
+<div class="premio coches-premio" id="premio" hidden role="button" tabindex="0" aria-label="Seguir">
   <div class="premio__rayos" aria-hidden="true"></div>
   <div class="premio__escena">
-    <div class="premio__pieza premio__pieza--entra">
-      <div class="premio__disco">
-        <svg width="150" height="150" viewBox="0 0 150 150" aria-hidden="true">
-          <g id="disco-trofeo">
-            <path d="M52 30h46v18c0 16-10 28-23 28S52 64 52 48z" fill="#E2B13C" stroke="#2A2118" stroke-width="3"/>
-            <path d="M52 36H40c0 12 6 20 14 22M98 36h12c0 12-6 20-14 22" fill="none" stroke="#2A2118" stroke-width="3"/>
-            <path d="M68 76h14v10H68zM60 86h30v8H60z" fill="#B88A2A" stroke="#2A2118" stroke-width="3"/>
-          </g>
-          <g id="disco-coche">
-          <rect x="22" y="104" width="106" height="16" rx="3" fill="#C8955A" stroke="#2A2118" stroke-width="3"/>
-          <path d="M30 108h90M30 115h90" stroke="#9E6D3A" stroke-width="1.5"/>
-          <circle cx="36" cy="126" r="9" fill="#8C9096" stroke="#2A2118" stroke-width="3"/>
-          <circle cx="114" cy="126" r="9" fill="#8C9096" stroke="#2A2118" stroke-width="3"/>
-          <circle cx="36" cy="126" r="3" fill="#2A2118"/><circle cx="114" cy="126" r="3" fill="#2A2118"/>
-          </g>
-        </svg>
-      </div>
+    <div class="premio__pieza premio__pieza--entra" id="p-pieza">
+      <div class="premio__disco" id="p-disco"></div>
     </div>
     <div class="premio__texto">
-      <p class="kicker" id="l-kicker">Plaza Grande</p>
-      <p class="premio__nombre" id="l-puesto">Primer puesto</p>
-      <p class="premio__desc" id="l-desc">Bajaste en 1:12.4.</p>
-      <ol class="coches-podio" id="l-podio"></ol>
+      <p class="kicker" id="p-kicker"></p>
+      <p class="premio__nombre" id="p-nombre"></p>
+      <p class="premio__desc" id="p-desc"></p>
+      <ol class="coches-podio" id="p-lista"></ol>
+      <p class="micro coches-creditos" id="p-creditos" hidden>Un juego de MAL. Los cuerpos vienen
+      de Modo Incógnito; la gente, las animaciones y las casas, de Estado Decepción.</p>
     </div>
   </div>
-  <p class="premio__pie">Toca para otra bajada</p>
+  <p class="premio__pie" id="p-pie">Toca para seguir</p>
 </div>
 
 <script src="../ds/mal/mal.js?v=1.0.17" defer></script>
-<script type="module" src="coches.js?v=805325097f"></script>
+<script type="module" src="coches.js?v=9c917258c4"></script>
 </body>
 </html>
