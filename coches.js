@@ -269,6 +269,63 @@ const colada = () => lienzo(110, 140, (c, w, h) => {
   for (const x of [44, 56, 68]) { c.beginPath(); c.moveTo(x, 40); c.quadraticCurveTo(x - 6, 28, x, 18); c.stroke(); }
 });
 
+// El halo de un farol encendido, para la noche.
+const halo = () => lienzo(64, 64, (c, w, h) => {
+  const g = c.createRadialGradient(w / 2, h / 2, 2, w / 2, h / 2, w / 2);
+  g.addColorStop(0, 'rgba(255,225,140,.9)'); g.addColorStop(0.35, 'rgba(255,190,90,.35)'); g.addColorStop(1, 'rgba(255,170,60,0)');
+  c.fillStyle = g; c.fillRect(0, 0, w, h);
+});
+
+// ─── los fuegos artificiales ───────────────────────────────────────
+// Un puñado de cohetes a la vez: cada uno, cuarenta y ocho chispas de un
+// color que salen de un punto, caen y se apagan. Todo en un solo Points.
+const fuegos = { n: 6, k: 64, activos: [], points: null, mats: null, datos: null, siguiente: 0 };
+function preparaFuegos() {
+  const total = fuegos.n * fuegos.k;
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(total * 3), 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(total * 3), 3));
+  const mat = new THREE.PointsMaterial({ size: 3.6, vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false, map: textura(halo()), alphaTest: 0.02 });
+  fuegos.points = new THREE.Points(geo, mat);
+  fuegos.points.frustumCulled = false;
+  fuegos.points.visible = false;
+  escena.add(fuegos.points);
+  fuegos.datos = Array.from({ length: fuegos.n }, () => ({ vivo: false, t: 0, x: 0, y: 0, z: 0, vel: new Float32Array(fuegos.k * 3), color: new THREE.Color() }));
+}
+function lanzaCohete(centroS) {
+  const d = fuegos.datos.find((q) => !q.vivo); if (!d) return;
+  const r = Math.random;
+  // Lejos y no muy alto, para que quepan en el encuadre de la carrera.
+  const p = punto(centroS + 90 + r() * 150, (r() - 0.5) * 70, 14 + r() * 16);
+  Object.assign(d, { vivo: true, t: 0, x: p.x, y: p.y, z: p.z });
+  d.color.setHSL(r(), 0.9, 0.6);
+  for (let i = 0; i < fuegos.k; i++) {
+    const th = r() * Math.PI * 2, ph = Math.acos(2 * r() - 1), v = 6 + r() * 6;
+    d.vel[i * 3] = Math.sin(ph) * Math.cos(th) * v; d.vel[i * 3 + 1] = Math.cos(ph) * v; d.vel[i * 3 + 2] = Math.sin(ph) * Math.sin(th) * v;
+  }
+  if (son.ctx && !son.mudo) { tono(300 + r() * 200, 0.5, 'sine', 0.08, 90); setTimeout(() => golpe(0.25, 1200), 60); }
+}
+function animaFuegos(dt, centroS) {
+  if (!noche || !fuegos.points) { if (fuegos.points) fuegos.points.visible = false; return; }
+  fuegos.points.visible = true;
+  fuegos.siguiente -= dt;
+  if (fuegos.siguiente <= 0) { lanzaCohete(centroS); fuegos.siguiente = 0.7 + Math.random() * 1.6; }
+  const pos = fuegos.points.geometry.attributes.position, col = fuegos.points.geometry.attributes.color;
+  fuegos.datos.forEach((d, n) => {
+    if (d.vivo) { d.t += dt; if (d.t > 1.7) d.vivo = false; }
+    const apaga = d.vivo ? Math.max(0, 1 - d.t / 1.7) : 0;
+    for (let i = 0; i < fuegos.k; i++) {
+      const idx = n * fuegos.k + i;
+      if (!d.vivo) { pos.setXYZ(idx, 0, -999, 0); col.setXYZ(idx, 0, 0, 0); continue; }
+      const t = d.t;
+      pos.setXYZ(idx, d.x + d.vel[i * 3] * t, d.y + d.vel[i * 3 + 1] * t - 4 * t * t, d.z + d.vel[i * 3 + 2] * t);
+      const chispa = apaga * (1.1 + 0.6 * Math.sin(t * 30 + i));
+      col.setXYZ(idx, d.color.r * chispa, d.color.g * chispa, d.color.b * chispa);
+    }
+  });
+  pos.needsUpdate = true; col.needsUpdate = true;
+}
+
 // ─── las estampitas ────────────────────────────────────────────────
 // El álbum de las Fiestas: estampitas escondidas por las pistas, tres por
 // pista, que se guardan al tocarlas. Cada una lleva un dibujo (uno de los
@@ -362,6 +419,24 @@ const ICONOS = {
     c.fillStyle = '#D6382B'; c.fillRect(w * 0.47, h * 0.54, w * 0.06, h * 0.16);
     c.strokeStyle = TINTA; c.lineWidth = 3; c.beginPath(); c.moveTo(w * 0.72, h * 0.6); c.lineTo(w * 0.9, h * 0.9); c.stroke();
   },
+  vaca: (c, w, h) => {
+    c.fillStyle = '#F3F1EC'; c.strokeStyle = TINTA; c.lineWidth = 4;
+    c.beginPath(); c.roundRect(w * 0.18, h * 0.42, w * 0.6, h * 0.3, 10); c.fill(); c.stroke();
+    c.fillStyle = TINTA; c.beginPath(); c.ellipse(w * 0.36, h * 0.52, 9, 7, 0.4, 0, 7); c.ellipse(w * 0.6, h * 0.62, 8, 6, -0.3, 0, 7); c.fill();
+    c.fillStyle = '#F3F1EC'; c.beginPath(); c.roundRect(w * 0.7, h * 0.32, w * 0.22, h * 0.2, 6); c.fill(); c.stroke();
+    c.strokeStyle = TINTA; c.lineWidth = 4; for (const x of [w * 0.26, w * 0.4, w * 0.58, w * 0.72]) { c.beginPath(); c.moveTo(x, h * 0.72); c.lineTo(x, h * 0.9); c.stroke(); }
+    c.fillStyle = '#C8955A'; c.beginPath(); c.moveTo(w * 0.74, h * 0.32); c.lineTo(w * 0.7, h * 0.18); c.lineTo(w * 0.8, h * 0.3); c.closePath(); c.fill(); c.stroke();
+    for (let k = 0; k < 7; k++) { const a = -0.3 - k * 0.35, x = w * 0.45 + Math.cos(a) * 34, y = h * 0.4 + Math.sin(a) * 26; c.strokeStyle = ['#F5C518', '#D6382B', '#43D9FF'][k % 3]; c.lineWidth = 3; c.beginPath(); c.moveTo(w * 0.45, h * 0.4); c.lineTo(x, y); c.stroke(); }
+  },
+  castillo: (c, w, h) => {
+    c.strokeStyle = '#C8955A'; c.lineWidth = 5; c.beginPath(); c.moveTo(w * 0.5, h * 0.95); c.lineTo(w * 0.5, h * 0.08); c.stroke();
+    for (const y of [0.3, 0.52, 0.74]) { c.beginPath(); c.moveTo(w * 0.22, h * y); c.lineTo(w * 0.78, h * y); c.stroke(); }
+    c.strokeStyle = TINTA; c.lineWidth = 2; c.beginPath(); c.moveTo(w * 0.5, h * 0.95); c.lineTo(w * 0.5, h * 0.08); c.stroke();
+    for (const [x, y, col] of [[0.25, 0.3, '#F5C518'], [0.75, 0.3, '#43D9FF'], [0.25, 0.52, '#E01B6A'], [0.75, 0.52, '#F5C518'], [0.5, 0.74, '#D6382B']]) {
+      for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2; c.strokeStyle = col; c.lineWidth = 3; c.beginPath(); c.moveTo(w * x, h * y); c.lineTo(w * x + Math.cos(a) * 14, h * y + Math.sin(a) * 14); c.stroke(); }
+      c.fillStyle = '#fff'; c.beginPath(); c.arc(w * x, h * y, 3, 0, 7); c.fill();
+    }
+  },
   farol: (c, w, h) => {
     c.strokeStyle = TINTA; c.lineWidth = 4; c.fillStyle = '#333';
     c.beginPath(); c.moveTo(w / 2, h * 0.95); c.lineTo(w / 2, h * 0.3); c.stroke();
@@ -388,9 +463,11 @@ const CROMOS = [
   { id: 'capirote', nombre: 'El cucurucho', desc: 'El penitente morado de la procesión de Viernes Santo.', pista: 'subida', zona: 'subida', d: 60, x: 2.3, icono: 'capirote' },
   { id: 'gallo', nombre: 'El Gallo de la Catedral', desc: 'La veleta de la Catedral que, según la leyenda, bajó a picotear a un borracho.', pista: 'subida', zona: 'subida', d: 160, x: -2.3, icono: 'gallo' },
   { id: 'corona', nombre: 'La Reina de Quito', desc: 'Se elige cada noviembre desde 1955; la corona es lo de menos.', pista: 'subida', zona: 'cumbre', d: 25, x: 1.9, icono: 'corona' },
-  { id: 'cohete', nombre: 'Los fuegos artificiales', desc: 'La noche del 5 de diciembre el cielo de Quito se llena de luces.', pista: 'panecillo', zona: 'plaza', d: 10, x: 0, icono: 'cohete' },
+  { id: 'cohete', nombre: 'Los fuegos artificiales', desc: 'La noche del 5 de diciembre el cielo de Quito se llena de luces.', pista: 'noche-vuelta', zona: 'panecillo', d: 60, x: -2.3, icono: 'cohete' },
+  { id: 'vaca', nombre: 'La vaca loca', desc: 'Un armazón de vaca cargado de cohetes que alguien se pone y sale a corretear a la gente.', pista: 'noche-sanjuan', zona: 'rocafuerte', d: 60, x: 1.9, icono: 'vaca' },
+  { id: 'castillo', nombre: 'El castillo', desc: 'La torre de carrizo con ruedas de fuegos que se enciende de abajo arriba.', pista: 'noche-guapulo', zona: 'guapulo', d: 200, x: -2, icono: 'castillo' },
 ];
-const COLORES_PISTA = { panecillo: '#5B2A86', guapulo: '#1B5FAA', sanjuan: '#D6382B', vuelta: '#2E7D4F', subida: '#E8862C' };
+const COLORES_PISTA = { panecillo: '#5B2A86', guapulo: '#1B5FAA', sanjuan: '#D6382B', vuelta: '#2E7D4F', subida: '#E8862C', 'noche-vuelta': '#1D1850', 'noche-guapulo': '#1D1850', 'noche-sanjuan': '#1D1850' };
 // La estampita dibujada: marco de color, el dibujo y el nombre abajo.
 const cromoCanvas = (cr) => lienzo(220, 300, (c, w, h) => {
   const col = COLORES_PISTA[cr.pista] || '#5B2A86';
@@ -556,7 +633,22 @@ const PISTAS = [
     rampas: [],
     coladas: [['subida', 40], ['subida', 120], ['subida', 190]],
   },
+  // La noche de las Fiestas: las mismas calles a oscuras, con los faroles
+  // encendidos y fuegos artificiales. Heredan todo de su pista de día.
+  {
+    id: 'noche-vuelta', base: 'vuelta', noche: true, nombre: 'La vuelta al Panecillo de noche',
+    lema: 'El cerro a oscuras, la Virgen iluminada y los cohetes del 5 de diciembre encima.',
+  },
+  {
+    id: 'noche-guapulo', base: 'guapulo', noche: true, nombre: 'Guápulo de noche',
+    lema: 'La cuesta con los faroles encendidos y el valle lleno de luces abajo.',
+  },
+  {
+    id: 'noche-sanjuan', base: 'sanjuan', noche: true, nombre: 'San Juan de noche',
+    lema: 'La Basílica a contraluz y la Venezuela en picada, entre cohetes y chivas.',
+  },
 ];
+for (const p of PISTAS) if (p.base) Object.assign(p, { ...PISTAS.find((q) => q.id === p.base), ...p });
 
 let P = {};
 const tramos = [];
@@ -726,7 +818,8 @@ escena.fog = new THREE.Fog(NIEBLA, 55, 300);
 escena.environment = new THREE.PMREMGenerator(render).fromScene(new RoomEnvironment(), 0.04).texture;
 escena.environmentIntensity = 0.55;
 const camara = new THREE.PerspectiveCamera(60, 1, 0.1, 900);
-escena.add(new THREE.HemisphereLight(0xE8F3FF, 0xC9B99C, 1.35));
+const hemi = new THREE.HemisphereLight(0xE8F3FF, 0xC9B99C, 1.35);
+escena.add(hemi);
 const sol = new THREE.DirectionalLight(0xFFF0D6, 2.6);
 const SOL = new THREE.Vector3(-26, 52, 20);
 sol.castShadow = true;
@@ -813,9 +906,29 @@ function construyeCalle() {
   }
 }
 
+// De día o de noche: el cielo, la niebla, las luces y el panorama cambian
+// juntos. Los faroles ya son de material sin luz, así que de noche brillan.
+let noche = false;
+const panoramas = {};
+function ambienta(esNoche) {
+  noche = esNoche;
+  escena.background.set(esNoche ? 0x0E1230 : 0xB4D5EC);
+  escena.fog.color.set(esNoche ? 0x161B3C : NIEBLA);
+  escena.fog.near = esNoche ? 40 : 55; escena.fog.far = esNoche ? 230 : 300;
+  hemi.color.set(esNoche ? 0x3E4C9E : 0xE8F3FF); hemi.groundColor.set(esNoche ? 0x16142A : 0xC9B99C); hemi.intensity = esNoche ? 0.5 : 1.35;
+  sol.color.set(esNoche ? 0x9FB0FF : 0xFFF0D6); sol.intensity = esNoche ? 0.4 : 2.6;
+  escena.environmentIntensity = esNoche ? 0.14 : 0.55;
+  render.toneMappingExposure = esNoche ? 0.92 : 1.12;
+  if (panorama) {
+    if (!panoramas[esNoche ? 'noche' : 'dia']) panoramas[esNoche ? 'noche' : 'dia'] = textura(pintaPanorama(esNoche));
+    panorama.material.map = panoramas[esNoche ? 'noche' : 'dia'];
+    panorama.material.needsUpdate = true;
+  }
+}
+
 // El Pichincha y las laderas: un cilindro pintado que viaja con la cámara.
 let panorama;
-function construyePanorama() {
+function pintaPanorama(esNoche) {
   const r = azar(99);
   const W = 4096, H = 1024, LW = W;
   const onda = (x, ks) => ks.reduce((t, [k, a, f]) => t + a * Math.sin((x / LW) * Math.PI * 2 * k + f), 0);
@@ -827,8 +940,15 @@ function construyePanorama() {
   const borde = (x) => base - 10 - onda(x, [[2, 50, 0.9], [5, 22, 2.4], [11, 9, 0.2]]) - 40;
   const c = lienzo(W, H, (ctx, w, h) => {
     const cielo = ctx.createLinearGradient(0, 0, 0, H * 0.62);
-    cielo.addColorStop(0, '#7FB4DE'); cielo.addColorStop(0.7, '#CFE3F0'); cielo.addColorStop(1, '#EEF4F6');
+    if (esNoche) { cielo.addColorStop(0, '#05081A'); cielo.addColorStop(0.6, '#141B45'); cielo.addColorStop(1, '#3B2E60'); }
+    else { cielo.addColorStop(0, '#7FB4DE'); cielo.addColorStop(0.7, '#CFE3F0'); cielo.addColorStop(1, '#EEF4F6'); }
     ctx.fillStyle = cielo; ctx.fillRect(0, 0, w, h);
+    if (esNoche) {
+      // Estrellas, y una luna.
+      for (let k = 0; k < 700; k++) { const a = 0.4 + r() * 0.6; ctx.fillStyle = `rgba(255,250,230,${a})`; const sz = r() < 0.1 ? 3 : 2; ctx.fillRect(r() * w, r() * H * 0.5, sz, sz); }
+      ctx.fillStyle = '#FFF4CC'; ctx.beginPath(); ctx.arc(2600, 150, 42, 0, 7); ctx.fill();
+      ctx.fillStyle = '#141B45'; ctx.beginPath(); ctx.arc(2618, 138, 36, 0, 7); ctx.fill();
+    }
   });
   const ctx2 = c.getContext('2d');
   const capa = (pinta, px) => {
@@ -838,14 +958,14 @@ function construyePanorama() {
     ctx2.filter = 'none';
   };
   capa((oc) => {
-    oc.fillStyle = 'rgba(255,255,255,.8)';
+    oc.fillStyle = esNoche ? 'rgba(80,90,140,.35)' : 'rgba(255,255,255,.8)';
     for (let k = 0; k < 14; k++) {
       const x = r() * W, y = 80 + r() * 200, sz = 60 + r() * 60;
       oc.beginPath(); oc.ellipse(x, y, sz * 1.6, sz * 0.5, 0, 0, 7); oc.fill();
     }
   }, 36);
   capa((oc) => {
-    oc.fillStyle = '#9DB7C8'; oc.beginPath(); oc.moveTo(0, H);
+    oc.fillStyle = esNoche ? '#0B0F26' : '#9DB7C8'; oc.beginPath(); oc.moveTo(0, H);
     for (let x = 0; x <= W; x += 8) {
       const pico = 230 * Math.exp(-(((x - 1300) / 420) ** 2)) + 140 * Math.exp(-(((x - 1800) / 300) ** 2)) + 120 * Math.exp(-(((x - 3300) / 500) ** 2));
       oc.lineTo(x, base - 40 - pico - onda(x, [[3, 30, 0.4], [7, 14, 1.3], [13, 6, 2.1]]));
@@ -853,21 +973,28 @@ function construyePanorama() {
     oc.lineTo(W, H); oc.fill();
   }, 22);
   capa((oc) => {
-    oc.fillStyle = '#9AB08A'; oc.beginPath(); oc.moveTo(0, H);
+    oc.fillStyle = esNoche ? '#13173A' : '#9AB08A'; oc.beginPath(); oc.moveTo(0, H);
     for (let x = 0; x <= W; x += 8) oc.lineTo(x, borde(x));
     oc.lineTo(W, H); oc.fill();
-    const tonos = ['#F2EEE5', '#EAD9B0', '#E8C9C0', '#C9DCE6', '#F3E3D3', '#D8D2C2', '#E6B98F'];
-    for (let k = 0; k < 900; k++) {
+    // De día, casitas; de noche, las luces de las laderas, que es lo que
+    // se ve de Quito desde cualquier cerro.
+    const tonos = esNoche ? ['#FFD27A', '#FFB347', '#FFF3C4', '#FFE08A', '#F7C56B'] : ['#F2EEE5', '#EAD9B0', '#E8C9C0', '#C9DCE6', '#F3E3D3', '#D8D2C2', '#E6B98F'];
+    for (let k = 0; k < (esNoche ? 1400 : 900); k++) {
       const x = r() * W, y0 = borde(x) + 8, y = y0 + r() ** 0.7 * (H - y0);
-      const sz = 4 + ((y - y0) / (H - y0)) * 8;
+      const sz = esNoche ? 2 + ((y - y0) / (H - y0)) * 4 : 4 + ((y - y0) / (H - y0)) * 8;
       oc.fillStyle = elige(r, tonos); oc.fillRect(x, y, sz * 1.4, sz);
     }
-  }, 10);
+  }, esNoche ? 6 : 10);
   const bruma = ctx2.createLinearGradient(0, base - 240, 0, base + 60);
-  bruma.addColorStop(0, 'rgba(226,238,244,0)'); bruma.addColorStop(1, 'rgba(226,238,244,.9)');
+  if (esNoche) { bruma.addColorStop(0, 'rgba(22,27,60,0)'); bruma.addColorStop(1, 'rgba(22,27,60,.85)'); }
+  else { bruma.addColorStop(0, 'rgba(226,238,244,0)'); bruma.addColorStop(1, 'rgba(226,238,244,.9)'); }
   ctx2.fillStyle = bruma; ctx2.fillRect(0, base - 240, W, 300);
+  return c;
+}
+function construyePanorama() {
+  panoramas.dia = textura(pintaPanorama(false));
   const g = new THREE.CylinderGeometry(780, 780, 520, 48, 1, true);
-  const m = new THREE.MeshBasicMaterial({ map: textura(c), side: THREE.BackSide, fog: false, depthWrite: false });
+  const m = new THREE.MeshBasicMaterial({ map: panoramas.dia, side: THREE.BackSide, fog: false, depthWrite: false });
   panorama = new THREE.Mesh(g, m);
   panorama.renderOrder = -1;
   escena.add(panorama);
@@ -962,6 +1089,7 @@ const FACHADAS = {
 function construyeDecorado(def) {
   const r = azar(2024 + def.id.length * 97);
   const f = new Fundidor();
+  const halos = [];
   // En un circuito el decorado se arma una vez: las vueltas pasan por ahí.
   const corridas = tramos.map((t, k) => ({ zona: t.zona, z0: t.i, z1: Math.min(k + 1 < tramos.length ? tramos[k + 1].i : N, DECO_FIN) }))
     .filter((cr) => cr.z0 < DECO_FIN);
@@ -1023,10 +1151,16 @@ function construyeDecorado(def) {
         fF.pon(new THREE.Mesh(geoFarol, negro), m);
         fF.pon(new THREE.Mesh(farol, luz), m);
         obstaculos.push({ s: ss, x: lado * (hw + 0.35), r: 0.15, tipo: 'farol' });
+        if (def.noche) halos.push(punto(ss, lado * (hw + 0.35), 4.35));
       }
     }
   }
   fF.funde();
+  // De noche, cada farol lleva su halo cálido.
+  if (halos.length) {
+    const matHalo = new THREE.SpriteMaterial({ map: textura(halo()), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0.85 });
+    for (const p of halos) { const sp = new THREE.Sprite(matHalo); sp.scale.set(4.2, 4.2, 1); sp.position.copy(p); mundo.add(sp); }
+  }
 
   // Los puestos de la vereda, que se meten un poco en la calle, y los cajones
   // sueltos (girados: lo ancho va a lo largo de la calle; de lado ocupan 1,2 m).
@@ -1259,6 +1393,7 @@ function cargaPista(id) {
   if (!construyePista(def)) return false;
   limpiaMundo();
   obstaculos.length = 0;
+  ambienta(!!def.noche);
   construyeCalle();
   if (CASAS.length) construyeDecorado(def);
   pistaActual = def;
@@ -2301,7 +2436,7 @@ function armaRuta() {
 function pintaRutaTitulo() {
   const partes = [pistaActual.nombre];
   if (LARGO_VUELTA) partes.push(`vuelta ${vueltaActual} de ${pistaActual.vueltas}`);
-  if (modo === 'copa' && copa) partes.push(`${copa.k + 1} de ${COPA.length}`);
+  if (modo === 'copa' && copa) partes.push(`${copa.k + 1} de ${COPAS[copa.id].pistas.length}`);
   $('#h-pista').textContent = partes.join(' · ');
 }
 const formato = (t) => {
@@ -2359,7 +2494,7 @@ function aplicaAjustes() {
   for (const el of document.querySelectorAll('#opciones [data-ajuste]')) el.setAttribute('aria-pressed', String(!!ajustes[el.dataset.ajuste]));
 }
 const GUARDA = 'coches3d-progreso';
-const progresoBase = () => ({ medallas: {}, records: {}, parejas: ['cucuruchos', 'guarichas'], pistas: ['panecillo'], copa: 0, album: [] });
+const progresoBase = () => ({ medallas: {}, records: {}, parejas: ['cucuruchos', 'guarichas'], pistas: ['panecillo'], copa: 0, copas: {}, album: [] });
 let prog = progresoBase();
 try { const p = JSON.parse(localStorage.getItem(GUARDA) || 'null'); if (p) prog = Object.assign(progresoBase(), p); } catch (err) { /* sin almacenamiento */ }
 const guarda = () => { try { localStorage.setItem(GUARDA, JSON.stringify(prog)); } catch (err) { /* sin almacenamiento */ } };
@@ -2372,7 +2507,11 @@ const DESBLOQUEOS = [
   { tipo: 'pareja', id: 'mamanegra', cuando: (p) => p.medallas.sanjuan <= 3, como: 'una medalla en La bajada de San Juan' },
   { tipo: 'pista', id: 'subida', cuando: (p) => p.copa === 1, como: 'ganar la Copa de las Fiestas' },
 ];
-const COPA = ['panecillo', 'guapulo', 'sanjuan'];
+const COPAS = {
+  fiestas: { nombre: 'Copa de las Fiestas', pistas: ['panecillo', 'guapulo', 'sanjuan'], campeones: '¡Campeones de las Fiestas!', ruta: 'el Panecillo, Guápulo y San Juan' },
+  noche: { nombre: 'Copa de la Noche', pistas: ['noche-vuelta', 'noche-guapulo', 'noche-sanjuan'], campeones: '¡Campeones de la Noche!', ruta: 'la vuelta al cerro, Guápulo y San Juan, de noche' },
+};
+const copaAbierta = (id) => id === 'fiestas' || prog.copa === 1;
 const PUNTOS = [10, 7, 5, 3, 1];
 const abierta = (tipo, id) => (tipo === 'pareja' ? prog.parejas : prog.pistas).includes(id);
 const comoSeGana = (tipo, id) => {
@@ -2482,17 +2621,19 @@ function trasCarrera() {
   let despues = abreElegir;
   if (modo === 'copa') {
     filas.forEach((f, k) => { copa.ultimos[f.id] = PUNTOS[k]; copa.puntos[f.id] += PUNTOS[k]; });
-    if (copa.k < COPA.length - 1) despues = muestraTablaCopa;
+    const laCopa = COPAS[copa.id];
+    if (copa.k < laCopa.pistas.length - 1) despues = muestraTablaCopa;
     else {
       const tabla = tablaCopa();
       const puesto = tabla.findIndex((f) => f.id === eqJ.id) + 1;
-      if (!prog.copa || puesto < prog.copa) prog.copa = puesto;
+      if (copa.id === 'fiestas' && (!prog.copa || puesto < prog.copa)) prog.copa = puesto;
+      if (!prog.copas[copa.id] || puesto < prog.copas[copa.id]) prog.copas[copa.id] = puesto;
       premios.push({
         disco: puesto <= 3 ? SVG.trofeo(puesto) : SVG.coche(),
-        kicker: 'Copa de las Fiestas · el final',
-        nombre: puesto === 1 ? '¡Campeones de las Fiestas!' : puesto <= 3 ? `${PUESTOS[puesto - 1]} en la Copa` : 'Fuera del podio de la Copa',
+        kicker: `${laCopa.nombre} · el final`,
+        nombre: puesto === 1 ? laCopa.campeones : puesto <= 3 ? `${PUESTOS[puesto - 1]} en la Copa` : 'Fuera del podio de la Copa',
         desc: puesto === 1
-          ? `Bajaron el Panecillo, Guápulo y San Juan, y ganaron con ${copa.puntos[eqJ.id]} puntos. Quito entero los vio pasar.`
+          ? `Corrieron ${laCopa.ruta}, y ganaron con ${copa.puntos[eqJ.id]} puntos. Quito entero los vio pasar.`
           : `Hicieron ${copa.puntos[eqJ.id]} puntos. La Copa se vuelve a correr cuando quieran.`,
         lista: tabla.map((f, k) => ({ texto: `${k + 1}. ${f.nombre}`, valor: `${f.puntos} pts`, tu: f.id === eqJ.id })),
         creditos: true,
@@ -2581,7 +2722,7 @@ function tablaCopa() {
 }
 function muestraTablaCopa() {
   estado = 'menu';
-  $('#copa-kicker').textContent = `Copa de las Fiestas · después de la carrera ${copa.k + 1} de ${COPA.length}`;
+  $('#copa-kicker').textContent = `${COPAS[copa.id].nombre} · después de la carrera ${copa.k + 1} de ${COPAS[copa.id].pistas.length}`;
   const ol = $('#copa-tabla');
   ol.textContent = '';
   tablaCopa().forEach((f, k) => {
@@ -2591,13 +2732,13 @@ function muestraTablaCopa() {
     const t = document.createElement('span'); t.textContent = `${f.puntos} pts (+${f.ultimos})`;
     li.append(n, t); ol.append(li);
   });
-  const sig = PISTAS.find((q) => q.id === COPA[copa.k + 1]);
+  const sig = PISTAS.find((q) => q.id === COPAS[copa.id].pistas[copa.k + 1]);
   $('#b-copa-sigue span').textContent = `Siguiente: ${sig.nombre}`;
   pantalla('copa');
 }
 function sigueCopa() {
   copa.k++;
-  cargaPista(COPA[copa.k]);
+  cargaPista(COPAS[copa.id].pistas[copa.k]);
   empieza();
 }
 
@@ -2709,11 +2850,12 @@ function dibujaMapa() {
 function pintaPortada() {
   const medallas = PISTAS.filter((q) => prog.medallas[q.id] <= 3).length;
   const copaTxt = prog.copa ? ` · en la Copa: ${prog.copa}.º` : '';
+  $('#b-copa-noche').classList.toggle('is-cerrada', !copaAbierta('noche'));
   $('#progreso').textContent = `Medallas: ${medallas} de ${PISTAS.length} · parejas: ${prog.parejas.length} de ${EQUIPOS.length} · estampitas: ${prog.album.length} de ${CROMOS.length}${copaTxt}`;
 }
 function abreElegir() {
   tocaMusica('menu');
-  const id = modo === 'copa' ? COPA[copa.k] : pistaSuelta;
+  const id = modo === 'copa' ? COPAS[copa.id].pistas[copa.k] : pistaSuelta;
   if (!pistaActual || pistaActual.id !== id) cargaPista(id);
   if (!abierta('pareja', eqJ.id)) eligePareja(prog.parejas[0]);
   else eligePareja(eqJ.id);
@@ -2724,7 +2866,7 @@ function abreElegir() {
 }
 function pintaElegir() {
   const enCopa = modo === 'copa';
-  $('#elegir-kicker').textContent = enCopa ? `Copa de las Fiestas · carrera 1 de ${COPA.length}` : 'Carrera suelta';
+  $('#elegir-kicker').textContent = enCopa ? `${COPAS[copa.id].nombre} · carrera 1 de ${COPAS[copa.id].pistas.length}` : 'Carrera suelta';
   $('#elegir-titulo').textContent = enCopa ? 'Elige tu pareja para toda la Copa' : 'Elige pareja y pista';
   $('#elegir-pistas').hidden = enCopa;
   for (const b of document.querySelectorAll('#parejas .chip')) {
@@ -2807,7 +2949,7 @@ function pintaMedallas() {
     if (!ok) li.classList.add('is-cerrada');
     ul2.append(li);
   }
-  $('#copa-mejor').textContent = prog.copa ? `Tu mejor Copa: ${PUESTOS[prog.copa - 1].toLowerCase()}.` : 'Todavía no has terminado la Copa.';
+  $('#copa-mejor').textContent = Object.keys(COPAS).map((id) => `${COPAS[id].nombre}: ${prog.copas[id] ? PUESTOS[prog.copas[id] - 1].toLowerCase() : copaAbierta(id) ? 'sin terminar' : 'cerrada'}`).join(' · ') + '.';
 }
 
 // ─── elegir pareja ─────────────────────────────────────────────────
@@ -2886,11 +3028,14 @@ function sigue() {
   if (son.ctx) son.ctx.resume();
 }
 
-$('#b-copa').addEventListener('click', () => {
+function empiezaCopa(id) {
+  if (!copaAbierta(id)) { avisa('Se abre ganando la Copa de las Fiestas', 1600); return; }
   modo = 'copa';
-  copa = { k: 0, puntos: Object.fromEntries(EQUIPOS.map((q) => [q.id, 0])), ultimos: {} };
+  copa = { id, k: 0, puntos: Object.fromEntries(EQUIPOS.map((q) => [q.id, 0])), ultimos: {} };
   abreElegir();
-});
+}
+$('#b-copa').addEventListener('click', () => empiezaCopa('fiestas'));
+$('#b-copa-noche').addEventListener('click', () => empiezaCopa('noche'));
 $('#b-suelta').addEventListener('click', () => { modo = 'suelta'; abreElegir(); });
 $('#b-medallas').addEventListener('click', () => { pintaMedallas(); pantalla('medallas'); $('#b-volver-medallas').focus({ preventScroll: true }); });
 $('#b-album').addEventListener('click', () => { pintaAlbum(); pantalla('album'); $('#b-volver-album').focus({ preventScroll: true }); });
@@ -3026,6 +3171,7 @@ function bucle(ahora) {
     panorama.position.set(camara.position.x, camara.position.y + 30, camara.position.z);
     sigueSol(camara.position);
     if (publico) publico.coloca(ahora / 1000, foto.s);
+    animaFuegos(dt, foto.s);
     render.render(escena, camara);
     requestAnimationFrame(bucle); return;
   }
@@ -3035,12 +3181,14 @@ function bucle(ahora) {
     if (estado === 'elegir') dibujaPortada(ahora / 1000);
     else if (estado === 'podio') dibujaPodio(ahora / 1000);
     else dibujaVuelo(ahora / 1000);
+    animaFuegos(dt, estado === 'elegir' || estado === 'podio' ? j.s : SALIDA + ((ahora / 1000) * 7) % Math.max(60, META - SALIDA));
     render.render(escena, camara);
   } else if (estado !== 'pausa') {
     acum += dt;
     while (acum >= PASO) { actualiza(PASO); acum -= PASO; }
     dibujaMundo(dt);
     dibujaCamara(dt);
+    animaFuegos(dt, j.s);
     if (publico) publico.coloca(ahora / 1000, j.s);
     render.render(escena, camara);
     if (estado === 'carrera' || estado === 'llegada' || estado === 'cuenta') pintaHud();
@@ -3079,7 +3227,7 @@ async function carga() {
   eqJ = EQUIPOS.find((q) => q.id === (abierta('pareja', guardada) ? guardada : prog.parejas[0]));
   cargaPista('panecillo');
   eligePareja(eqJ.id);
-  for (const id of ['b-copa', 'b-suelta', 'b-medallas', 'b-album']) $('#' + id).disabled = false;
+  for (const id of ['b-copa', 'b-copa-noche', 'b-suelta', 'b-medallas', 'b-album']) $('#' + id).disabled = false;
   aplicaAjustes();
   texto.textContent = tactilMQ.matches ? 'Toca para empezar' : 'Pulsa una tecla';
   $('#start').classList.add('is-lista');
@@ -3087,8 +3235,9 @@ async function carga() {
 }
 
 preparaMateriales();
-cargaPista('panecillo');
 construyePanorama();
+preparaFuegos();
+cargaPista('panecillo');
 mide();
 pintaPortada();
 pantalla('titulo', true);
@@ -3106,7 +3255,9 @@ window.coches = {
   curva: (s) => P.k[limita(Math.floor(s), 0, N - 1)], tope: (k) => GIRO / (CENTRIFUGA * Math.max(k, 1e-4)), hw: (s) => muestra(s).hw, teclas, empieza,
   // Avanza la simulación sin dibujar, para las pruebas automáticas.
   volcar: () => volcar(),
-  pista: (id) => cargaPista(id),
+  pista: (id) => cargaPista(id), noche: () => noche, copas: COPAS, empiezaCopa,
+  cohete: (s) => lanzaCohete(s),
+  fuegos: () => ({ visible: fuegos.points && fuegos.points.visible, vivos: fuegos.datos.filter((d) => d.vivo).map((d) => [Math.round(d.x), Math.round(d.y), Math.round(d.z), +d.t.toFixed(1)]), cam: camara.position.toArray().map(Math.round) }),
   // Mete una calle de verdad y su pista sin pasar por la red, para probar.
   pistaReal: (datos, def) => { DATOS_REALES[datos.id] = datos; if (!PISTAS.some((p) => p.id === def.id)) PISTAS.push(def); return cargaPista(def.id); },
   vuelta: () => vueltaActual, largoVuelta: () => LARGO_VUELTA, mapa: dibujaMapa,

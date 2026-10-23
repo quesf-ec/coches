@@ -154,6 +154,7 @@ body.pixel #pista{image-rendering:pixelated;image-rendering:crisp-edges}
 @media (orientation:landscape) and (max-height:600px){
   .coches-opciones{grid-template-columns:1fr 1fr}
   .coches-opciones .btn:first-child{grid-column:1 / -1}
+  .coches-opciones .btn:nth-child(2){grid-column:1 / -1}
 }
 
 /* El álbum: una cuadrícula de estampitas; las que faltan, en sombra. */
@@ -219,6 +220,7 @@ body.pixel #pista{image-rendering:pixelated;image-rendering:crisp-edges}
 .coches-stats .medidor{height:8px}
 /* Lo cerrado se ve, pero apagado y con su candado. */
 .coches-candado{display:none;margin-right:.3em}
+.btn.is-cerrada{opacity:.6}
 .is-cerrada .coches-candado{display:inline-block}
 .coches-parejas .chip.is-cerrada{opacity:.55;border-style:dashed}
 .coches-parejas .chip svg:not(.icono){vertical-align:-4px}

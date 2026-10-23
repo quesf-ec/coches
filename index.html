@@ -21,9 +21,9 @@
 <!-- El sello ?v= se sube a mano en cada cambio del juego (CSS, JS y, con el
      JS, los modelos, que heredan su sello): así el navegador no se queda con
      la versión anterior. -->
-<link rel="stylesheet" href="coches.css?v=23551ba82f">
+<link rel="stylesheet" href="coches.css?v=764b5624af">
 <!-- La piel del juego: variante del tema juegos (ver tema/LEEME.md). Va al final para mandar. -->
-<link rel="stylesheet" href="tema/tema.css?v=23551ba82f">
+<link rel="stylesheet" href="tema/tema.css?v=764b5624af">
 <script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js", "three/addons/": "./vendor/addons/" } }</script>
 </head>
 <body class="coches">
@@ -108,6 +108,8 @@
     <nav class="coches-opciones" aria-label="Menú">
       <button class="btn btn--rojo boton-juego btn-block" id="b-copa" type="button" disabled>
         <svg class="icono" aria-hidden="true"><use href="#i-trofeo"/></svg> <span>Copa de las Fiestas</span></button>
+      <button class="btn boton-juego btn-block" id="b-copa-noche" type="button" disabled>
+        <svg class="icono coches-candado" aria-hidden="true"><use href="#i-candado"/></svg><svg class="icono" aria-hidden="true"><use href="#i-luna"/></svg> Copa de la Noche</button>
       <button class="btn boton-juego btn-block" id="b-suelta" type="button" disabled>
         <svg class="icono" aria-hidden="true"><use href="#i-play"/></svg> Carrera suelta</button>
       <button class="btn boton-juego btn-block" id="b-medallas" type="button" disabled>
@@ -296,6 +298,6 @@
 </div>
 
 <script src="../ds/mal/mal.js?v=1.0.17" defer></script>
-<script type="module" src="coches.js?v=23551ba82f"></script>
+<script type="module" src="coches.js?v=764b5624af"></script>
 </body>
 </html>
