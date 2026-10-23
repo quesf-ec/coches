@@ -99,7 +99,7 @@ body.coches{
    Lo único que sale en el centro, y solo un segundo: es lo que hay
    que mirar en ese momento. */
 .coches-cuenta,.coches-aviso{
-  position:fixed;left:0;right:0;z-index:22;margin:0;text-align:center;pointer-events:none;
+  position:fixed;left:0;right:0;z-index:35;margin:0;text-align:center;pointer-events:none;
   font-family:var(--mal-display);font-weight:800;color:#fff;
   -webkit-text-stroke:2px #2b2129;paint-order:stroke fill;
   text-shadow:0 5px 0 #2b2129;
@@ -255,7 +255,7 @@ body.pixel #pista{image-rendering:pixelated;image-rendering:crisp-edges}
 
 @media (prefers-reduced-motion:reduce){
   .coches-turbo,.coches-empujador{animation:none}
-  .coches-cuenta.is-sale{animation:none}
+  .coches-cuenta.is-sale{animation:coches-sale .9s steps(1, end) both}
 }
 
 /* ─── de lado, en el teléfono ─────────────────────────────────

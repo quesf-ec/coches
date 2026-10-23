@@ -655,7 +655,18 @@ const tramos = [];
 let N = 0, SALIDA = 0, META = 0;
 // En un circuito, lo que mide una vuelta y hasta dónde llega el decorado
 // (una vuelta: las demás pasan por el mismo sitio).
-let LARGO_VUELTA = 0, DECO_FIN = 0;
+let LARGO_VUELTA = 0, DECO_INI = 0, DECO_FIN = 0;
+// Un filtro de caja cíclico: para la vuelta de un circuito, donde el final
+// sigue en el principio.
+function suavizaCiclico(arr, R, pasadas) {
+  let a = arr.slice(); const n = a.length;
+  for (let p = 0; p < pasadas; p++) {
+    const b = new Array(n);
+    for (let i = 0; i < n; i++) { let t = 0; for (let k = -R; k <= R; k++) t += a[(i + k + n * 8) % n]; b[i] = t / (2 * R + 1); }
+    a = b;
+  }
+  return a;
+}
 // Las calles de verdad, de coches/pistas/*.json (las trae tools/calles.py),
 // y las generadas en código con la misma forma (un trazado en metros).
 const DATOS_REALES = {};
@@ -696,6 +707,16 @@ function construyePistaReal(def) {
   }
   if (!cerrada) vuelta.push(pts[pts.length - 1]);
   const largo = vuelta.length;
+  // En un circuito la altura y la curva se suavizan sobre la vuelta, en
+  // redondo, antes de repetirla: así cada vuelta es idéntica y la calle
+  // cierra sin escalón.
+  let lapY = null, lapK = null;
+  if (cerrada) {
+    lapY = suavizaCiclico(vuelta.map((p) => p[2]), 25, 3);
+    const ths = vuelta.map((p, m) => { const sg = vuelta[(m + 1) % largo], an = vuelta[(m - 1 + largo) % largo]; return Math.atan2(sg[0] - an[0], sg[1] - an[1]); });
+    const giro = (a, b) => { let d = a - b; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; return d; };
+    lapK = suavizaCiclico(ths.map((t, m) => giro(t, ths[(m + 1) % largo])), 4, 2);
+  }
   const zonaDe = (m) => { let z = def.zonas[0][0]; for (const [n, desde] of def.zonas) if (m >= desde) z = n; return z; };
   let desde, hasta;
   if (cerrada) {
@@ -714,15 +735,17 @@ function construyePistaReal(def) {
     const ant = cerrada ? vuelta[(m - 1 + largo) % largo] : vuelta[Math.max(m - 1, 0)];
     const th = Math.atan2(sig[0] - ant[0], sig[1] - ant[1]);
     const zn = zonaDe(m);
-    if (zn !== zona) { zona = zn; tramos.push({ zona, i: P.x.length }); }
-    P.x.push(x); P.z.push(z); P.y.push(y); P.th.push(th); P.zona.push(zona); P.hw.push(ZONAS[zona].hw); P.k.push(0);
+    // En el circuito, la línea abre un tramo aunque la zona siga: así
+    // «metros desde que empieza la zona» cuentan desde la línea.
+    if (zn !== zona || (cerrada && i === 0)) { zona = zn; tramos.push({ zona, i: P.x.length }); }
+    P.x.push(x); P.z.push(z); P.y.push(cerrada ? lapY[m] : y); P.th.push(th); P.zona.push(zona); P.hw.push(ZONAS[zona].hw); P.k.push(cerrada ? lapK[m] : 0);
   }
   // Sin saltos de 2π en el rumbo, y la curva es lo que gira cada metro.
   for (let i = 1; i < P.th.length; i++) {
     while (P.th[i] - P.th[i - 1] > Math.PI) P.th[i] -= Math.PI * 2;
     while (P.th[i] - P.th[i - 1] < -Math.PI) P.th[i] += Math.PI * 2;
   }
-  for (let i = 0; i + 1 < P.th.length; i++) P.k[i] = P.th[i] - P.th[i + 1];
+  if (!cerrada) for (let i = 0; i + 1 < P.th.length; i++) P.k[i] = P.th[i] - P.th[i + 1];
   return true;
 }
 
@@ -733,11 +756,12 @@ function construyePista(def) {
   if (def.real) {
     if (!construyePistaReal(def)) return false;
     N = P.x.length;
-    DECO_FIN = LARGO_VUELTA ? SALIDA + LARGO_VUELTA + 6 : N;
+    DECO_INI = LARGO_VUELTA ? SALIDA : 0;
+    DECO_FIN = LARGO_VUELTA ? SALIDA + LARGO_VUELTA : N;
     // La curva se suaviza (una calle de OSM va a tramos rectos) y la
     // altura, más que en las pistas inventadas: el terreno viene a 30 m.
-    P.k = suavizaArr(P.k, 4, 2);
-    P.y = suavizaArr(P.y, 25, 3);
+    // (En el circuito ya vienen suavizadas en redondo.)
+    if (!LARGO_VUELTA) { P.k = suavizaArr(P.k, 4, 2); P.y = suavizaArr(P.y, 25, 3); }
     P.hw = suavizaArr(P.hw, 8, 1);
     for (let i = 0; i < N; i++) P.pend[i] = (P.y[Math.min(i + 1, N - 1)] - P.y[Math.max(i - 1, 0)]) / 2;
     return true;
@@ -760,7 +784,7 @@ function construyePista(def) {
     else tramo(...p);
   }
   N = P.x.length;
-  DECO_FIN = N;
+  DECO_INI = 0; DECO_FIN = N;
 
   // Las alturas y los anchos se suavizan: la pendiente cambia sin escalones
   // y la calle se ensancha o se estrecha a lo largo de unos metros.
@@ -841,8 +865,20 @@ const MAT = {};
 // vacía al cambiar de pista. Los coches, la gente y el fondo se quedan.
 const mundo = new THREE.Group();
 escena.add(mundo);
+// Se liberan geometrías y, de los materiales, solo los de esta pista: los
+// compartidos (la calle, las casas del GLB) llevan la marca y se quedan.
 function limpiaMundo() {
-  mundo.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
+  const vistos = new Set();
+  mundo.traverse((o) => {
+    if (o.isInstancedMesh) o.dispose();
+    if (o.geometry && !o.isSprite) o.geometry.dispose();
+    for (const m of [].concat(o.material || [])) {
+      if (!m || vistos.has(m) || m.userData.compartido) continue;
+      vistos.add(m);
+      if (m.map && !m.map.userData.compartido) m.map.dispose();
+      m.dispose();
+    }
+  });
   mundo.clear();
 }
 
@@ -883,14 +919,18 @@ function preparaMateriales() {
   MAT.pasto = lam(TEX.pasto); MAT.plaza = lam(TEX.plaza);
   MAT.bordillo = mate({ color: 0xB9B0A0, side: THREE.DoubleSide });
   MAT.madera = mate({ map: TEX.madera });
+  for (const m of Object.values(MAT)) m.userData.compartido = true;
+  for (const t of Object.values(TEX)) if (t && t.userData) t.userData.compartido = true;
 }
 
 function construyeCalle() {
   // Por tramos de zona: cada una con su calzada y su lado.
   const uvCalle = { asfalto: (i, x) => [x / 10 + 0.5, i / 8], adoquin: (i, x) => [x / 2, i / 2] };
-  let i0 = 0;
-  for (let i = 1; i <= N; i++) {
-    if (i < N && P.zona[i] === P.zona[i0]) continue;
+  // En un circuito, una sola vuelta de calzada: la vuelta cierra sobre sí.
+  const FIN = LARGO_VUELTA ? DECO_FIN : N;
+  let i0 = DECO_INI;
+  for (let i = i0 + 1; i <= FIN; i++) {
+    if (i < FIN && P.zona[i] === P.zona[i0]) continue;
     const i1 = Math.min(i, N - 1), z = ZONAS[P.zona[i0]];
     const hw = (k) => P.hw[k];
     cinta(i0, i1, (k, l) => [l ? hw(k) : -hw(k), 0], uvCalle[z.calle], MAT[z.calle]);
@@ -1077,7 +1117,7 @@ function preparaQuito(quito) {
     }
     for (const n of ['obstaculo_muro', 'obstaculo_salto']) if (!PIEZAS[n] && o.name.startsWith(n)) PIEZAS[n] = asienta(o, 0);
   });
-  quito.scene.traverse((o) => { if (o.isMesh) for (const m of [].concat(o.material)) { m.metalness = 0; m.roughness = Math.max(m.roughness, 0.8); } });
+  quito.scene.traverse((o) => { if (o.isMesh) for (const m of [].concat(o.material)) { m.metalness = 0; m.roughness = Math.max(m.roughness, 0.8); m.userData.compartido = true; if (m.map) m.map.userData.compartido = true; } });
 }
 
 // Las fachadas grandes pintadas en lienzo: [pintor, ancho, alto, fondo].
@@ -1091,9 +1131,9 @@ function construyeDecorado(def) {
   const f = new Fundidor();
   const halos = [];
   // En un circuito el decorado se arma una vez: las vueltas pasan por ahí.
-  const corridas = tramos.map((t, k) => ({ zona: t.zona, z0: t.i, z1: Math.min(k + 1 < tramos.length ? tramos[k + 1].i : N, DECO_FIN) }))
-    .filter((cr) => cr.z0 < DECO_FIN);
-  const enZona = (z, d) => { const t = tramos.find((q) => q.zona === z); return (t ? t.i : 0) + d; };
+  const corridas = tramos.map((t, k) => ({ zona: t.zona, z0: Math.max(t.i, DECO_INI), z1: Math.min(k + 1 < tramos.length ? tramos[k + 1].i : N, DECO_FIN) }))
+    .filter((cr) => cr.z0 < cr.z1);
+  const enZona = (z, d) => { const t = tramos.find((q) => q.zona === z && q.i >= DECO_INI); return (t ? t.i : DECO_INI) + d; };
   const hasta = (z1, extra) => Math.min(z1, META + extra, N - 5, DECO_FIN);
 
   // Las fachadas grandes: van en cajas y dejan hueco entre las casas.
@@ -1194,7 +1234,7 @@ function construyeDecorado(def) {
   const fP = new Fundidor();
   for (const cr of corridas) {
     if (!ZONAS[cr.zona].arboles) continue;
-    for (let s = cr.z0; s < Math.min(cr.z1 + 30, N - 5); s += 7) {
+    for (let s = cr.z0; s < Math.min(cr.z1 + (LARGO_VUELTA ? 0 : 30), N - 5); s += 7) {
       if (s > SALIDA - 6 && s < SALIDA + 8) continue;
       for (const lado of [-1, 1]) {
         // En un anillo, los árboles van por fuera: por dentro se ve el cerro.
@@ -1259,7 +1299,7 @@ function construyeDecorado(def) {
       lugares.push({ s, lado, fondo: r() });
     }
   };
-  for (let s = 4; s < SALIDA + 10; s += 5) { fila(s, -1, 5); fila(s + 2.5, 1, 5); }
+  for (let s = LARGO_VUELTA ? SALIDA + 4 : 4; s < SALIDA + 10; s += 5) { fila(s, -1, 5); fila(s + 2.5, 1, 5); }
   if (!LARGO_VUELTA) for (let s = META - 14; s < META + 16; s += 5) { fila(s, -1, 6); fila(s + 2.5, 1, 6); }
   corridas.forEach((cr, k) => {
     const [paso, n] = ZONAS[cr.zona].publico || [0, 0];
@@ -1379,7 +1419,7 @@ function construyeDecorado(def) {
   // En un circuito, lo que hay en la calle está en cada vuelta: mismas
   // piezas, otro metro.
   if (LARGO_VUELTA) {
-    const base = obstaculos.filter((o) => o.s < DECO_FIN);
+    const base = obstaculos.filter((o) => o.s >= DECO_INI && o.s < DECO_FIN);
     for (let v = 1; v < def.vueltas; v++) for (const o of base) obstaculos.push({ ...o, s: o.s + v * LARGO_VUELTA });
   }
   obstaculos.sort((a, b) => a.s - b.s);
@@ -2199,7 +2239,8 @@ function actualiza(dt) {
       if (o.tomada || Math.abs(o.s - j.s) > (o.largo || 0.6)) continue;
       const dx = Math.abs(o.x - j.x);
       if (o.tipo === 'cromo' && dx < 1.0) {
-        o.tomada = true; o.mesh.visible = false;
+        for (const q of obstaculos) if (q.tipo === 'cromo' && q.id === o.id) q.tomada = true;   // también en las otras vueltas
+        o.mesh.visible = false;
         const cr = CROMOS.find((q) => q.id === o.id);
         if (modo !== 'demo' && !prog.album.includes(o.id)) { prog.album.push(o.id); cromosNuevos.push(o.id); guarda(); }
         avisa(`¡Estampita: ${cr.nombre}!`, 1400);
@@ -2392,7 +2433,7 @@ function dibujaMundo(dt) {
   }
 
   // El fantasma, donde iba el récord en este segundo.
-  if (fantasma.coche) {
+  if (fantasma.coche && fantasma.datos) {
     const tr = fantasma.datos, i = Math.min(Math.floor(reloj * 10), tr.length - 1), f = Math.min(1, reloj * 10 - i);
     const a = tr[i], b = tr[Math.min(i + 1, tr.length - 1)];
     const s = mezcla(a[0], b[0], f), x = mezcla(a[1], b[1], f), h = mezcla(a[2], b[2], f);
@@ -2844,6 +2885,7 @@ function muestraTablaCopa() {
   const sig = PISTAS.find((q) => q.id === COPAS[copa.id].pistas[copa.k + 1]);
   $('#b-copa-sigue span').textContent = `Siguiente: ${sig.nombre}`;
   pantalla('copa');
+  $('#b-copa-sigue').focus({ preventScroll: true });
 }
 function sigueCopa() {
   copa.k++;
@@ -2963,7 +3005,10 @@ function dibujaMapa() {
 function pintaPortada() {
   const medallas = PISTAS.filter((q) => prog.medallas[q.id] <= 3).length;
   const copaTxt = prog.copa ? ` · en la Copa: ${prog.copa}.º` : '';
-  $('#b-copa-noche').classList.toggle('is-cerrada', !copaAbierta('noche'));
+  const bn = $('#b-copa-noche');
+  bn.classList.toggle('is-cerrada', !copaAbierta('noche'));
+  bn.setAttribute('aria-disabled', String(!copaAbierta('noche')));
+  bn.title = copaAbierta('noche') ? '' : 'Se abre ganando la Copa de las Fiestas';
   $('#progreso').textContent = `Medallas: ${medallas} de ${PISTAS.length} · parejas: ${prog.parejas.length} de ${EQUIPOS.length} · estampitas: ${prog.album.length} de ${CROMOS.length}${copaTxt}`;
 }
 function abreElegir() {
@@ -3019,6 +3064,7 @@ function pintaElegir() {
       cargaPista(q.id);
       eligePareja(eqJ.id);
       pintaElegir();
+      const n = $('#pistas [aria-checked="true"]'); if (n) n.focus({ preventScroll: true });
     });
     caja.append(b);
   }
@@ -3178,7 +3224,7 @@ $('#b-ayuda').addEventListener('click', () => { pantalla('ayuda'); $('#b-volver-
 $('#b-volver-ayuda').addEventListener('click', aMenu);
 $('#titulo').addEventListener('click', desdeTitulo);
 $('#podio').addEventListener('click', aMenu);
-$('#podio').addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); aMenu(); } });
+$('#podio').addEventListener('keydown', (ev) => { if (ev.repeat) return; if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); aMenu(); } });
 // Los menús suenan: un blip al moverse, otro al elegir.
 document.addEventListener('focusin', (ev) => { if (ev.target.matches('.btn, .chip') && estado !== 'carrera') tono(1100, 0.04, 'square', 0.05); });
 document.addEventListener('click', (ev) => { if (ev.target.closest('.btn, .chip') && estado !== 'carrera') tono(620, 0.1, 'square', 0.07, 1240); });
@@ -3201,7 +3247,7 @@ function navegaMenu(ev) {
     lista = fuera; k = fuera.indexOf(act);
   }
   const sig = lista[(k + (atras ? -1 : 1) + lista.length) % lista.length];
-  if (sig) { sig.focus({ preventScroll: true }); if (sig.matches('.chip') && lateral) sig.click(); }
+  if (sig) { sig.focus({ preventScroll: true }); if (sig.matches('.chip[role="radio"]') && lateral) sig.click(); }
   return true;
 }
 $('#b-volver-medallas').addEventListener('click', aMenu);
@@ -3214,7 +3260,7 @@ $('#b-salir').addEventListener('click', aMenu);
 $('#b-copa-sigue').addEventListener('click', sigueCopa);
 $('#b-copa-deja').addEventListener('click', aMenu);
 $('#premio').addEventListener('click', siguientePremio);
-$('#premio').addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); siguientePremio(); } });
+$('#premio').addEventListener('keydown', (ev) => { if (ev.repeat) return; if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); siguientePremio(); } });
 $('#b-sonido').addEventListener('click', () => { ajustes.sonido = !ajustes.sonido; guardaAjustes(); aplicaAjustes(); });
 for (const el of document.querySelectorAll('#opciones [data-ajuste]')) {
   el.addEventListener('click', () => { ajustes[el.dataset.ajuste] = !ajustes[el.dataset.ajuste]; guardaAjustes(); aplicaAjustes(); });
@@ -3235,6 +3281,9 @@ $('#b-volver-opciones').addEventListener('click', aMenu);
 $('#b-creditos').addEventListener('click', () => { pantalla('creditos'); $('#b-volver-creditos').focus({ preventScroll: true }); });
 $('#b-volver-creditos').addEventListener('click', aMenu);
 document.addEventListener('visibilitychange', () => { if (document.hidden) pausa(); });
+// Si el teléfono se pone de pie, sale el cartel de girarlo: la carrera se pausa.
+const verticalMQ = matchMedia('(orientation: portrait) and (pointer: coarse)');
+verticalMQ.addEventListener('change', (ev) => { if (ev.matches) { for (const k in teclas) teclas[k] = false; pausa(); } });
 
 const MAPA = {
   ArrowLeft: 'izq', KeyA: 'izq', ArrowRight: 'der', KeyD: 'der',
@@ -3242,7 +3291,11 @@ const MAPA = {
 };
 addEventListener('keydown', (ev) => {
   if (modo === 'demo') { ev.preventDefault(); terminaDemo(); return; }
-  if (estado === 'titulo') { if (!['ShiftLeft', 'ShiftRight', 'ControlLeft', 'ControlRight', 'AltLeft', 'AltRight', 'MetaLeft', 'MetaRight', 'Tab'].includes(ev.code)) { ev.preventDefault(); desdeTitulo(); } return; }
+  if (estado === 'titulo') {
+    if (ev.ctrlKey || ev.metaKey || ev.altKey || /^F\d+$/.test(ev.code) || ev.repeat) return;
+    if (!['ShiftLeft', 'ShiftRight', 'ControlLeft', 'ControlRight', 'AltLeft', 'AltRight', 'MetaLeft', 'MetaRight', 'Tab', 'Escape'].includes(ev.code)) { ev.preventDefault(); desdeTitulo(); }
+    return;
+  }
   if (ev.code === 'Escape' || ev.code === 'KeyP') { if (estado === 'pausa') sigue(); else pausa(); return; }
   if ((estado === 'menu' || estado === 'elegir' || estado === 'pausa') && ev.code.startsWith('Arrow')) { if (navegaMenu(ev)) ev.preventDefault(); return; }
   const t = MAPA[ev.code];
@@ -3294,6 +3347,7 @@ const PASO = 1 / 60;
 function bucle(ahora) {
   const dt = Math.min(0.1, (ahora - previo) / 1000);
   previo = ahora;
+  sonidoRodar();   // fuera de la carrera baja a cero: que no quede el siseo en los menús
   if (estado === 'premio') { requestAnimationFrame(bucle); return; }
   if (estado === 'foto') {
     // Cámara libre, para las fotos de las pruebas.
@@ -3327,7 +3381,6 @@ function bucle(ahora) {
     if (publico) publico.coloca(ahora / 1000, j.s);
     render.render(escena, camara);
     if (estado === 'carrera' || estado === 'llegada' || estado === 'cuenta') pintaHud();
-    sonidoRodar();
   }
   requestAnimationFrame(bucle);
 }
@@ -3391,6 +3444,9 @@ window.coches = {
   // Avanza la simulación sin dibujar, para las pruebas automáticas.
   volcar: () => volcar(),
   pista: (id) => cargaPista(id), noche: () => noche, copas: COPAS, empiezaCopa,
+  renderiza: () => render.render(escena, camara),
+  limpia: () => { limpiaMundo(); obstaculos.length = 0; return { ...render.info.memory }; },
+  memoria: () => ({ geometrias: render.info.memory.geometries, texturas: render.info.memory.textures, programas: render.info.programs.length, hijos: mundo.children.length, obstaculos: obstaculos.length }),
   cohete: (s) => lanzaCohete(s),
   fuegos: () => ({ visible: fuegos.points && fuegos.points.visible, vivos: fuegos.datos.filter((d) => d.vivo).map((d) => [Math.round(d.x), Math.round(d.y), Math.round(d.z), +d.t.toFixed(1)]), cam: camara.position.toArray().map(Math.round) }),
   // Mete una calle de verdad y su pista sin pasar por la red, para probar.
