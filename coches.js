@@ -392,6 +392,14 @@ const PISTAS = [
     coladas: [['basilica', 50], ['venezuela', 30], ['venezuela', 120], ['rocafuerte', 60], ['rocafuerte', 140]],
   },
   {
+    id: 'vuelta', nombre: 'La vuelta al Panecillo', salida: 'EL PANECILLO', meta: 'EL PANECILLO', real: 'panecillo-vuelta', vueltas: 2, arbolesLado: -1,
+    lema: 'Dos vueltas al cerro por la carretera que lo rodea: la Virgen siempre a la vista y el que empuja, sin descanso en las subidas.',
+    zonas: [['panecillo', 0], ['mirador', 130], ['cumbre', 230], ['panecillo', 330]],
+    hitos: [['cerro', null, 0, 0, 40, 30]],
+    rampas: [['panecillo', 70, 0], ['mirador', 50, -1.2], ['cumbre', 60, 1.2]],
+    coladas: [['panecillo', 40], ['mirador', 20], ['cumbre', 20], ['panecillo', 360]],
+  },
+  {
     id: 'subida', nombre: 'La subida del Panecillo', salida: 'LA AMBATO', meta: 'LA VIRGEN', premio: true,
     lema: 'Al revés: de la Ambato a la Virgen, cuesta arriba todo el rato. Aquí el que empuja es el motor.',
     tramos: ['ambato', [0, 40, 0, 0, 0], ['salida', 34], [10, 20, 10, 0, 2],
@@ -409,8 +417,22 @@ let N = 0, SALIDA = 0, META = 0;
 // En un circuito, lo que mide una vuelta y hasta dónde llega el decorado
 // (una vuelta: las demás pasan por el mismo sitio).
 let LARGO_VUELTA = 0, DECO_FIN = 0;
-// Las calles de verdad, de coches/pistas/*.json (las trae tools/calles.py).
+// Las calles de verdad, de coches/pistas/*.json (las trae tools/calles.py),
+// y las generadas en código con la misma forma (un trazado en metros).
 const DATOS_REALES = {};
+const GENERADAS = {
+  // La vuelta al cerro: un anillo con tres lóbulos alrededor del Panecillo,
+  // que sube y baja. Unos 430 m la vuelta; tres vueltas, dos minutos.
+  'panecillo-vuelta': () => {
+    const puntos = [];
+    for (let k = 0; k < 120; k++) {
+      const a = (k / 120) * Math.PI * 2;
+      const r = 62 + 14 * Math.sin(3 * a) + 5 * Math.sin(5 * a + 1);
+      puntos.push([Math.cos(a) * r, Math.sin(a) * r, 5 * Math.sin(2 * a + 0.4) + 2 * Math.sin(5 * a)]);
+    }
+    return { id: 'panecillo-vuelta', origen: [0, 0], largo: 430, cerrada: true, puntos, calles: [] };
+  },
+};
 
 // Una pista sobre una calle de verdad: el trazado viene en metros, cada
 // pocos metros, y aquí se muestrea cada metro. Si es un circuito, la vuelta
@@ -894,6 +916,8 @@ function construyeDecorado(def) {
     for (let s = cr.z0; s < Math.min(cr.z1 + 30, N - 5); s += 7) {
       if (s > SALIDA - 6 && s < SALIDA + 8) continue;
       for (const lado of [-1, 1]) {
+        // En un anillo, los árboles van por fuera: por dentro se ve el cerro.
+        if (def.arbolesLado && lado !== def.arbolesLado) continue;
         const hw = muestra(s).hw, x = lado * (hw + ACERA + 1.5 + r() * 9);
         const m = matrizEn(s + r() * 4, x, BORDILLO - 0.2, 0, r() * 6);
         fP.pon(new THREE.Mesh(tronco, matTronco), m);
@@ -913,6 +937,30 @@ function construyeDecorado(def) {
     }
   }
   fP.funde();
+  // El cerro: una loma de pasto con la Virgen encima, para el circuito que
+  // le da la vuelta. [tipo, zona, d, x, radio, alto]; con zona null, d y x
+  // son coordenadas del mundo (el centro del anillo generado es 0, 0).
+  for (const [tipo, z, d, x, radio, alto] of def.hitos) {
+    if (tipo !== 'cerro') continue;
+    const g = new THREE.SphereGeometry(1, 24, 10, 0, Math.PI * 2, 0, Math.PI / 2);
+    g.scale(radio, alto, radio);
+    const pos = g.attributes.position;
+    const r2 = azar(7);
+    for (let i = 0; i < pos.count; i++) { const y = pos.getY(i); if (y > 0.5) pos.setY(i, y + (r2() - 0.5) * 1.6); }
+    g.computeVertexNormals();
+    const loma = new THREE.Mesh(g, mate({ color: 0x7FA86A, flatShading: true }));
+    if (z === null) loma.position.set(d, -9, x); else loma.position.copy(punto(enZona(z, d), x, -0.6));
+    loma.receiveShadow = true;
+    mundo.add(loma);
+    // Un camino de piedra que sube en espiral y, arriba, el pedestal.
+    const pedestal = new THREE.Mesh(new THREE.CylinderGeometry(4, 5, 2.2, 10), mate({ color: 0xC9C2B4 }));
+    pedestal.position.copy(loma.position).y += alto - 0.4;
+    mundo.add(pedestal);
+    const v = new THREE.Sprite(new THREE.SpriteMaterial({ map: textura(virgen()), fog: false }));
+    v.scale.set(12, 21.3, 1);
+    v.position.copy(loma.position).y += alto + 11;
+    mundo.add(v);
+  }
   for (const [tipo, z, d, x] of def.hitos) {
     if (tipo !== 'virgen') continue;
     const v = new THREE.Sprite(new THREE.SpriteMaterial({ map: textura(virgen()), fog: false }));
@@ -1486,6 +1534,7 @@ let rivales = [];
 let peatones = [];
 let estado = 'cargando';      // cargando · titulo · menu · elegir · cuenta · carrera · llegada · pausa · premio · podio
 let antes = 'carrera';
+const foto = { s: 0, x: 0, h: 2, giro: 0 };
 let reloj = 0, cuenta = 0, tLlegada = 0, zonaActual = '', sacudida = 0, tPeaton = 0, llegadaVista = false, vueltaActual = 1;
 const vueltaDe = (s) => LARGO_VUELTA ? limita(Math.floor((s - SALIDA) / LARGO_VUELTA) + 1, 1, pistaActual.vueltas) : 1;
 const teclas = { izq: false, der: false, empuja: false, freno: false };
@@ -2588,6 +2637,20 @@ function bucle(ahora) {
   const dt = Math.min(0.1, (ahora - previo) / 1000);
   previo = ahora;
   if (estado === 'premio') { requestAnimationFrame(bucle); return; }
+  if (estado === 'foto') {
+    // Cámara libre, para las fotos de las pruebas.
+    if (cocheJ) dibujaMundo(dt);
+    const m = muestra(foto.s);
+    punto(foto.s, foto.x, foto.h, camara.position);
+    if (foto.mira) camara.lookAt(foto.mira[0], foto.mira[1], foto.mira[2]);
+    else camara.lookAt(camara.position.x + Math.sin(m.th + foto.giro) * 10, camara.position.y - 1, camara.position.z + Math.cos(m.th + foto.giro) * 10);
+    camara.clearViewOffset(); camara.fov = 60; camara.updateProjectionMatrix();
+    panorama.position.set(camara.position.x, camara.position.y + 30, camara.position.z);
+    sigueSol(camara.position);
+    if (publico) publico.coloca(ahora / 1000, foto.s);
+    render.render(escena, camara);
+    requestAnimationFrame(bucle); return;
+  }
   if (estado === 'menu' || estado === 'cargando' || estado === 'titulo' || estado === 'elegir' || estado === 'podio') {
     if (!N) { requestAnimationFrame(bucle); return; }
     if (cocheJ) dibujaMundo(dt);
@@ -2618,7 +2681,8 @@ async function carga() {
   const avanza = () => { listos++; texto.textContent = `Cargando… ${Math.round((listos / total) * 100)}%`; };
   const cargador = new GLTFLoader();
   const pide = (n) => cargador.loadAsync(modeloUrl(n)).then((g) => { avanza(); return g; });
-  const pideCalle = (n) => fetch(new URL(`pistas/${n}.json${SELLO}`, import.meta.url)).then((r) => r.json()).then((d) => { DATOS_REALES[n] = d; avanza(); });
+  const pideCalle = (n) => (GENERADAS[n] ? Promise.resolve(GENERADAS[n]()) : fetch(new URL(`pistas/${n}.json${SELLO}`, import.meta.url)).then((r) => r.json()))
+    .then((d) => { DATOS_REALES[n] = d; avanza(); });
   const [chico, chica, generico, policia, ministro, anim, quito] = await Promise.all([...nombres.map(pide), ...reales.map(pideCalle)]);
   Object.assign(MODELOS, { 'base-chico': chico, 'base-chica': chica, generico, policia, ministro });
   for (const n of ['montado', 'correr', 'rol', 'golpe', 'salto', 'arrancar']) {
@@ -2667,6 +2731,8 @@ window.coches = {
   // Mete una calle de verdad y su pista sin pasar por la red, para probar.
   pistaReal: (datos, def) => { DATOS_REALES[datos.id] = datos; if (!PISTAS.some((p) => p.id === def.id)) PISTAS.push(def); return cargaPista(def.id); },
   vuelta: () => vueltaActual, largoVuelta: () => LARGO_VUELTA, mapa: dibujaMapa,
+  camaraEn: (s, x, h, giro, mira) => { Object.assign(foto, { s, x, h, giro: giro || 0, mira: mira || null }); pantalla(null, true); estado = 'foto'; },
+  punto: (s, x, h) => punto(s, x, h).toArray(),
   progreso: () => prog,
   copa: () => copa,
   peatones: () => peatones.filter((p) => p.estado !== 'libre').map((p) => ({ estado: p.estado, ds: +(p.s - j.s).toFixed(1), x: +p.x.toFixed(1) })),
