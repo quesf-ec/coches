@@ -260,7 +260,10 @@
   background:var(--azul);border:3px solid var(--arc-tinta);
   box-shadow:inset 0 3px 0 rgba(255,255,255,.4), 0 5px 0 var(--arc-tinta);-webkit-backdrop-filter:none;backdrop-filter:none;opacity:.92}
 [data-variante="coches"] .coches-mando.is-on{filter:brightness(1.15);box-shadow:inset 0 3px 0 rgba(255,255,255,.4), 0 1px 0 var(--arc-tinta);transform:translateY(4px)}
-[data-variante="coches"] .coches-mando--empuja,[data-variante="coches"] .coches-mando--empuja.is-on{background:var(--naranja);border-color:var(--arc-tinta)}
+[data-variante="coches"] .coches-mando--freno,[data-variante="coches"] .coches-mando--freno.is-on{background:linear-gradient(180deg, #FF7A6B, var(--arc-rojo) 50%, #B01E16);border-color:var(--arc-tinta)}
+/* Las mitades de la pantalla que giran: sin disco, solo la flecha. */
+[data-variante="coches"] .coches-zona,[data-variante="coches"] .coches-zona.is-on{background:transparent;border:0;box-shadow:none;opacity:1;color:var(--arc-blanco);filter:none}
+[data-variante="coches"] .coches-zona.is-on{background:linear-gradient(to top, rgba(255,226,60,.28), transparent 70%)}
 
 /* la cuenta atrás: 3 rojo, 2 amarillo, 1 verde y a bajar, cian */
 [data-variante="coches"] .coches-cuenta{font-size:clamp(5rem, 22vw, 11rem);-webkit-text-stroke:4px var(--arc-tinta);

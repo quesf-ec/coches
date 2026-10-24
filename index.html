@@ -2,7 +2,7 @@
 <html lang="es" data-marca="juegos" data-variante="coches" data-tema="claro">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Coches de madera · Copa de las Fiestas</title>
 <meta name="description" content="Carreras de coches de madera en 3D por Quito: uno maneja y otro empuja. La Copa de las Fiestas en tres bajadas, medallas, récords y parejas que se abren.">
 <link rel="canonical" href="https://franciscombp.github.io/mal/coches/">
@@ -21,9 +21,9 @@
 <!-- El sello ?v= se sube a mano en cada cambio del juego (CSS, JS y, con el
      JS, los modelos, que heredan su sello): así el navegador no se queda con
      la versión anterior. -->
-<link rel="stylesheet" href="coches.css?v=b5958c2c00">
+<link rel="stylesheet" href="coches.css?v=c564b2fbbb">
 <!-- La piel del juego: variante del tema juegos (ver tema/LEEME.md). Va al final para mandar. -->
-<link rel="stylesheet" href="tema/tema.css?v=b5958c2c00">
+<link rel="stylesheet" href="tema/tema.css?v=c564b2fbbb">
 <script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js", "three/addons/": "./vendor/addons/" } }</script>
 </head>
 <body class="coches">
@@ -64,19 +64,16 @@
   </div>
 </div>
 
-<!-- Los mandos táctiles: van aparte del HUD porque ocupan las dos esquinas
-     de abajo enteras, que es donde caen los pulgares. -->
+<!-- Los mandos táctiles: la mitad izquierda de la pantalla gira a la izquierda,
+     la derecha a la derecha, como en un juego de karts de teléfono; el freno
+     es un botón en el centro, al alcance de los dos pulgares. El que empuja
+     lo hace solo. -->
 <div class="coches-mandos" id="mandos" hidden>
-  <div class="coches-mandos__lado">
-    <button class="coches-mando" data-tecla="izq" type="button" aria-label="Izquierda">
-      <svg class="icono icono--l" aria-hidden="true"><use href="#i-chevron-izq"/></svg></button>
-    <button class="coches-mando" data-tecla="der" type="button" aria-label="Derecha">
-      <svg class="icono icono--l" aria-hidden="true"><use href="#i-chevron-der"/></svg></button>
-  </div>
-  <div class="coches-mandos__lado">
-    <button class="coches-mando coches-mando--freno" data-tecla="freno" type="button" aria-label="Frenar">Freno</button>
-    <button class="coches-mando coches-mando--empuja" data-tecla="empuja" type="button" aria-label="Empujar">Empuja</button>
-  </div>
+  <button class="coches-mando coches-zona coches-zona--izq" data-tecla="izq" type="button" aria-label="Girar a la izquierda">
+    <svg class="icono icono--l" aria-hidden="true"><use href="#i-chevron-izq"/></svg></button>
+  <button class="coches-mando coches-zona coches-zona--der" data-tecla="der" type="button" aria-label="Girar a la derecha">
+    <svg class="icono icono--l" aria-hidden="true"><use href="#i-chevron-der"/></svg></button>
+  <button class="coches-mando coches-mando--freno" data-tecla="freno" type="button" aria-label="Frenar">Freno</button>
 </div>
 
 <p class="coches-cuenta" id="cuenta" aria-live="assertive"></p>
@@ -134,15 +131,15 @@
   <div class="coches-panel coches-menu">
     <p class="coches-banner">Cómo se juega</p>
     <p class="caption">Cero motores y dos en cada coche: uno maneja y el otro
-    empuja. Si vas rápido, el de atrás se trepa solo; en las subidas hay que bajarlo a empujar.</p>
+    empuja. El de atrás empuja solo al arrancar y en las subidas, y se trepa cuando el coche ya va rápido.</p>
     <dl class="coches-teclas">
       <div><dt>← →</dt><dd>girar</dd></div>
-      <div><dt>↑ o espacio</dt><dd>mantenlo y el de atrás se baja a empujar; suéltalo y se trepa</dd></div>
       <div><dt>↓</dt><dd>frenar con la suela</dd></div>
+      <div><dt>↑ o espacio</dt><dd>empujón extra: el de atrás empuja solo al arrancar y en las subidas, pero si lo mantienes empuja más</dd></div>
       <div><dt>Esc</dt><dd>pausa</dd></div>
     </dl>
-    <p class="caption coches-solo-tactil">Abajo a la izquierda se gira. A la derecha, mantén
-    «Empuja» para que el de atrás empuje y suéltalo para que se trepe; «Freno» para las curvas.</p>
+    <p class="caption coches-solo-tactil">Toca la mitad izquierda de la pantalla para girar a la izquierda
+    y la derecha para girar a la derecha. «Freno», en el centro, para las curvas cerradas.</p>
     <p class="caption">En las rampas no se gira en el aire. Las coladas moradas dan turbo.
     Las medallas abren parejas nuevas y ganar la Copa abre la subida del Panecillo.</p>
     <button class="btn btn-ghost btn-block" id="b-volver-ayuda" type="button">
@@ -303,6 +300,6 @@
 </div>
 
 <script src="../ds/mal/mal.js?v=1.0.18" defer></script>
-<script type="module" src="coches.js?v=b5958c2c00"></script>
+<script type="module" src="coches.js?v=c564b2fbbb"></script>
 </body>
 </html>

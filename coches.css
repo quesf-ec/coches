@@ -4,6 +4,9 @@
    son la forma de esta pantalla en concreto. */
 
 html,body.coches{height:100%;margin:0;overflow:hidden;overscroll-behavior:none}
+/* Ni se selecciona texto ni se hace zoom por muchos toques o clics seguidos. */
+body.coches,body.coches *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+body.coches button,body.coches [role="button"]{touch-action:manipulation}
 body.coches{
   background:#8FB8D8;            /* el cielo, para que no parpadee blanco al cargar */
   -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;
@@ -78,22 +81,34 @@ body.coches{
           calc(env(safe-area-inset-bottom, 0px) + var(--mal-e4))
           calc(env(safe-area-inset-left, 0px) + var(--mal-e4));
 }
-.coches-mandos__lado{display:flex;gap:var(--mal-e3);pointer-events:auto}
 .coches-mando{
-  width:clamp(64px, 18vw, 84px);height:clamp(64px, 18vw, 84px);border-radius:50%;
-  display:grid;place-items:center;padding:0;
+  display:grid;place-items:center;padding:0;border-radius:50%;
   font:700 var(--mal-t-micro)/1 var(--mal-mono);letter-spacing:.06em;text-transform:uppercase;
   color:var(--mal-on-surface);background:color-mix(in srgb, var(--mal-surface) 70%, transparent);
   border:2px solid var(--mal-on-surface);box-shadow:0 4px 0 rgba(var(--ref-borde-rgb), .55);
-  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
-  touch-action:none;-webkit-tap-highlight-color:transparent;
+  touch-action:none;-webkit-tap-highlight-color:transparent;pointer-events:auto;
 }
-.coches-mando.is-on{transform:translateY(3px);box-shadow:0 1px 0 rgba(var(--ref-borde-rgb), .55);
-  background:var(--mal-surface)}
-.coches-mando--empuja{background:var(--mal-primary);color:var(--mal-on-primary);border-color:var(--mal-primary-hover)}
-.coches-mando--empuja.is-on{background:var(--mal-primary-hover)}
+.coches-mando.is-on{transform:translateY(3px);box-shadow:0 1px 0 rgba(var(--ref-borde-rgb), .55);background:var(--mal-surface)}
+/* Dirección: cada mitad de la pantalla es un mando. El dibujo es solo la
+   pista de dónde tocar; todo el costado responde. */
+.coches-zona{
+  position:fixed;top:24%;bottom:0;width:50%;border-radius:0;border:0;box-shadow:none;background:transparent;
+  align-content:end;padding-bottom:calc(env(safe-area-inset-bottom, 0px) + var(--mal-e4));
+  color:rgba(255,255,255,.75);transition:background .08s;
+}
+.coches-zona--izq{left:0;justify-items:start;padding-left:calc(env(safe-area-inset-left, 0px) + var(--mal-e5))}
+.coches-zona--der{right:0;justify-items:end;padding-right:calc(env(safe-area-inset-right, 0px) + var(--mal-e5))}
+.coches-zona .icono{width:56px;height:56px;filter:drop-shadow(0 2px 0 rgba(0,0,0,.5));opacity:.8}
+.coches-zona.is-on{transform:none;box-shadow:none;background:linear-gradient(to top, rgba(255,255,255,.2), transparent 70%)}
+.coches-zona.is-on .icono{opacity:1}
+/* Freno: un botón en el centro de abajo, por encima de las zonas. */
+.coches-mando--freno{
+  position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom, 0px) + var(--mal-e4));transform:translateX(-50%);
+  width:clamp(64px, 17vw, 80px);height:clamp(64px, 17vw, 80px);z-index:2;
+}
+.coches-mando--freno.is-on{transform:translateX(-50%) translateY(3px)}
 /* Con mandos, el tablero queda entre los dos pulgares, a su altura. */
-.coches.con-mandos .hud-juego__abajo{padding-bottom:0}
+.coches.con-mandos .hud-juego__abajo{padding-bottom:clamp(70px, 20vw, 90px)}
 
 /* ─── la cuenta atrás y los avisos ─────────────────────────────
    Lo único que sale en el centro, y solo un segundo: es lo que hay
