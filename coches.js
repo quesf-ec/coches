@@ -36,16 +36,16 @@ const modeloUrl = (n) => new URL(`modelos/${n}.glb${SELLO}`, import.meta.url).hr
 
 // ─── la física, en metros y segundos ───────────────────────────────
 const G = 9.8;
-const CUESTA = 1.25;          // la cuesta tira un poco más que en la vida: es un juego
-const ROCE = 0.15;            // rulimanes contra el asfalto…
+const CUESTA = 1.8;           // la cuesta tira bastante más que en la vida: es un juego
+const ROCE = 0.12;            // rulimanes contra el asfalto…
 const ROCE_PIEDRA = 0.22;     // …y contra el empedrado, que frena y traquetea
-const AIRE = 0.0032;
-const TOPE = 22;              // ~80 km/h, lo más que da una cuesta
-const TOPE_TURBO = 25;
-const EMPUJE = 3.6;           // lo que empuja el que va atrás…
-const CORRE = 7.5;            // …y lo más rápido que corre
+const AIRE = 0.0026;
+const TOPE = 30;              // ~108 km/h, lo más que da una cuesta
+const TOPE_TURBO = 35;
+const EMPUJE = 7.5;           // lo que empuja el que va atrás…
+const CORRE = 10;             // …y lo más rápido que corre
 const ENGANCHE = CORRE + 0.8; // a esta velocidad, el de atrás se sube solo
-const FRENO = 7;
+const FRENO = 11;
 const FUERA = 4;              // la vereda frena
 const GIRO = 0.42;            // el volante: metros de lado por cada m/s
 const CENTRIFUGA = 0.62;      // la curva te saca a v² · curvatura
@@ -2114,7 +2114,11 @@ function endereza() {
 // se mantiene el mando y, en cuanto el coche va lo bastante rápido, se sube
 // solo. Si va a bordo y en una subida hace falta empujar, se baja con el mando.
 function actualizaEmpujador(dt) {
-  const quiere = teclas.empuja && estado === 'carrera';
+  // El de atrás empuja solo: al arrancar, en lo plano cuando se va lento y en
+  // las subidas. La tecla es un empujón extra, para cuando se quiere más.
+  const pend = muestra(j.s).pend;
+  const solo = !teclas.freno && (j.v < 6 || (pend > 0.01 && j.v < CORRE));
+  const quiere = (teclas.empuja || solo) && estado === 'carrera';
   switch (e.estado) {
     case 'a_bordo':
       if (quiere && j.v < CORRE && !j.aire && j.volcado <= 0) {
@@ -2395,13 +2399,27 @@ function colocaEnCalle(obj, s, x, h, giro, alabeo) {
 }
 
 // La tripulación, sentada o empujando, va pegada al coche.
-function enCoche(persona, coche, z, pose) {
+function enCoche(persona, coche, z, pose, corre) {
   const off = persona.apoyo(pose);
-  _v.set(0, pose === 'montado' ? TABLA + 0.03 + off - persona.pie : 0, z);
+  // Corriendo, el de atrás va y viene un poco, rebota y se inclina hacia
+  // delante: se ve que corre de verdad y no que flota.
+  let dz = 0, dy = 0;
+  if (corre) { dz = Math.sin(corre.fase) * 0.2; dy = Math.abs(Math.sin(corre.fase)) * 0.1; }
+  _v.set(0, (pose === 'montado' ? TABLA + 0.03 + off - persona.pie : 0) + dy, z + dz);
   coche.localToWorld(_v);
   persona.obj.position.copy(_v);
   persona.obj.quaternion.copy(coche.quaternion);
+  if (corre) persona.obj.rotateX(corre.inclina);
   if (persona.tambalea) persona.obj.rotateZ(Math.sin(performance.now() / 260) * 0.14);
+}
+
+// El compás de la carrera del que empuja: más rápido cuanto más rápido va el
+// coche, y más inclinado cuanto más lento (arrancar es empujar con el cuerpo).
+function pasoCarrera(cc, v, dt) {
+  const r = cc.carrera || (cc.carrera = { fase: 0, inclina: 0 });
+  r.fase += dt * (9 + Math.min(v, CORRE) * 1.6);
+  r.inclina = 0.3 + 0.22 * (1 - Math.min(1, v / CORRE));
+  return r;
 }
 
 function colocaCoche(cc, s, x, h, giro, vuelco, v, dt) {
@@ -2428,8 +2446,8 @@ function dibujaMundo(dt) {
   if (e.estado === 'piso') colocaEnCalle(cocheJ.empujador.obj, e.s, e.x, 0, 0);
   else if (e.estado === 'a_bordo') enCoche(cocheJ.empujador, cocheJ.g, -0.5, 'montado');
   else {
-    enCoche(cocheJ.empujador, cocheJ.g, -1.3, 'correr');
-    cocheJ.empujador.acciones.correr.timeScale = 0.6 + j.v / CORRE * 0.8;
+    enCoche(cocheJ.empujador, cocheJ.g, -1.3, 'correr', pasoCarrera(cocheJ, j.v, dt));
+    cocheJ.empujador.acciones.correr.timeScale = 1.1 + Math.min(1, j.v / CORRE) * 1.1;
   }
 
   // El fantasma, donde iba el récord en este segundo.
@@ -2446,7 +2464,7 @@ function dibujaMundo(dt) {
   for (const rv of rivales) {
     colocaCoche(rv.cruce, rv.s, rv.x, 0, 0, 0, rv.v, dt);
     enCoche(rv.cruce.conductor, rv.cruce.g, 0.32, 'montado');
-    if (rv.empuja) enCoche(rv.cruce.empujador, rv.cruce.g, -1.3, 'correr');
+    if (rv.empuja) { enCoche(rv.cruce.empujador, rv.cruce.g, -1.3, 'correr', pasoCarrera(rv.cruce, rv.v, dt)); rv.cruce.empujador.acciones.correr.timeScale = 1.1 + Math.min(1, rv.v / CORRE) * 1.1; }
     else enCoche(rv.cruce.empujador, rv.cruce.g, -0.5, 'montado');
   }
   // Los peatones.
@@ -3306,6 +3324,20 @@ addEventListener('keydown', (ev) => {
 addEventListener('keyup', (ev) => { if (modo === 'demo') return; const t = MAPA[ev.code]; if (t) teclas[t] = false; });
 document.addEventListener('pointerdown', () => { if (modo === 'demo') terminaDemo(); });
 addEventListener('blur', () => { for (const k in teclas) teclas[k] = false; });
+
+// Muchos toques o clics seguidos no deben seleccionar texto ni hacer zoom:
+// ni el doble clic, ni el doble toque, ni el pellizco, ni Ctrl + rueda.
+document.addEventListener('dblclick', (ev) => ev.preventDefault());
+document.addEventListener('selectstart', (ev) => ev.preventDefault());
+for (const tipo of ['gesturestart', 'gesturechange', 'gestureend']) document.addEventListener(tipo, (ev) => ev.preventDefault());
+document.addEventListener('wheel', (ev) => { if (ev.ctrlKey) ev.preventDefault(); }, { passive: false });
+let ultimoToque = 0;
+document.addEventListener('touchend', (ev) => {
+  const ahora = performance.now();
+  if (ahora - ultimoToque < 350) ev.preventDefault();
+  ultimoToque = ahora;
+}, { passive: false });
+document.addEventListener('pointerdown', () => { const sel = getSelection(); if (sel && sel.rangeCount) sel.removeAllRanges(); });
 
 const marcaTactil = () => {
   document.body.classList.toggle('tactil', esTactil);
