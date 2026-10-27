@@ -21,9 +21,9 @@
 <!-- El sello ?v= se sube a mano en cada cambio del juego (CSS, JS y, con el
      JS, los modelos, que heredan su sello): así el navegador no se queda con
      la versión anterior. -->
-<link rel="stylesheet" href="coches.css?v=40c660cb4a">
+<link rel="stylesheet" href="coches.css?v=098782d8b9">
 <!-- La piel del juego: variante del tema juegos (ver tema/LEEME.md). Va al final para mandar. -->
-<link rel="stylesheet" href="tema/tema.css?v=40c660cb4a">
+<link rel="stylesheet" href="tema/tema.css?v=098782d8b9">
 <script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js", "three/addons/": "./vendor/addons/" } }</script>
 <script type="application/ld+json">
 {
@@ -96,6 +96,7 @@
             <svg class="icono icono--s" aria-hidden="true"><use href="#i-rayo"/></svg> Colada</span>
           <span class="coches-empujador" id="h-empujador" data-estado="empujando">Empujando</span>
         </div>
+        <p class="coches-pasos" id="h-pasos" hidden></p>
       </div>
     </div>
   </div>
@@ -176,7 +177,7 @@
     <dl class="coches-teclas">
       <div><dt>← →</dt><dd>girar</dd></div>
       <div><dt>↓</dt><dd>frenar con la suela</dd></div>
-      <div><dt>↑ o espacio</dt><dd>empujón extra: el de atrás empuja solo al arrancar y en las subidas, pero si lo mantienes empuja más</dd></div>
+
       <div><dt>Esc</dt><dd>pausa</dd></div>
     </dl>
     <p class="caption coches-solo-tactil">Toca la mitad izquierda de la pantalla para girar a la izquierda
@@ -341,6 +342,6 @@
 </div>
 
 <script src="../ds/mal/mal.js?v=1.0.18" defer></script>
-<script type="module" src="coches.js?v=40c660cb4a"></script>
+<script type="module" src="coches.js?v=098782d8b9"></script>
 </body>
 </html>

@@ -110,6 +110,11 @@ body.coches{
 /* Con mandos, el tablero queda entre los dos pulgares, a su altura. */
 .coches.con-mandos .hud-juego__abajo{padding-bottom:clamp(70px, 20vw, 90px)}
 
+/* El paso que toca, bajo el empujador. */
+.coches-pasos{margin:0;font-family:var(--mal-mono);font-weight:700;font-size:var(--mal-t-micro);letter-spacing:.06em;
+  padding:3px 10px;border-radius:99px;background:rgba(20,16,24,.55);color:#F3F1EC;align-self:flex-end}
+.coches-pasos[hidden]{display:none}
+
 /* Las rayas de velocidad: cuñas blancas que salen de los bordes hacia el
    centro, apagadas en el centro y en reposo. */
 .coches-velo{position:fixed;inset:0;z-index:21;pointer-events:none;opacity:0;transition:opacity .25s;

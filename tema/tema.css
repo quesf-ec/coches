@@ -283,3 +283,7 @@
 @media (prefers-reduced-motion:reduce){
   [data-variante="coches"] .coches-opciones .btn:focus-visible::after{animation:none}
 }
+
+/* El paso que toca, en la piel arcade. */
+[data-variante="coches"] .coches-pasos{font-family:"Bangers",var(--mal-display);font-size:1rem;letter-spacing:.06em;color:var(--arc-amarillo);
+  background:var(--arc-tinta);border:2px solid var(--arc-blanco)}
