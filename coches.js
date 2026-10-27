@@ -2065,6 +2065,7 @@ function reinicia() {
   Object.assign(c, { suelto: false, s: 0, x: 0, v: 0 });
   for (const pe of peatones) pe.estado = 'libre';
   reloj = 0; zonaActual = ''; sacudida = 0; tPeaton = 1; vueltaActual = 1;
+  Object.assign(pasos, { ultimo: 0, t: -9, combo: 0, burst: 0 });
   fantasma.trazo = [];
   // En la contrarreloj los rivales se esconden, y sale el fantasma si hay récord.
   const solo = modo === 'tiempo';
@@ -2254,6 +2255,44 @@ function endereza() {
 // El que empuja nunca se queda atrás: va pegado al coche a pie. Empuja mientras
 // se mantiene el mando y, en cuanto el coche va lo bastante rápido, se sube
 // solo. Si va a bordo y en una subida hace falta empujar, se baja con el mando.
+// ─── los pasos ─────────────────────────────────────────────────────
+// Empujar es pisar: mientras el de atrás empuja, alternar izquierda y
+// derecha son sus pasos. Cada paso que va detrás del anterior (pie distinto)
+// le da un empujón; a buen ritmo (cada 0,2–0,55 s), más, y la racha sube el
+// multiplicador. Dos veces el mismo pie es un tropiezo: se corta la racha.
+// Mantener un lado sigue girando; un toque suelto no gira casi nada.
+const pasos = { ultimo: 0, t: -9, combo: 0, mejor: 0, prevIzq: false, prevDer: false, burst: 0 };
+function pasaPasos(dt) {
+  const subeIzq = teclas.izq && !pasos.prevIzq, subeDer = teclas.der && !pasos.prevDer;
+  pasos.prevIzq = teclas.izq; pasos.prevDer = teclas.der;
+  pasos.burst = Math.max(0, pasos.burst - dt);
+  if (!subeIzq && !subeDer) return;
+  if ((teclas.izq && teclas.der) || e.estado !== 'empujando' || j.aire || j.volcado > 0) return;
+  const lado = subeIzq ? -1 : 1;
+  const hace = reloj - pasos.t;
+  pasos.t = reloj;
+  if (lado === pasos.ultimo) {
+    pasos.combo = 0;
+    tono(180, 0.08, 'triangle', 0.1);
+  } else if (pasos.ultimo !== 0 && hace < 0.9) {
+    const bueno = hace >= 0.2 && hace <= 0.55;
+    pasos.combo++;
+    pasos.mejor = Math.max(pasos.mejor, pasos.combo);
+    const mult = 1 + Math.min(pasos.combo, 10) * 0.08;
+    j.v = Math.min(j.v + (bueno ? 2.0 : 1.0) * mult * ST.empuje, TOPE_TURBO * ST.tope);
+    pasos.burst = 0.35;
+    tono(bueno ? 560 + pasos.combo * 18 : 400, 0.06, 'square', 0.08);
+  } else {
+    pasos.combo = 0;
+    j.v = Math.min(j.v + 0.6 * ST.empuje, TOPE_TURBO * ST.tope);
+  }
+  pasos.ultimo = lado;
+  // El pie que se pisa, adelante: el compás del cuerpo sigue al paso.
+  const r = cocheJ.carrera || (cocheJ.carrera = { fase: 0, inclina: 0 });
+  const obj = lado < 0 ? Math.PI / 2 : (3 * Math.PI) / 2;
+  r.fase = obj + 2 * Math.PI * Math.round((r.fase - obj) / (2 * Math.PI));
+}
+
 function actualizaEmpujador(dt) {
   // El de atrás empuja solo: al arrancar, en lo plano cuando se va lento y en
   // las subidas. La tecla es un empujón extra, para cuando se quiere más.
@@ -2334,7 +2373,10 @@ function actualiza(dt) {
     c.s += c.v * dt;
     if (j.volcado <= 0) endereza();
   } else {
-    const mando = estado === 'llegada' ? 0 : (teclas.izq ? -1 : 0) + (teclas.der ? 1 : 0);
+    if (estado === 'carrera') pasaPasos(dt);
+    // Justo después de un paso, el volante casi no responde: el toque era para pisar.
+    const tras = reloj - pasos.t < 0.25 && e.estado === 'empujando' ? 0.3 : 1;
+    const mando = estado === 'llegada' ? 0 : ((teclas.izq ? -1 : 0) + (teclas.der ? 1 : 0)) * tras;
     j.giro = mezcla(j.giro, mando, Math.min(1, dt * 10));
     const piedra = ZONAS[zona].calle === 'adoquin';
     let a = -AIRE * j.v * j.v;
@@ -2343,7 +2385,8 @@ function actualiza(dt) {
       if (e.estado === 'empujando') {
         // Con los dos lados a la vez, el de atrás empuja con todo: el doble.
         const todo = teclas.izq && teclas.der ? 2 : 1;
-        a += todo * EMPUJE * ST.empuje * Math.max(0, 1 - j.v / CORRE) + (j.v < 1 ? 1.2 * todo : 0);
+        // El empuje solo: poco. Lo grande lo dan los pasos.
+        a += todo * EMPUJE * 0.6 * ST.empuje * Math.max(0, 1 - j.v / CORRE) + (j.v < 1 ? 1.2 * todo : 0);
       }
       if (teclas.freno || estado === 'llegada') a -= j.v > 0.2 ? FRENO * (estado === 'llegada' ? 0.4 : 1) : 0;
       // En la vereda se frena; si se queda casi parado ahí, el de atrás lo
@@ -2597,7 +2640,7 @@ function dibujaMundo(dt) {
   else if (e.estado === 'a_bordo') enCoche(cocheJ.empujador, cocheJ.g, -0.5, 'montado');
   else {
     enCoche(cocheJ.empujador, cocheJ.g, -1.3, 'correr', pasoCarrera(cocheJ, j.v, dt));
-    cocheJ.empujador.acciones.correr.timeScale = 1.1 + Math.min(1, j.v / CORRE) * 1.1;
+    cocheJ.empujador.acciones.correr.timeScale = 1.1 + Math.min(1, j.v / CORRE) * 1.1 + (pasos.burst > 0 ? 0.6 : 0);
   }
 
   // El fantasma, donde iba el récord en este segundo.
@@ -2687,41 +2730,10 @@ function dibujaPortada(t) {
   if (publico) publico.coloca(t, j.s);
 }
 
-// ─── el empujón a tiempo ───────────────────────────────────────────
-// Mientras empuja, el de atrás tiene un ritmo: una marca va y viene por el
-// medidor cada 0,8 s. Tocar «¡Dale!» (o espacio) cuando la marca pasa por el
-// centro da un empujón fuerte; más o menos cerca, uno normal; a destiempo,
-// casi nada y se corta la racha. Cada toque bueno sube el multiplicador.
-const RITMO = 0.8;
-const dale = { combo: 0, mejor: 0, pulso: 0 };
-// La posición de la marca, de 0 (un extremo) a 1 (el otro), en triángulo.
-const faseRitmo = () => { const p = (reloj / RITMO) % 1; return p < 0.5 ? p * 2 : 2 - p * 2; };
-function tocaEmpuje() {
-  if (estado !== 'carrera' || j.aire || j.volcado > 0) return;
-  if (e.estado === 'a_bordo') {
-    // Tocar a bordo es bajarse a empujar, como mantener el mando.
-    if (j.v < CORRE) { e.estado = 'empujando'; cocheJ.empujador.pon('correr'); tono(320, 0.08, 'triangle', 0.15); }
-    return;
-  }
-  if (e.estado !== 'empujando') return;
-  const d = Math.abs(faseRitmo() - 0.5) * 2;   // 0 en el centro, 1 en los extremos
-  const mult = 1 + Math.min(dale.combo, 10) * 0.1;
-  let texto, empuje, nota;
-  if (d < 0.14) { dale.combo++; empuje = 2.0 * mult; texto = '¡Perfecto!'; nota = 880; }
-  else if (d < 0.42) { dale.combo++; empuje = 1.0 * mult; texto = '¡Bien!'; nota = 660; }
-  else { dale.combo = 0; empuje = 0.3; texto = '¡Ahí no!'; nota = 220; }
-  dale.mejor = Math.max(dale.mejor, dale.combo);
-  dale.pulso = 0.18;
-  j.v = Math.min(j.v + empuje, TOPE_TURBO * ST.tope);
-  tono(nota, 0.09, 'square', 0.12);
-  avisa(dale.combo > 1 ? `${texto} ×${dale.combo}` : texto, 450);
-}
-
 // ─── el HUD ────────────────────────────────────────────────────────
 const hud = {
   puesto: $('#h-puesto'), tiempo: $('#h-tiempo'), vel: $('#h-vel'),
-  empujador: $('#h-empujador'), ruta: $('#h-ruta'), turbo: $('#h-turbo'), velo: $('#velo'),
-  dale: $('#dale-caja'), ritmo: $('#dale-ritmo'), marca: $('#dale-marca'), combo: $('#dale-combo'),
+  empujador: $('#h-empujador'), ruta: $('#h-ruta'), turbo: $('#h-turbo'), velo: $('#velo'), pasos: $('#h-pasos'),
   caja: $('.coches-puesto'), puntos: [],
 };
 // Un punto por coche en la línea de la carrera, con su color y su número.
@@ -2775,12 +2787,9 @@ function pintaHud() {
     if (pos !== q.ultimo) { q.el.style.left = pos; q.ultimo = pos; }
   }
   hud.turbo.hidden = !(j.turbo > 0);
-  // El medidor del empujón: solo cuando el de atrás empuja.
-  hud.dale.hidden = estado !== 'carrera';
-  hud.ritmo.hidden = e.estado !== 'empujando';
-  if (!hud.ritmo.hidden) hud.marca.style.left = `${(faseRitmo() * 100).toFixed(1)}%`;
-  hud.combo.textContent = dale.combo > 1 ? `Racha ×${dale.combo}` : '';
-  if (dale.pulso > 0) { dale.pulso -= 1 / 60; hud.dale.classList.toggle('is-pulso', dale.pulso > 0); }
+  // Cuál pie toca: el que sigue en el compás de los pasos.
+  hud.pasos.hidden = e.estado !== 'empujando' || estado !== 'carrera';
+  if (!hud.pasos.hidden) hud.pasos.textContent = `Pisa ${pasos.ultimo === -1 ? '▶' : '◀'}${pasos.combo > 1 ? `  ·  ×${pasos.combo}` : ''}`;
   // Las rayas de velocidad, cuando de verdad va rápido.
   const velo = quieto.matches ? 0 : limita((j.v - 22) / 16, 0, 0.75) + (j.turbo > 0 ? 0.2 : 0);
   if (velo !== ultimoHud.velo) hud.velo.style.opacity = velo.toFixed(2);
@@ -3113,7 +3122,7 @@ const CAPAS = ['titulo', 'portada', 'ayuda', 'elegir', 'medallas', 'album', 'opc
 function pantalla(id, sinCortina) {
   for (const p of CAPAS) $('#' + p).hidden = p !== id;
   $('#premio').hidden = true;
-  $('#hud').hidden = true; $('#mandos').hidden = true; $('#dale-caja').hidden = true;
+  $('#hud').hidden = true; $('#mandos').hidden = true;
   if (!sinCortina) cortina();
 }
 // El barrido entre pantallas, como el de la consola.
@@ -3172,7 +3181,6 @@ function pilotoDemo() {
   teclas.izq = j.x > objetivo + 0.15 && !j.aire; teclas.der = j.x < objetivo - 0.15 && !j.aire;
   teclas.freno = j.v > GIRO / (CENTRIFUGA * Math.max(peor, 1e-4)) * 0.95;
   teclas.empuja = j.v < 5.5 && !teclas.freno;
-  if (Math.abs(faseRitmo() - 0.5) < 0.07 && Math.random() < 0.5) tocaEmpuje();
 }
 function desdeTitulo() {
   if (estado !== 'titulo' || $('#b-copa').disabled) return;
@@ -3478,7 +3486,6 @@ $('#b-copa-sigue').addEventListener('click', sigueCopa);
 $('#b-copa-deja').addEventListener('click', aMenu);
 $('#premio').addEventListener('click', siguientePremio);
 $('#premio').addEventListener('keydown', (ev) => { if (ev.repeat) return; if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); siguientePremio(); } });
-$('#dale').addEventListener('pointerdown', (ev) => { ev.preventDefault(); tocaEmpuje(); });
 $('#b-sonido').addEventListener('click', () => { ajustes.sonido = !ajustes.sonido; guardaAjustes(); aplicaAjustes(); });
 for (const el of document.querySelectorAll('#opciones [data-ajuste]')) {
   el.addEventListener('click', () => { ajustes[el.dataset.ajuste] = !ajustes[el.dataset.ajuste]; guardaAjustes(); aplicaAjustes(); });
@@ -3515,7 +3522,6 @@ addEventListener('keydown', (ev) => {
     return;
   }
   if (ev.code === 'Escape' || ev.code === 'KeyP') { if (estado === 'pausa') sigue(); else pausa(); return; }
-  if (estado === 'carrera' && !ev.repeat && (ev.code === 'Space' || ev.code === 'ArrowUp' || ev.code === 'KeyW')) { ev.preventDefault(); tocaEmpuje(); }
   if ((estado === 'menu' || estado === 'elegir' || estado === 'pausa') && ev.code.startsWith('Arrow')) { if (navegaMenu(ev)) ev.preventDefault(); return; }
   const t = MAPA[ev.code];
   if (!t || (estado !== 'carrera' && estado !== 'cuenta')) return;
@@ -3686,7 +3692,9 @@ window.coches = {
   pistaReal: (datos, def) => { DATOS_REALES[datos.id] = datos; if (!PISTAS.some((p) => p.id === def.id)) PISTAS.push(def); return cargaPista(def.id); },
   vuelta: () => vueltaActual, largoVuelta: () => LARGO_VUELTA, mapa: dibujaMapa,
   musica: () => ({ nombre: musica.nombre, paso: musica.paso, ctx: !!son.ctx }),
-  dale: (fase) => { if (fase !== undefined) reloj = (fase * RITMO) + Math.floor(reloj / RITMO) * RITMO; tocaEmpuje(); return { combo: dale.combo, v: +(j.v * 3.6).toFixed(1), fase: +faseRitmo().toFixed(2), e: e.estado }; },
+  // Un paso con el pie izquierdo (-1) o el derecho (1), y una pausa después.
+  paso: (lado, espera) => { const k = lado < 0 ? 'izq' : 'der'; teclas[k] = true; window.coches.simula(0.03); teclas[k] = false; window.coches.simula(espera || 0); },
+  combo: () => pasos.combo,
   demo: empiezaDemo, ajustes,
   // Pinta unos segundos de una canción sin sonar, para medir que suena.
   rindeMusica: async (nombre, seg) => {

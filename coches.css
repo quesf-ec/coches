@@ -110,25 +110,10 @@ body.coches{
 /* Con mandos, el tablero queda entre los dos pulgares, a su altura. */
 .coches.con-mandos .hud-juego__abajo{padding-bottom:clamp(70px, 20vw, 90px)}
 
-/* El empujón a tiempo: el botón abajo al centro y el medidor encima. */
-.coches-dale{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom, 0px) + var(--mal-e3));transform:translateX(-50%);
-  z-index:3;display:grid;justify-items:center;gap:6px;pointer-events:none}
-.coches-dale[hidden]{display:none}
-.coches-dale__boton{pointer-events:auto;width:clamp(78px, 20vw, 100px);height:clamp(78px, 20vw, 100px);border-radius:50%;padding:0;
-  font:700 var(--mal-t-caption)/1 var(--mal-mono);text-transform:uppercase;letter-spacing:.06em;
-  color:var(--mal-on-primary);background:var(--mal-primary);border:3px solid var(--mal-primary-hover);
-  box-shadow:0 5px 0 var(--mal-primary-hover);touch-action:none;-webkit-tap-highlight-color:transparent}
-.coches-dale__boton:active,.coches-dale.is-pulso .coches-dale__boton{transform:translateY(4px);box-shadow:0 1px 0 var(--mal-primary-hover)}
-.coches-dale__medidor{position:relative;width:min(64vw, 240px);height:14px;border-radius:99px;
-  background:rgba(20,16,24,.45);border:2px solid #F3F1EC}
-.coches-dale__zona{position:absolute;top:0;bottom:0;border-radius:99px}
-.coches-dale__zona--buena{left:30%;width:40%;background:rgba(93,224,90,.45)}
-.coches-dale__zona--perfecta{left:44%;width:12%;background:#5DE05A}
-.coches-dale__marca{position:absolute;top:-5px;bottom:-5px;width:6px;margin-left:-3px;border-radius:3px;background:#FFE23C;
-  box-shadow:0 0 0 2px #2b2129;transition:left .04s linear}
-.coches-dale__combo{margin:0;font-family:var(--mal-mono);font-weight:700;font-size:var(--mal-t-caption);color:#F3F1EC;
-  text-shadow:0 2px 0 #2b2129;min-height:1.2em}
-.coches-dale__combo:empty{visibility:hidden}
+/* El paso que toca, bajo el empujador. */
+.coches-pasos{margin:0;font-family:var(--mal-mono);font-weight:700;font-size:var(--mal-t-micro);letter-spacing:.06em;
+  padding:3px 10px;border-radius:99px;background:rgba(20,16,24,.55);color:#F3F1EC;align-self:flex-end}
+.coches-pasos[hidden]{display:none}
 
 /* Las rayas de velocidad: cuñas blancas que salen de los bordes hacia el
    centro, apagadas en el centro y en reposo. */
