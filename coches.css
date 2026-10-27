@@ -103,10 +103,10 @@ body.coches{
 .coches-zona.is-on .icono{opacity:1}
 /* Freno: un botón en el centro de abajo, por encima de las zonas. */
 .coches-mando--freno{
-  position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom, 0px) + var(--mal-e4));transform:translateX(-50%);
+  position:fixed;left:calc(env(safe-area-inset-left, 0px) + var(--mal-e5));bottom:calc(env(safe-area-inset-bottom, 0px) + clamp(120px, 34vw, 170px));
   width:clamp(64px, 17vw, 80px);height:clamp(64px, 17vw, 80px);z-index:2;
 }
-.coches-mando--freno.is-on{transform:translateX(-50%) translateY(3px)}
+.coches-mando--freno.is-on{transform:translateY(3px)}
 /* Con mandos, el tablero queda entre los dos pulgares, a su altura. */
 .coches.con-mandos .hud-juego__abajo{padding-bottom:clamp(70px, 20vw, 90px)}
 
