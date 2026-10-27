@@ -39,9 +39,9 @@ const G = 9.8;
 const CUESTA = 1.8;           // la cuesta tira bastante más que en la vida: es un juego
 const ROCE = 0.12;            // rulimanes contra el asfalto…
 const ROCE_PIEDRA = 0.22;     // …y contra el empedrado, que frena y traquetea
-const AIRE = 0.0026;
-const TOPE = 30;              // ~108 km/h, lo más que da una cuesta
-const TOPE_TURBO = 35;
+const AIRE = 0.0018;
+const TOPE = 40;              // ~145 km/h, lo más que da la bajada grande
+const TOPE_TURBO = 46;
 const EMPUJE = 7.5;           // lo que empuja el que va atrás…
 const CORRE = 10;             // …y lo más rápido que corre
 const ENGANCHE = CORRE + 0.8; // a esta velocidad, el de atrás se sube solo
@@ -437,6 +437,25 @@ const ICONOS = {
       c.fillStyle = '#fff'; c.beginPath(); c.arc(w * x, h * y, 3, 0, 7); c.fill();
     }
   },
+  tabla: (c, w, h) => {
+    c.fillStyle = '#C8955A'; c.strokeStyle = TINTA; c.lineWidth = 4;
+    c.beginPath(); c.roundRect(w * 0.1, h * 0.4, w * 0.8, h * 0.18, 4); c.fill(); c.stroke();
+    c.strokeStyle = 'rgba(110,65,25,.6)'; c.lineWidth = 2; for (const y of [0.46, 0.52]) { c.beginPath(); c.moveTo(w * 0.12, h * y); c.lineTo(w * 0.88, h * y); c.stroke(); }
+    c.fillStyle = '#333'; c.strokeStyle = TINTA; c.lineWidth = 4; for (const x of [0.22, 0.78]) { c.beginPath(); c.arc(w * x, h * 0.68, w * 0.08, 0, 7); c.fill(); c.stroke(); }
+  },
+  rulimanes: (c, w, h) => {
+    c.strokeStyle = TINTA; c.lineWidth = 4;
+    for (const [x, y, r] of [[0.35, 0.45, 0.22], [0.68, 0.6, 0.17]]) {
+      c.fillStyle = '#8C9096'; c.beginPath(); c.arc(w * x, h * y, w * r, 0, 7); c.fill(); c.stroke();
+      c.fillStyle = '#D9DCE0'; c.beginPath(); c.arc(w * x, h * y, w * r * 0.55, 0, 7); c.fill(); c.stroke();
+      c.fillStyle = TINTA; for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2; c.beginPath(); c.arc(w * x + Math.cos(a) * w * r * 0.78, h * y + Math.sin(a) * w * r * 0.78, 3, 0, 7); c.fill(); }
+    }
+  },
+  soga: (c, w, h) => {
+    c.strokeStyle = TINTA; c.lineWidth = 9; c.lineCap = 'round'; c.beginPath(); c.moveTo(w * 0.15, h * 0.3); c.bezierCurveTo(w * 0.3, h * 0.9, w * 0.6, h * 0.1, w * 0.85, h * 0.7); c.stroke();
+    c.strokeStyle = '#D9C7A0'; c.lineWidth = 5; c.beginPath(); c.moveTo(w * 0.15, h * 0.3); c.bezierCurveTo(w * 0.3, h * 0.9, w * 0.6, h * 0.1, w * 0.85, h * 0.7); c.stroke();
+    c.strokeStyle = 'rgba(110,65,25,.6)'; c.lineWidth = 2; for (let t = 0.05; t < 1; t += 0.08) { const x = w * (0.15 + 0.7 * t); c.beginPath(); c.moveTo(x - 3, h * 0.5 - 6); c.lineTo(x + 3, h * 0.5 + 6); c.stroke(); }
+  },
   farol: (c, w, h) => {
     c.strokeStyle = TINTA; c.lineWidth = 4; c.fillStyle = '#333';
     c.beginPath(); c.moveTo(w / 2, h * 0.95); c.lineTo(w / 2, h * 0.3); c.stroke();
@@ -463,11 +482,14 @@ const CROMOS = [
   { id: 'capirote', nombre: 'El cucurucho', desc: 'El penitente morado de la procesión de Viernes Santo.', pista: 'subida', zona: 'subida', d: 60, x: 2.3, icono: 'capirote' },
   { id: 'gallo', nombre: 'El Gallo de la Catedral', desc: 'La veleta de la Catedral que, según la leyenda, bajó a picotear a un borracho.', pista: 'subida', zona: 'subida', d: 160, x: -2.3, icono: 'gallo' },
   { id: 'corona', nombre: 'La Reina de Quito', desc: 'Cada año, antes de las Fiestas, se elige una; la corona es lo de menos.', pista: 'subida', zona: 'cumbre', d: 25, x: 1.9, icono: 'corona' },
+  { id: 'tabla', nombre: 'La tabla', desc: 'Tres tablones, dos ejes y rulimanes: el coche entero, hecho en casa.', pista: 'tobogan', zona: 'cumbre', d: 40, x: -2.6, icono: 'tabla' },
+  { id: 'rulimanes', nombre: 'Los rulimanes', desc: 'Las ruedas de verdad: rodamientos de camión, que chillan en el empedrado.', pista: 'tobogan', zona: 'valle', d: 100, x: 2.6, icono: 'rulimanes' },
+  { id: 'soga', nombre: 'La soga', desc: 'El volante: una soga atada al eje de adelante y, con suerte, un freno de madera.', pista: 'tobogan', zona: 'trepada', d: 250, x: -2.4, icono: 'soga' },
   { id: 'cohete', nombre: 'Los fuegos artificiales', desc: 'La noche del 5 de diciembre el cielo de Quito se llena de luces.', pista: 'noche-vuelta', zona: 'panecillo', d: 60, x: -2.3, icono: 'cohete' },
   { id: 'vaca', nombre: 'La vaca loca', desc: 'Un armazón de vaca cargado de cohetes que alguien se pone y sale a corretear a la gente.', pista: 'noche-sanjuan', zona: 'rocafuerte', d: 60, x: 1.9, icono: 'vaca' },
   { id: 'castillo', nombre: 'El castillo', desc: 'La torre de carrizo con ruedas de fuegos que se enciende de abajo arriba.', pista: 'noche-guapulo', zona: 'guapulo', d: 200, x: -2, icono: 'castillo' },
 ];
-const COLORES_PISTA = { panecillo: '#5B2A86', guapulo: '#1B5FAA', sanjuan: '#D6382B', vuelta: '#2E7D4F', subida: '#E8862C', 'noche-vuelta': '#1D1850', 'noche-guapulo': '#1D1850', 'noche-sanjuan': '#1D1850' };
+const COLORES_PISTA = { tobogan: '#C8301E', 'noche-tobogan': '#1D1850', panecillo: '#5B2A86', guapulo: '#1B5FAA', sanjuan: '#D6382B', vuelta: '#2E7D4F', subida: '#E8862C', 'noche-vuelta': '#1D1850', 'noche-guapulo': '#1D1850', 'noche-sanjuan': '#1D1850' };
 // La estampita dibujada: marco de color, el dibujo y el nombre abajo.
 const cromoCanvas = (cr) => lienzo(220, 300, (c, w, h) => {
   const col = COLORES_PISTA[cr.pista] || '#5B2A86';
@@ -578,6 +600,9 @@ const ZONAS = {
   rocafuerte: { nombre: 'La Rocafuerte', calle: 'adoquin', lado: 'vereda', hw: 4.2, casas: true, faroles: true, banderas: true, peatones: true, puestos: 22, cajones: 2, publico: [10, 4] },
   sanfrancisco: { nombre: 'Plaza de San Francisco', calle: 'adoquin', lado: 'plaza', hw: 6.5, casas: true, faroles: true, banderas: true, peatones: true, publico: [5, 7] },
   subida: { nombre: 'La subida del Panecillo', calle: 'asfalto', lado: 'pasto', hw: 4.8, arboles: true, publico: [14, 5] },
+  tobogan: { nombre: 'El tobogán', calle: 'asfalto', lado: 'pasto', hw: 5.8, arboles: true, publico: [16, 5] },
+  valle: { nombre: 'El valle', calle: 'asfalto', lado: 'pasto', hw: 5.6, arboles: true, publico: [10, 6] },
+  trepada: { nombre: 'La trepada', calle: 'asfalto', lado: 'pasto', hw: 5.4, arboles: true, publico: [12, 5] },
   cumbre: { nombre: 'La cumbre', calle: 'asfalto', lado: 'pasto', hw: 5.2, arboles: true, publico: [6, 6] },
 };
 
@@ -628,6 +653,14 @@ const PISTAS = [
     coladas: [['basilica', 50], ['venezuela', 30], ['venezuela', 120], ['rocafuerte', 60], ['rocafuerte', 140]],
   },
   {
+    id: 'tobogan', nombre: 'La bajada grande', salida: 'LA CUMBRE', meta: 'LA CUMBRE', real: 'tobogan', vueltas: 3,
+    lema: 'Tres vueltas: una recta inmensa cuesta abajo, la curva del valle y, con ese impulso, la trepada de vuelta. Lo que falte lo empuja el de atrás.',
+    zonas: [['tobogan', 0], ['valle', 310], ['trepada', 460], ['cumbre', 780]],
+    hitos: [['cerro', null, 45, 180, 28, 20]],
+    rampas: [['tobogan', 150, -3.2], ['tobogan', 240, 3.2]],
+    coladas: [['valle', 60], ['trepada', 180], ['cumbre', 60]],
+  },
+  {
     id: 'vuelta', nombre: 'La vuelta al Panecillo', salida: 'EL PANECILLO', meta: 'EL PANECILLO', real: 'panecillo-vuelta', vueltas: 2, arbolesLado: -1,
     lema: 'Dos vueltas al cerro por la carretera que lo rodea: la Virgen siempre a la vista y el que empuja, sin descanso en las subidas.',
     zonas: [['panecillo', 0], ['miradorpanecillo', 130], ['cumbre', 230], ['panecillo', 330]],
@@ -647,6 +680,10 @@ const PISTAS = [
   },
   // La noche de las Fiestas: las mismas calles a oscuras, con los faroles
   // encendidos y fuegos artificiales. Heredan todo de su pista de día.
+  {
+    id: 'noche-tobogan', base: 'tobogan', noche: true, nombre: 'La bajada grande de noche',
+    lema: 'La recta inmensa a oscuras, con los faroles abajo y los cohetes arriba.',
+  },
   {
     id: 'noche-vuelta', base: 'vuelta', noche: true, nombre: 'La vuelta al Panecillo de noche',
     lema: 'El cerro a oscuras, la Virgen iluminada y los cohetes del 5 de diciembre encima.',
@@ -685,6 +722,22 @@ const DATOS_REALES = {};
 const GENERADAS = {
   // La vuelta al cerro: un anillo con tres lóbulos alrededor del Panecillo,
   // que sube y baja. Unos 430 m la vuelta; tres vueltas, dos minutos.
+  // La bajada grande: una recta inmensa cuesta abajo, una curva en el valle
+  // y la trepada de vuelta, que con el impulso casi se sube entera; arriba,
+  // otra curva y la línea. Unos 940 m la vuelta.
+  tobogan: () => {
+    const puntos = [];
+    const pon = (x, z, y) => puntos.push([x, z, y]);
+    // la recta de bajada, de (0, 20) a (0, 340), 56 m abajo (18 %)
+    for (let i = 0; i < 64; i++) pon(0, 20 + i * 5, -56 * (i / 64));
+    // la curva del valle: media vuelta de radio 45 alrededor de (45, 340), 2 m abajo
+    for (let i = 0; i <= 28; i++) { const a = Math.PI - (i / 28) * Math.PI; pon(45 + Math.cos(a) * 45, 340 + Math.sin(a) * 45, -56 - 2 * (i / 28)); }
+    // la trepada, de (90, 340) a (90, 20), 44 m arriba (14 %)
+    for (let i = 1; i < 64; i++) pon(90, 340 - i * 5, -58 + 44 * (i / 64));
+    // la curva de arriba: media vuelta alrededor de (45, 20), 14 m arriba, hasta la línea
+    for (let i = 0; i < 28; i++) { const a = -(i / 28) * Math.PI; pon(45 + Math.cos(a) * 45, 20 + Math.sin(a) * 45, -14 + 14 * (i / 28)); }
+    return { id: 'tobogan', origen: [0, 0], largo: 922, cerrada: true, puntos, calles: [] };
+  },
   'panecillo-vuelta': () => {
     const puntos = [];
     for (let k = 0; k < 120; k++) {
@@ -2282,15 +2335,20 @@ function actualiza(dt) {
     if (j.volcado <= 0) endereza();
   } else {
     const mando = estado === 'llegada' ? 0 : (teclas.izq ? -1 : 0) + (teclas.der ? 1 : 0);
-    j.giro = mezcla(j.giro, mando, Math.min(1, dt * 8));
+    j.giro = mezcla(j.giro, mando, Math.min(1, dt * 10));
     const piedra = ZONAS[zona].calle === 'adoquin';
     let a = -AIRE * j.v * j.v;
     if (!j.aire) {
       a += -G * CUESTA * pend - (piedra ? ROCE_PIEDRA : ROCE);
       if (e.estado === 'empujando') a += EMPUJE * ST.empuje * Math.max(0, 1 - j.v / CORRE) + (j.v < 1 ? 1.2 : 0);
       if (teclas.freno || estado === 'llegada') a -= j.v > 0.2 ? FRENO * (estado === 'llegada' ? 0.4 : 1) : 0;
-      if (Math.abs(j.x) > hw) { a -= FUERA; sacudida = Math.max(sacudida, 0.4); }
-      j.vx = mando * GIRO * ST.giro * Math.max(j.v, 2.5) - CENTRIFUGA * j.v * j.v * k;
+      // En la vereda se frena; si se queda casi parado ahí, el de atrás lo
+      // arrastra de vuelta a la calle.
+      if (Math.abs(j.x) > hw) { a -= FUERA * Math.min(1, 0.3 + j.v / 8); sacudida = Math.max(sacudida, 0.4); if (j.v < 4) j.x -= Math.sign(j.x) * dt * 1.6; }
+      // El volante responde desde parado, sube con la velocidad y no se va de
+      // las manos en la bajada grande; la curva saca a v² · curvatura.
+      const vg = Math.min(j.v, 30);
+      j.vx = j.giro * GIRO * ST.giro * limita(j.v, 4.5, 24) - CENTRIFUGA * vg * vg * k;
     }
     if (j.turbo > 0) { j.turbo -= dt; a += 4.5; }
     j.v = limita(j.v + a * dt, 0, (j.turbo > 0 ? TOPE_TURBO : TOPE) * ST.tope);
@@ -2572,19 +2630,23 @@ function dibujaCamara(dt) {
   // Mientras se vuelca, la cámara se queda atrás y llega tarde: se ve el
   // tumbo entero en vez de pegada a la tabla.
   camS = j.volcado > 0 ? mezcla(camS, j.s, Math.min(1, dt * 1.5)) : j.s;
-  const lejos = 5.4 + j.v * 0.06;
-  const objetivo = punto(camS - lejos, j.x * 0.8, 2.25 + j.v * 0.02);
+  // Alta y atrás, mirando más adelante que el coche: se ve venir la curva y
+  // el de atrás no tapa la calle.
+  const lejos = 6.6 + j.v * 0.045;
+  const objetivo = punto(camS - lejos, j.x * 0.75, 3.1 + j.v * 0.012);
   // La cámara no se mete bajo la calle en las bajadas fuertes.
-  const suelo = muestra(camS - lejos).y + 1.2;
+  const suelo = muestra(camS - lejos).y + 1.4;
   if (objetivo.y < suelo) objetivo.y = suelo;
-  const mira = punto(camS + 7, j.x * 0.6, 0.9 + j.h * 0.5);
+  const mira = punto(camS + 10 + j.v * 0.15, j.x * 0.5, 0.5 + j.h * 0.5);
   // Si la cámara quedó lejos (al empezar o tras un salto de tiempo), se
   // pone en su sitio de golpe: deslizarse cien metros la mete en las casas.
   if (camara.position.distanceToSquared(objetivo) > 225) camara.position.copy(objetivo);
   else camara.position.lerp(objetivo, Math.min(1, dt * 6));
-  if (sacudida > 0 && !quieto.matches) camara.position.add(_v.set((Math.random() - 0.5) * sacudida * 0.12, (Math.random() - 0.5) * sacudida * 0.12, 0));
+  const tiembla = Math.max(sacudida, j.v > 26 ? (j.v - 26) / 40 : 0);
+  if (tiembla > 0 && !quieto.matches) camara.position.add(_v.set((Math.random() - 0.5) * tiembla * 0.12, (Math.random() - 0.5) * tiembla * 0.12, 0));
   camara.lookAt(mira);
-  const fov = 60 + 12 * Math.min(1, j.v / TOPE) + (j.turbo > 0 ? 6 : 0);
+  camara.rotateZ(-j.giro * 0.035);   // se ladea un poco con el volante
+  const fov = 62 + 16 * Math.min(1, j.v / 36) + (j.turbo > 0 ? 6 : 0);
   if (Math.abs(camara.fov - fov) > 0.05) { camara.fov = mezcla(camara.fov, fov, Math.min(1, dt * 3)); camara.updateProjectionMatrix(); }
   panorama.position.set(camara.position.x, camara.position.y + 30, camara.position.z);
   sigueSol(cocheJ.g.position);
@@ -2624,7 +2686,7 @@ function dibujaPortada(t) {
 // ─── el HUD ────────────────────────────────────────────────────────
 const hud = {
   puesto: $('#h-puesto'), tiempo: $('#h-tiempo'), vel: $('#h-vel'),
-  empujador: $('#h-empujador'), ruta: $('#h-ruta'), turbo: $('#h-turbo'),
+  empujador: $('#h-empujador'), ruta: $('#h-ruta'), turbo: $('#h-turbo'), velo: $('#velo'),
   caja: $('.coches-puesto'), puntos: [],
 };
 // Un punto por coche en la línea de la carrera, con su color y su número.
@@ -2678,6 +2740,10 @@ function pintaHud() {
     if (pos !== q.ultimo) { q.el.style.left = pos; q.ultimo = pos; }
   }
   hud.turbo.hidden = !(j.turbo > 0);
+  // Las rayas de velocidad, cuando de verdad va rápido.
+  const velo = quieto.matches ? 0 : limita((j.v - 22) / 16, 0, 0.75) + (j.turbo > 0 ? 0.2 : 0);
+  if (velo !== ultimoHud.velo) hud.velo.style.opacity = velo.toFixed(2);
+  datos.velo = velo;
   ultimoHud = datos;
 }
 
@@ -2703,7 +2769,7 @@ function aplicaAjustes() {
   for (const el of document.querySelectorAll('#opciones [data-ajuste]')) el.setAttribute('aria-pressed', String(!!ajustes[el.dataset.ajuste]));
 }
 const GUARDA = 'coches3d-progreso';
-const progresoBase = () => ({ medallas: {}, records: {}, parejas: ['cucuruchos', 'guarichas'], pistas: ['panecillo'], copa: 0, copas: {}, album: [], pinturas: ['madera'], pintura: 'madera' });
+const progresoBase = () => ({ medallas: {}, records: {}, parejas: ['cucuruchos', 'guarichas'], pistas: ['tobogan', 'panecillo'], copa: 0, copas: {}, album: [], pinturas: ['madera'], pintura: 'madera' });
 let prog = progresoBase();
 try { const p = JSON.parse(localStorage.getItem(GUARDA) || 'null'); if (p) prog = Object.assign(progresoBase(), p); } catch (err) { /* sin almacenamiento */ }
 // Guardados de antes de que hubiera varias copas.
@@ -2724,8 +2790,8 @@ const DESBLOQUEOS = [
   { tipo: 'pintura', id: 'oro', cuando: (p) => p.copas.noche === 1, como: 'ganando la Copa de la Noche' },
 ];
 const COPAS = {
-  fiestas: { nombre: 'Copa de las Fiestas', pistas: ['panecillo', 'guapulo', 'sanjuan'], campeones: '¡Campeones de las Fiestas!', ruta: 'el Panecillo, Guápulo y San Juan' },
-  noche: { nombre: 'Copa de la Noche', pistas: ['noche-vuelta', 'noche-guapulo', 'noche-sanjuan'], campeones: '¡Campeones de la Noche!', ruta: 'la vuelta al cerro, Guápulo y San Juan, de noche' },
+  fiestas: { nombre: 'Copa de las Fiestas', pistas: ['tobogan', 'panecillo', 'guapulo', 'sanjuan'], campeones: '¡Campeones de las Fiestas!', ruta: 'la bajada grande, el Panecillo, Guápulo y San Juan' },
+  noche: { nombre: 'Copa de la Noche', pistas: ['noche-tobogan', 'noche-vuelta', 'noche-guapulo', 'noche-sanjuan'], campeones: '¡Campeones de la Noche!', ruta: 'la bajada grande, la vuelta al cerro, Guápulo y San Juan, de noche' },
 };
 const copaAbierta = (id) => id === 'fiestas' || prog.copa === 1;
 const PUNTOS = [10, 7, 5, 3, 1];
@@ -3591,7 +3657,7 @@ window.coches = {
     return { rms: Math.sqrt(e / d.length), pico: d.reduce((m, v) => Math.max(m, Math.abs(v)), 0), pasos: Math.round(seg / (30 / c.bpm)) };
   },
   camaraEn: (s, x, h, giro, mira) => { Object.assign(foto, { s, x, h, giro: giro || 0, mira: mira || null }); pantalla(null, true); estado = 'foto'; },
-  punto: (s, x, h) => punto(s, x, h).toArray(),
+  punto: (s, x, h) => punto(s, x, h).toArray(), pend: (s) => muestra(s).pend,
   fantasma: () => ({ datos: fantasma.datos ? fantasma.datos.length : 0, trazo: fantasma.trazo.length, coche: !!(fantasma.coche && fantasma.coche.g.visible) }),
   pintura: () => ({ elegida: prog.pintura, color: cocheJ ? '#' + cocheJ.tabla.material.color.getHexString() : null }),
   modo: (m) => { modo = m; },

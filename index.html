@@ -21,9 +21,9 @@
 <!-- El sello ?v= se sube a mano en cada cambio del juego (CSS, JS y, con el
      JS, los modelos, que heredan su sello): así el navegador no se queda con
      la versión anterior. -->
-<link rel="stylesheet" href="coches.css?v=7757f811c7">
+<link rel="stylesheet" href="coches.css?v=fe83234b37">
 <!-- La piel del juego: variante del tema juegos (ver tema/LEEME.md). Va al final para mandar. -->
-<link rel="stylesheet" href="tema/tema.css?v=7757f811c7">
+<link rel="stylesheet" href="tema/tema.css?v=fe83234b37">
 <script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js", "three/addons/": "./vendor/addons/" } }</script>
 <script type="application/ld+json">
 {
@@ -115,6 +115,8 @@
   <button class="coches-mando coches-mando--freno" data-tecla="freno" type="button" aria-label="Frenar">Freno</button>
 </div>
 
+<!-- Las rayas de velocidad, que salen de los bordes cuando va rápido. -->
+<div class="coches-velo" id="velo" aria-hidden="true"></div>
 <p class="coches-cuenta" id="cuenta" aria-live="assertive"></p>
 <!-- La demo: la consola juega sola si nadie toca el título. -->
 <p class="coches-demo" id="demo" hidden><span>Demo</span> <small>Toca para volver</small></p>
@@ -339,6 +341,6 @@
 </div>
 
 <script src="../ds/mal/mal.js?v=1.0.18" defer></script>
-<script type="module" src="coches.js?v=7757f811c7"></script>
+<script type="module" src="coches.js?v=fe83234b37"></script>
 </body>
 </html>
