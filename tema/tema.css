@@ -243,8 +243,8 @@
   font-size:clamp(1rem, .85rem + .6vw, 1.3rem);color:var(--arc-blanco);-webkit-text-stroke:1.5px var(--arc-tinta);text-shadow:0 3px 0 var(--arc-tinta)}
 [data-variante="coches"] .coches-ruta__carril{background:var(--arc-tinta);border-color:rgba(255,255,255,.35);box-shadow:0 3px 0 rgba(0,0,0,.4)}
 [data-variante="coches"] .coches-punto.es-tu{box-shadow:0 0 0 3px var(--arc-amarillo), 0 0 0 5px var(--arc-tinta)}
-[data-variante="coches"] .coches-vel{font-size:clamp(2.8rem, 1.8rem + 3vw, 4rem);transform:rotate(-3deg);
-  -webkit-text-stroke:3px var(--arc-tinta);text-shadow:0 4px 0 var(--arc-tinta), 4px 4px 0 var(--arc-tinta)}
+[data-variante="coches"] .coches-vel{font-size:clamp(1.6rem, 1.1rem + 1.6vw, 2.4rem);transform:rotate(-3deg);
+  -webkit-text-stroke:2px var(--arc-tinta);text-shadow:0 3px 0 var(--arc-tinta), 3px 3px 0 var(--arc-tinta)}
 [data-variante="coches"] .coches-vel small{font-family:"Bungee",var(--mal-texto);font-weight:400;color:var(--arc-blanco);letter-spacing:.04em;-webkit-text-stroke:0;text-shadow:0 2px 0 var(--arc-tinta)}
 [data-variante="coches"] :is(.coches-empujador,.coches-turbo){font-family:"Bungee",var(--mal-texto);font-weight:400;letter-spacing:.03em;
   border:2px solid var(--arc-tinta);box-shadow:0 3px 0 var(--arc-tinta);transform:skewX(-8deg);color:var(--arc-tinta);background:var(--arc-blanco)}

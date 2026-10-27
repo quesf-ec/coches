@@ -53,10 +53,10 @@ body.coches{
 .coches-punto.es-tu{width:28px;height:28px;margin:-14px 0 0 -14px;font-size:12px;z-index:2;
   box-shadow:0 0 0 3px #fff, 0 0 0 5px var(--tinta)}
 
-/* Abajo, al centro: la velocidad, el empujador y la colada. */
-.coches .hud-juego__abajo{justify-content:center}
-.coches-tablero{display:flex;flex-direction:column;align-items:center;gap:var(--mal-e2)}
-.coches-vel{font-size:clamp(2.4rem, 1.6rem + 3vw, 3.6rem);font-variant-numeric:tabular-nums;--hud-borde:6px;text-shadow:0 4px 0 var(--tinta)}
+/* Debajo del puesto, a la derecha: la velocidad, el empujador y la colada. */
+.coches-tablero{display:flex;flex-direction:column;align-items:flex-end;gap:var(--mal-e1);margin-top:var(--mal-e1)}
+.coches-tablero__fila{justify-content:flex-end}
+.coches-vel{font-size:clamp(1.5rem, 1rem + 1.6vw, 2.2rem);font-variant-numeric:tabular-nums;--hud-borde:4px;text-shadow:0 3px 0 var(--tinta)}
 .coches-vel small{font-family:var(--mal-mono);font-size:max(.3em, 12px);margin-left:.3em;letter-spacing:.06em;text-transform:uppercase;--hud-borde:3px;text-shadow:0 2px 0 var(--tinta)}
 .coches-tablero__fila{display:flex;gap:var(--mal-e2);align-items:center}
 .coches-empujador,.coches-turbo{display:inline-flex;align-items:center;gap:.35em;padding:4px 12px;border-radius:99px;
@@ -295,7 +295,8 @@ body.pixel #pista{image-rendering:pixelated;image-rendering:crisp-edges}
     calc(env(safe-area-inset-bottom, 0px) + 10px) calc(env(safe-area-inset-left, 0px) + 14px)}
   .coches-botones .btn{width:40px;height:40px;min-height:40px;padding:0}
   .coches-puesto__n{font-size:2.6rem}
-  .coches-vel{font-size:2.2rem}
+  .coches-vel{font-size:1.4rem}
+  .coches-tablero{gap:2px;margin-top:0}
   .coches-ruta{gap:6px}
 }
 
