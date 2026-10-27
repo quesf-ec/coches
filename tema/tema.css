@@ -283,11 +283,3 @@
 @media (prefers-reduced-motion:reduce){
   [data-variante="coches"] .coches-opciones .btn:focus-visible::after{animation:none}
 }
-
-/* El empujón a tiempo, en la piel arcade. */
-[data-variante="coches"] .coches-dale__boton{font-family:"Bangers",var(--mal-display);font-size:1.3rem;letter-spacing:.06em;
-  color:var(--arc-blanco);-webkit-text-stroke:1.5px var(--arc-tinta);paint-order:stroke fill;text-shadow:0 3px 0 var(--arc-tinta);
-  background:var(--naranja);border:3px solid var(--arc-tinta);box-shadow:0 5px 0 var(--arc-tinta)}
-[data-variante="coches"] .coches-dale__boton:active,[data-variante="coches"] .coches-dale.is-pulso .coches-dale__boton{box-shadow:0 1px 0 var(--arc-tinta)}
-[data-variante="coches"] .coches-dale__medidor{background:var(--arc-tinta);border-color:var(--arc-blanco)}
-[data-variante="coches"] .coches-dale__combo{font-family:"Bangers",var(--mal-display);font-size:1.1rem;letter-spacing:.06em;color:var(--arc-amarillo)}
