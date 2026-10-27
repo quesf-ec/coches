@@ -2687,10 +2687,41 @@ function dibujaPortada(t) {
   if (publico) publico.coloca(t, j.s);
 }
 
+// ─── el empujón a tiempo ───────────────────────────────────────────
+// Mientras empuja, el de atrás tiene un ritmo: una marca va y viene por el
+// medidor cada 0,8 s. Tocar «¡Dale!» (o espacio) cuando la marca pasa por el
+// centro da un empujón fuerte; más o menos cerca, uno normal; a destiempo,
+// casi nada y se corta la racha. Cada toque bueno sube el multiplicador.
+const RITMO = 0.8;
+const dale = { combo: 0, mejor: 0, pulso: 0 };
+// La posición de la marca, de 0 (un extremo) a 1 (el otro), en triángulo.
+const faseRitmo = () => { const p = (reloj / RITMO) % 1; return p < 0.5 ? p * 2 : 2 - p * 2; };
+function tocaEmpuje() {
+  if (estado !== 'carrera' || j.aire || j.volcado > 0) return;
+  if (e.estado === 'a_bordo') {
+    // Tocar a bordo es bajarse a empujar, como mantener el mando.
+    if (j.v < CORRE) { e.estado = 'empujando'; cocheJ.empujador.pon('correr'); tono(320, 0.08, 'triangle', 0.15); }
+    return;
+  }
+  if (e.estado !== 'empujando') return;
+  const d = Math.abs(faseRitmo() - 0.5) * 2;   // 0 en el centro, 1 en los extremos
+  const mult = 1 + Math.min(dale.combo, 10) * 0.1;
+  let texto, empuje, nota;
+  if (d < 0.14) { dale.combo++; empuje = 2.0 * mult; texto = '¡Perfecto!'; nota = 880; }
+  else if (d < 0.42) { dale.combo++; empuje = 1.0 * mult; texto = '¡Bien!'; nota = 660; }
+  else { dale.combo = 0; empuje = 0.3; texto = '¡Ahí no!'; nota = 220; }
+  dale.mejor = Math.max(dale.mejor, dale.combo);
+  dale.pulso = 0.18;
+  j.v = Math.min(j.v + empuje, TOPE_TURBO * ST.tope);
+  tono(nota, 0.09, 'square', 0.12);
+  avisa(dale.combo > 1 ? `${texto} ×${dale.combo}` : texto, 450);
+}
+
 // ─── el HUD ────────────────────────────────────────────────────────
 const hud = {
   puesto: $('#h-puesto'), tiempo: $('#h-tiempo'), vel: $('#h-vel'),
   empujador: $('#h-empujador'), ruta: $('#h-ruta'), turbo: $('#h-turbo'), velo: $('#velo'),
+  dale: $('#dale-caja'), ritmo: $('#dale-ritmo'), marca: $('#dale-marca'), combo: $('#dale-combo'),
   caja: $('.coches-puesto'), puntos: [],
 };
 // Un punto por coche en la línea de la carrera, con su color y su número.
@@ -2744,6 +2775,12 @@ function pintaHud() {
     if (pos !== q.ultimo) { q.el.style.left = pos; q.ultimo = pos; }
   }
   hud.turbo.hidden = !(j.turbo > 0);
+  // El medidor del empujón: solo cuando el de atrás empuja.
+  hud.dale.hidden = estado !== 'carrera';
+  hud.ritmo.hidden = e.estado !== 'empujando';
+  if (!hud.ritmo.hidden) hud.marca.style.left = `${(faseRitmo() * 100).toFixed(1)}%`;
+  hud.combo.textContent = dale.combo > 1 ? `Racha ×${dale.combo}` : '';
+  if (dale.pulso > 0) { dale.pulso -= 1 / 60; hud.dale.classList.toggle('is-pulso', dale.pulso > 0); }
   // Las rayas de velocidad, cuando de verdad va rápido.
   const velo = quieto.matches ? 0 : limita((j.v - 22) / 16, 0, 0.75) + (j.turbo > 0 ? 0.2 : 0);
   if (velo !== ultimoHud.velo) hud.velo.style.opacity = velo.toFixed(2);
@@ -3076,7 +3113,7 @@ const CAPAS = ['titulo', 'portada', 'ayuda', 'elegir', 'medallas', 'album', 'opc
 function pantalla(id, sinCortina) {
   for (const p of CAPAS) $('#' + p).hidden = p !== id;
   $('#premio').hidden = true;
-  $('#hud').hidden = true; $('#mandos').hidden = true;
+  $('#hud').hidden = true; $('#mandos').hidden = true; $('#dale-caja').hidden = true;
   if (!sinCortina) cortina();
 }
 // El barrido entre pantallas, como el de la consola.
@@ -3135,6 +3172,7 @@ function pilotoDemo() {
   teclas.izq = j.x > objetivo + 0.15 && !j.aire; teclas.der = j.x < objetivo - 0.15 && !j.aire;
   teclas.freno = j.v > GIRO / (CENTRIFUGA * Math.max(peor, 1e-4)) * 0.95;
   teclas.empuja = j.v < 5.5 && !teclas.freno;
+  if (Math.abs(faseRitmo() - 0.5) < 0.07 && Math.random() < 0.5) tocaEmpuje();
 }
 function desdeTitulo() {
   if (estado !== 'titulo' || $('#b-copa').disabled) return;
@@ -3440,6 +3478,7 @@ $('#b-copa-sigue').addEventListener('click', sigueCopa);
 $('#b-copa-deja').addEventListener('click', aMenu);
 $('#premio').addEventListener('click', siguientePremio);
 $('#premio').addEventListener('keydown', (ev) => { if (ev.repeat) return; if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); siguientePremio(); } });
+$('#dale').addEventListener('pointerdown', (ev) => { ev.preventDefault(); tocaEmpuje(); });
 $('#b-sonido').addEventListener('click', () => { ajustes.sonido = !ajustes.sonido; guardaAjustes(); aplicaAjustes(); });
 for (const el of document.querySelectorAll('#opciones [data-ajuste]')) {
   el.addEventListener('click', () => { ajustes[el.dataset.ajuste] = !ajustes[el.dataset.ajuste]; guardaAjustes(); aplicaAjustes(); });
@@ -3476,6 +3515,7 @@ addEventListener('keydown', (ev) => {
     return;
   }
   if (ev.code === 'Escape' || ev.code === 'KeyP') { if (estado === 'pausa') sigue(); else pausa(); return; }
+  if (estado === 'carrera' && !ev.repeat && (ev.code === 'Space' || ev.code === 'ArrowUp' || ev.code === 'KeyW')) { ev.preventDefault(); tocaEmpuje(); }
   if ((estado === 'menu' || estado === 'elegir' || estado === 'pausa') && ev.code.startsWith('Arrow')) { if (navegaMenu(ev)) ev.preventDefault(); return; }
   const t = MAPA[ev.code];
   if (!t || (estado !== 'carrera' && estado !== 'cuenta')) return;
@@ -3646,6 +3686,7 @@ window.coches = {
   pistaReal: (datos, def) => { DATOS_REALES[datos.id] = datos; if (!PISTAS.some((p) => p.id === def.id)) PISTAS.push(def); return cargaPista(def.id); },
   vuelta: () => vueltaActual, largoVuelta: () => LARGO_VUELTA, mapa: dibujaMapa,
   musica: () => ({ nombre: musica.nombre, paso: musica.paso, ctx: !!son.ctx }),
+  dale: (fase) => { if (fase !== undefined) reloj = (fase * RITMO) + Math.floor(reloj / RITMO) * RITMO; tocaEmpuje(); return { combo: dale.combo, v: +(j.v * 3.6).toFixed(1), fase: +faseRitmo().toFixed(2), e: e.estado }; },
   demo: empiezaDemo, ajustes,
   // Pinta unos segundos de una canción sin sonar, para medir que suena.
   rindeMusica: async (nombre, seg) => {
