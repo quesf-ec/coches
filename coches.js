@@ -2340,7 +2340,11 @@ function actualiza(dt) {
     let a = -AIRE * j.v * j.v;
     if (!j.aire) {
       a += -G * CUESTA * pend - (piedra ? ROCE_PIEDRA : ROCE);
-      if (e.estado === 'empujando') a += EMPUJE * ST.empuje * Math.max(0, 1 - j.v / CORRE) + (j.v < 1 ? 1.2 : 0);
+      if (e.estado === 'empujando') {
+        // Con los dos lados a la vez, el de atrás empuja con todo: el doble.
+        const todo = teclas.izq && teclas.der ? 2 : 1;
+        a += todo * EMPUJE * ST.empuje * Math.max(0, 1 - j.v / CORRE) + (j.v < 1 ? 1.2 * todo : 0);
+      }
       if (teclas.freno || estado === 'llegada') a -= j.v > 0.2 ? FRENO * (estado === 'llegada' ? 0.4 : 1) : 0;
       // En la vereda se frena; si se queda casi parado ahí, el de atrás lo
       // arrastra de vuelta a la calle.
@@ -2632,12 +2636,12 @@ function dibujaCamara(dt) {
   camS = j.volcado > 0 ? mezcla(camS, j.s, Math.min(1, dt * 1.5)) : j.s;
   // Alta y atrás, mirando más adelante que el coche: se ve venir la curva y
   // el de atrás no tapa la calle.
-  const lejos = 6.6 + j.v * 0.045;
-  const objetivo = punto(camS - lejos, j.x * 0.75, 3.1 + j.v * 0.012);
+  const lejos = 4.8 + j.v * 0.035;
+  const objetivo = punto(camS - lejos, j.x * 0.75, 2.6 + j.v * 0.01);
   // La cámara no se mete bajo la calle en las bajadas fuertes.
   const suelo = muestra(camS - lejos).y + 1.4;
   if (objetivo.y < suelo) objetivo.y = suelo;
-  const mira = punto(camS + 10 + j.v * 0.15, j.x * 0.5, 0.5 + j.h * 0.5);
+  const mira = punto(camS + 8 + j.v * 0.12, j.x * 0.5, 0.5 + j.h * 0.5);
   // Si la cámara quedó lejos (al empezar o tras un salto de tiempo), se
   // pone en su sitio de golpe: deslizarse cien metros la mete en las casas.
   if (camara.position.distanceToSquared(objetivo) > 225) camara.position.copy(objetivo);
