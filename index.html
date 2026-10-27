@@ -21,9 +21,9 @@
 <!-- El sello ?v= se sube a mano en cada cambio del juego (CSS, JS y, con el
      JS, los modelos, que heredan su sello): así el navegador no se queda con
      la versión anterior. -->
-<link rel="stylesheet" href="coches.css?v=43be6baa35">
+<link rel="stylesheet" href="coches.css?v=7757f811c7">
 <!-- La piel del juego: variante del tema juegos (ver tema/LEEME.md). Va al final para mandar. -->
-<link rel="stylesheet" href="tema/tema.css?v=43be6baa35">
+<link rel="stylesheet" href="tema/tema.css?v=7757f811c7">
 <script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js", "three/addons/": "./vendor/addons/" } }</script>
 <script type="application/ld+json">
 {
@@ -87,19 +87,20 @@
     <div class="coches-puesto">
       <p class="coches-puesto__n" aria-live="polite"><span id="h-puesto">5</span><span class="coches-de">/5</span></p>
       <p class="coches-tiempo" id="h-tiempo">0:00.0</p>
-    </div>
-  </div>
-
-  <div class="hud-juego__abajo">
-    <div class="coches-tablero">
-      <p class="coches-vel"><span id="h-vel">0</span><small>km/h</small></p>
-      <div class="coches-tablero__fila">
-        <span class="coches-empujador" id="h-empujador" data-estado="empujando">Empujando</span>
-        <span class="coches-turbo" id="h-turbo" hidden>
-          <svg class="icono icono--s" aria-hidden="true"><use href="#i-rayo"/></svg> Colada</span>
+      <!-- La velocidad y el empujador van aquí también, debajo del puesto:
+           el centro de abajo queda libre para la calle y el freno. -->
+      <div class="coches-tablero">
+        <p class="coches-vel"><span id="h-vel">0</span><small>km/h</small></p>
+        <div class="coches-tablero__fila">
+          <span class="coches-turbo" id="h-turbo" hidden>
+            <svg class="icono icono--s" aria-hidden="true"><use href="#i-rayo"/></svg> Colada</span>
+          <span class="coches-empujador" id="h-empujador" data-estado="empujando">Empujando</span>
+        </div>
       </div>
     </div>
   </div>
+
+  <div class="hud-juego__abajo"></div>
 </div>
 
 <!-- Los mandos táctiles: la mitad izquierda de la pantalla gira a la izquierda,
@@ -338,6 +339,6 @@
 </div>
 
 <script src="../ds/mal/mal.js?v=1.0.18" defer></script>
-<script type="module" src="coches.js?v=43be6baa35"></script>
+<script type="module" src="coches.js?v=7757f811c7"></script>
 </body>
 </html>
