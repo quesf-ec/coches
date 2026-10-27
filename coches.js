@@ -544,6 +544,17 @@ function texturasSuelo() {
       c.strokeStyle = 'rgba(110,65,25,.45)'; c.lineWidth = 2;
       for (let y = 6; y < h; y += 9) { c.beginPath(); c.moveTo(0, y); c.bezierCurveTo(40, y - 4, 90, y + 4, w, y); c.stroke(); }
     }), true),
+    // La tabla del coche: tres tablones con veta, junta oscura y clavos.
+    tablones: textura(lienzo(256, 256, (c, w, h) => {
+      c.fillStyle = '#C8955A'; c.fillRect(0, 0, w, h);
+      for (let t = 0; t < 3; t++) {
+        const x0 = t * w / 3;
+        c.strokeStyle = 'rgba(110,65,25,.4)'; c.lineWidth = 2;
+        for (let y = 4 + t * 3; y < h; y += 10) { c.beginPath(); c.moveTo(x0 + 4, y); c.bezierCurveTo(x0 + 30, y - 3, x0 + 55, y + 3, x0 + w / 3 - 4, y); c.stroke(); }
+        c.fillStyle = 'rgba(60,35,15,.55)'; c.fillRect(x0, 0, 3, h);
+        c.fillStyle = '#6E6A66'; for (const y of [18, h - 18]) { c.beginPath(); c.arc(x0 + w / 6, y, 4, 0, 7); c.fill(); }
+      }
+    }), true),
   };
 }
 
@@ -552,22 +563,22 @@ function texturasSuelo() {
 // puestos, cajones, árboles, banderines, peatones y cuánto público (cada
 // cuántos metros una fila, y de cuántos).
 const ZONAS = {
-  panecillo: { nombre: 'El Panecillo', calle: 'asfalto', lado: 'pasto', hw: 4.0, arboles: true, publico: [40, 4] },
-  ambato: { nombre: 'La bajada de la Ambato', calle: 'asfalto', lado: 'vereda', hw: 3.6, casas: true, faroles: true, banderas: true, peatones: true, publico: [22, 4] },
-  bulevar: { nombre: 'Bulevar 24 de Mayo', calle: 'asfalto', lado: 'vereda', hw: 4.5, casas: true, faroles: true, banderas: true, peatones: true, puestos: 34, publico: [8, 6] },
-  ronda: { nombre: 'La Ronda', calle: 'adoquin', lado: 'vereda', hw: 3.4, casas: true, faroles: true, banderas: true, peatones: true, puestos: 40, publico: [10, 4] },
-  garcia: { nombre: 'La García Moreno', calle: 'adoquin', lado: 'vereda', hw: 3.4, casas: true, faroles: true, banderas: true, peatones: true, cajones: 3, publico: [14, 4] },
-  plaza: { nombre: 'Plaza Grande', calle: 'adoquin', lado: 'plaza', hw: 5.0, casas: true, faroles: true, banderas: true, peatones: true, puestos: 20, publico: [5, 7] },
-  miradorpanecillo: { nombre: 'El mirador del Panecillo', calle: 'asfalto', lado: 'pasto', hw: 3.8, arboles: true, publico: [30, 4] },
-  mirador: { nombre: 'El Mirador de Guápulo', calle: 'asfalto', lado: 'pasto', hw: 3.8, arboles: true, publico: [30, 4] },
-  guapulo: { nombre: 'La cuesta de Guápulo', calle: 'adoquin', lado: 'vereda', hw: 3.0, casas: true, faroles: true, banderas: true, peatones: true, publico: [12, 4] },
-  plazaguapulo: { nombre: 'Plaza de Guápulo', calle: 'adoquin', lado: 'plaza', hw: 4.6, casas: true, faroles: true, banderas: true, peatones: true, puestos: 18, publico: [5, 6] },
-  basilica: { nombre: 'La Basílica', calle: 'adoquin', lado: 'plaza', hw: 4.6, casas: true, faroles: true, publico: [6, 6] },
-  venezuela: { nombre: 'La bajada de la Venezuela', calle: 'asfalto', lado: 'vereda', hw: 3.6, casas: true, faroles: true, banderas: true, peatones: true, publico: [16, 4] },
-  rocafuerte: { nombre: 'La Rocafuerte', calle: 'adoquin', lado: 'vereda', hw: 3.2, casas: true, faroles: true, banderas: true, peatones: true, puestos: 22, cajones: 2, publico: [10, 4] },
-  sanfrancisco: { nombre: 'Plaza de San Francisco', calle: 'adoquin', lado: 'plaza', hw: 5.5, casas: true, faroles: true, banderas: true, peatones: true, publico: [5, 7] },
-  subida: { nombre: 'La subida del Panecillo', calle: 'asfalto', lado: 'pasto', hw: 3.8, arboles: true, publico: [14, 5] },
-  cumbre: { nombre: 'La cumbre', calle: 'asfalto', lado: 'pasto', hw: 4.2, arboles: true, publico: [6, 6] },
+  panecillo: { nombre: 'El Panecillo', calle: 'asfalto', lado: 'pasto', hw: 5.0, arboles: true, publico: [40, 4] },
+  ambato: { nombre: 'La bajada de la Ambato', calle: 'asfalto', lado: 'vereda', hw: 4.6, casas: true, faroles: true, banderas: true, peatones: true, publico: [22, 4] },
+  bulevar: { nombre: 'Bulevar 24 de Mayo', calle: 'asfalto', lado: 'vereda', hw: 5.5, casas: true, faroles: true, banderas: true, peatones: true, puestos: 34, publico: [8, 6] },
+  ronda: { nombre: 'La Ronda', calle: 'adoquin', lado: 'vereda', hw: 4.4, casas: true, faroles: true, banderas: true, peatones: true, puestos: 40, publico: [10, 4] },
+  garcia: { nombre: 'La García Moreno', calle: 'adoquin', lado: 'vereda', hw: 4.4, casas: true, faroles: true, banderas: true, peatones: true, cajones: 3, publico: [14, 4] },
+  plaza: { nombre: 'Plaza Grande', calle: 'adoquin', lado: 'plaza', hw: 6.0, casas: true, faroles: true, banderas: true, peatones: true, puestos: 20, publico: [5, 7] },
+  miradorpanecillo: { nombre: 'El mirador del Panecillo', calle: 'asfalto', lado: 'pasto', hw: 4.8, arboles: true, publico: [30, 4] },
+  mirador: { nombre: 'El Mirador de Guápulo', calle: 'asfalto', lado: 'pasto', hw: 4.8, arboles: true, publico: [30, 4] },
+  guapulo: { nombre: 'La cuesta de Guápulo', calle: 'adoquin', lado: 'vereda', hw: 4.0, casas: true, faroles: true, banderas: true, peatones: true, publico: [12, 4] },
+  plazaguapulo: { nombre: 'Plaza de Guápulo', calle: 'adoquin', lado: 'plaza', hw: 5.6, casas: true, faroles: true, banderas: true, peatones: true, puestos: 18, publico: [5, 6] },
+  basilica: { nombre: 'La Basílica', calle: 'adoquin', lado: 'plaza', hw: 5.6, casas: true, faroles: true, publico: [6, 6] },
+  venezuela: { nombre: 'La bajada de la Venezuela', calle: 'asfalto', lado: 'vereda', hw: 4.6, casas: true, faroles: true, banderas: true, peatones: true, publico: [16, 4] },
+  rocafuerte: { nombre: 'La Rocafuerte', calle: 'adoquin', lado: 'vereda', hw: 4.2, casas: true, faroles: true, banderas: true, peatones: true, puestos: 22, cajones: 2, publico: [10, 4] },
+  sanfrancisco: { nombre: 'Plaza de San Francisco', calle: 'adoquin', lado: 'plaza', hw: 6.5, casas: true, faroles: true, banderas: true, peatones: true, publico: [5, 7] },
+  subida: { nombre: 'La subida del Panecillo', calle: 'asfalto', lado: 'pasto', hw: 4.8, arboles: true, publico: [14, 5] },
+  cumbre: { nombre: 'La cumbre', calle: 'asfalto', lado: 'pasto', hw: 5.2, arboles: true, publico: [6, 6] },
 };
 
 // Las pistas. Cada una es una lista de tramos: el nombre de una zona la
@@ -579,8 +590,8 @@ const PISTAS = [
   {
     id: 'panecillo', nombre: 'La bajada del Panecillo', salida: 'EL PANECILLO', meta: 'PLAZA GRANDE',
     lema: 'De la Virgen a la Plaza Grande: las curvas del Panecillo, la Ambato empinada, La Ronda y la subida de la García Moreno.',
-    tramos: ['panecillo', [0, 40, 0, 0, 0], ['salida', 34], [12, 20, 12, 0, -5], [14, 22, 14, -5, -6], [14, 22, 14, 6, -6],
-      [16, 30, 16, 7, -10], [14, 20, 14, -5, -5], [10, 14, 10, 2, -3],
+    tramos: ['panecillo', [0, 40, 0, 0, 0], ['salida', 34], [12, 20, 12, 0, -6], [14, 22, 14, -5, -8], [14, 22, 14, 5, -9],
+      [16, 30, 16, 5, -14], [14, 20, 14, -4, -7], [10, 14, 10, 2, -3],
       'ambato', [18, 56, 18, 0, -26], [10, 10, 10, 0, 1.2], [15, 24, 15, 3, -3],
       'bulevar', [18, 54, 18, -2, -3], [15, 24, 15, 3, -1],
       'ronda', [9, 15, 9, -4, 0.8], [9, 15, 9, 5, -2.5], [9, 15, 9, -4, 0.6], [9, 15, 9, 4, -2.5], [9, 12, 9, -2, 0],
@@ -919,6 +930,7 @@ function preparaMateriales() {
   MAT.asfalto = lam(TEX.asfalto); MAT.adoquin = lam(TEX.adoquin); MAT.vereda = lam(TEX.vereda);
   MAT.pasto = lam(TEX.pasto); MAT.plaza = lam(TEX.plaza);
   MAT.bordillo = mate({ color: 0xB9B0A0, side: THREE.DoubleSide });
+  MAT.raya = new THREE.MeshBasicMaterial({ color: 0xEDE9DF, side: THREE.DoubleSide });
   MAT.madera = mate({ map: TEX.madera });
   for (const m of Object.values(MAT)) m.userData.compartido = true;
   for (const t of Object.values(TEX)) if (t && t.userData) t.userData.compartido = true;
@@ -935,12 +947,16 @@ function construyeCalle() {
     const i1 = Math.min(i, N - 1), z = ZONAS[P.zona[i0]];
     const hw = (k) => P.hw[k];
     cinta(i0, i1, (k, l) => [l ? hw(k) : -hw(k), 0], uvCalle[z.calle], MAT[z.calle]);
+    // En el asfalto, la raya blanca del borde.
+    if (z.calle === 'asfalto') for (const s of [-1, 1]) cinta(i0, i1, (k, l) => [s * (hw(k) - (l ? 0.22 : 0.34)), 0.004], (k) => [0, k], MAT.raya);
     for (const s of [-1, 1]) {
       cinta(i0, i1, (k, l) => [s * hw(k), l ? BORDILLO : 0], (k) => [0, k], MAT.bordillo);
       const acera = z.lado === 'pasto' ? MAT.pasto : MAT.vereda;
       cinta(i0, i1, (k, l) => [s * (hw(k) + (l ? ACERA : 0)), BORDILLO], (k, x) => [x / 1.6, k / 1.6], acera);
-      const lejos = z.lado === 'pasto' ? 45 : 14;
-      cinta(i0, i1, (k, l) => [s * (hw(k) + ACERA + (l ? lejos : 0)), l ? (z.lado === 'pasto' ? -5 : BORDILLO) : BORDILLO],
+      // El terreno de los lados cae pronto: así una curva de más arriba no
+      // deja su pasto flotando sobre la de más abajo.
+      const lejos = z.lado === 'pasto' ? 30 : 14;
+      cinta(i0, i1, (k, l) => [s * (hw(k) + ACERA + (l ? lejos : 0)), l ? (z.lado === 'pasto' ? -11 : BORDILLO) : BORDILLO],
         (k, x) => [x / 4, k / 4], MAT[z.lado]);
     }
     i0 = i;
@@ -1225,9 +1241,41 @@ function construyeDecorado(def) {
   }
   f.funde();
 
-  // Los cerros: eucaliptos y muros de piedra.
+  // El rótulo de cada calle, al empezar la zona, en una placa azul.
+  const matPoste = mate({ color: 0x2A2A2E });
+  for (const cr of corridas) {
+    const zz = ZONAS[cr.zona];
+    if (!zz.casas || cr.z1 - cr.z0 < 30) continue;
+    const s = cr.z0 + 10, hw = muestra(s).hw, lado = cr.z0 % 2 ? 1 : -1;
+    const grupo = new THREE.Group();
+    grupo.add(new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 2.6, 6).translate(0, 1.3, 0), matPoste));
+    const placa = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 0.28), mate({ map: textura(lienzo(352, 90, (c, w, h) => {
+      c.fillStyle = '#1F4E9E'; c.fillRect(0, 0, w, h); c.strokeStyle = '#F3F1EC'; c.lineWidth = 6; c.strokeRect(6, 6, w - 12, h - 12);
+      c.fillStyle = '#F3F1EC'; c.font = '700 40px system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(zz.nombre.replace(/^(La|El) (bajada|cuesta|subida) de (la )?/i, ''), w / 2, h / 2 + 2);
+    })), side: THREE.DoubleSide }));
+    placa.position.set(0, 2.45, 0); grupo.add(placa);
+    grupo.applyMatrix4(matrizEn(s, lado * (hw + ACERA - 0.3), BORDILLO, -lado));
+    mundo.add(grupo);
+  }
+  // Una pileta en cada plaza, a un lado, con su chorro.
+  for (const cr of corridas) {
+    if (ZONAS[cr.zona].lado !== 'plaza' || cr.z1 - cr.z0 < 60) continue;
+    const s = cr.z0 + 30, hw = muestra(s).hw;
+    const pileta = new THREE.Group();
+    pileta.add(new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.4, 0.6, 16).translate(0, 0.3, 0), mate({ color: 0xA9A196 })));
+    pileta.add(new THREE.Mesh(new THREE.CylinderGeometry(2.0, 2.0, 0.08, 16).translate(0, 0.58, 0), mate({ color: 0x5FA8C8, roughness: 0.2, metalness: 0.1 })));
+    pileta.add(new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.4, 1.6, 10).translate(0, 1.3, 0), mate({ color: 0xA9A196 })));
+    pileta.add(new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, 0.12, 16).translate(0, 2.1, 0), mate({ color: 0xA9A196 })));
+    pileta.applyMatrix4(matrizEn(s, -(hw + ACERA + 3.2), BORDILLO, 0));
+    mundo.add(pileta);
+  }
+
+  // Los cerros: eucaliptos, arrayanes redondos, arbustos y muros de piedra.
   const tronco = new THREE.CylinderGeometry(0.18, 0.28, 9, 6).translate(0, 4.5, 0);
+  const troncoBajo = new THREE.CylinderGeometry(0.16, 0.22, 3.2, 6).translate(0, 1.6, 0);
   const copa = new THREE.IcosahedronGeometry(2.2, 0);
+  const copaRedonda = new THREE.IcosahedronGeometry(2.4, 1);
+  const arbusto = new THREE.IcosahedronGeometry(0.7, 0);
   const matTronco = mate({ color: 0xBFAE96 });
   const verdes = [0x5F7F62, 0x6E8F6C, 0x55745A, 0x7FA07A].map((c) => mate({ color: c, flatShading: true }));
   const muro = new THREE.BoxGeometry(5.2, 0.7, 0.5).translate(0, 0.35, 0);
@@ -1242,13 +1290,22 @@ function construyeDecorado(def) {
         if (def.arbolesLado && lado !== def.arbolesLado) continue;
         const hw = muestra(s).hw, x = lado * (hw + ACERA + 1.5 + r() * 9);
         const m = matrizEn(s + r() * 4, x, BORDILLO - 0.2, 0, r() * 6);
-        fP.pon(new THREE.Mesh(tronco, matTronco), m);
-        for (let k = 0; k < 3; k++) {
-          const t = new THREE.Matrix4().makeTranslation((r() - 0.5) * 2.2, 8 + r() * 2.5, (r() - 0.5) * 2.2);
-          const e = 0.8 + r() * 0.6;
-          t.multiply(new THREE.Matrix4().makeScale(e, e * 1.25, e));
-          fP.pon(new THREE.Mesh(copa, elige(r, verdes)), m.clone().multiply(t));
+        if (r() < 0.3) {
+          // Un arrayán: bajo y redondo.
+          fP.pon(new THREE.Mesh(troncoBajo, matTronco), m);
+          const e = 0.7 + r() * 0.4;
+          fP.pon(new THREE.Mesh(copaRedonda, elige(r, verdes)), m.clone().multiply(new THREE.Matrix4().makeTranslation(0, 3.6, 0).multiply(new THREE.Matrix4().makeScale(e, e * 0.9, e))));
+        } else {
+          fP.pon(new THREE.Mesh(tronco, matTronco), m);
+          for (let k = 0; k < 3; k++) {
+            const t = new THREE.Matrix4().makeTranslation((r() - 0.5) * 2.2, 8 + r() * 2.5, (r() - 0.5) * 2.2);
+            const e = 0.8 + r() * 0.6;
+            t.multiply(new THREE.Matrix4().makeScale(e, e * 1.25, e));
+            fP.pon(new THREE.Mesh(copa, elige(r, verdes)), m.clone().multiply(t));
+          }
         }
+        // Arbustos al pie, junto a la calle.
+        if (r() < 0.5) { const e = 0.7 + r() * 0.8; fP.pon(new THREE.Mesh(arbusto, elige(r, verdes)), matrizEn(s + r() * 5, lado * (hw + ACERA + 0.6 + r() * 1.2), BORDILLO + 0.3 * e, 0).multiply(new THREE.Matrix4().makeScale(e, e * 0.8, e))); }
       }
     }
     for (let s = Math.max(cr.z0, SALIDA + 11); s < cr.z1; s += 6) {
@@ -1839,22 +1896,52 @@ const persona = (id) => {
 
 function construyeCoche(eq) {
   const g = new THREE.Group();
-  const tabla = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.06, 1.9), mate({ map: TEX.madera, color: eq.tabla }));
+  // La tabla, de tres tablones, con un listón a cada lado y un asiento.
+  const tabla = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.06, 1.9), mate({ map: TEX.tablones, color: eq.tabla }));
   tabla.position.y = TABLA;
   g.add(tabla);
-  const metal = mate({ color: 0x8C9096 });
-  const eje = new THREE.Mesh(new THREE.BoxGeometry(0.78, 0.04, 0.05), mate({ color: 0x3A3A3A }));
-  const rueda = new THREE.CylinderGeometry(0.09, 0.09, 0.07, 12).rotateZ(Math.PI / 2);
+  const oscura = mate({ map: TEX.madera, color: 0x8A5A2E });
+  for (const l of [-1, 1]) { const r = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.08, 1.7), oscura); r.position.set(l * 0.32, TABLA + 0.07, -0.05); g.add(r); }
+  const asiento = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.05, 0.34), oscura); asiento.position.set(0, TABLA + 0.055, 0.3); g.add(asiento);
+  // Las ruedas: llanta de caucho y cubo de metal, sobre ejes negros.
+  const metal = mate({ color: 0x8C9096, metalness: 0.4, roughness: 0.5 });
+  const caucho = mate({ color: 0x2A2A2C, roughness: 0.95 });
+  const eje = new THREE.Mesh(new THREE.BoxGeometry(0.84, 0.04, 0.05), mate({ color: 0x3A3A3A }));
+  const llanta = new THREE.TorusGeometry(0.085, 0.032, 8, 16).rotateY(Math.PI / 2);
+  const cubo = new THREE.CylinderGeometry(0.06, 0.06, 0.08, 10).rotateZ(Math.PI / 2);
   const ruedas = [];
   const delante = new THREE.Group(); delante.position.set(0, 0.1, 0.78); g.add(delante);
   const atras = new THREE.Group(); atras.position.set(0, 0.1, -0.78); g.add(atras);
   for (const grupo of [delante, atras]) {
     grupo.add(eje.clone());
-    for (const l of [-1, 1]) { const w = new THREE.Mesh(rueda, metal); w.position.x = l * 0.38; grupo.add(w); ruedas.push(w); }
+    for (const l of [-1, 1]) {
+      const w = new THREE.Group(); w.position.x = l * 0.41;
+      w.add(new THREE.Mesh(llanta, caucho), new THREE.Mesh(cubo, metal));
+      grupo.add(w); ruedas.push(w);
+    }
   }
+  // La soga del volante: del eje de delante a las manos del que maneja.
+  const sogaMat = mate({ color: 0xD9C7A0 });
+  for (const l of [-1, 1]) {
+    const soga = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.62, 5), sogaMat);
+    soga.position.set(l * 0.28, 0.28, 0.5); soga.rotation.x = -1.05; soga.rotation.z = l * 0.35;
+    g.add(soga);
+  }
+  // La palanca del freno, a la derecha, con su pomo rojo.
+  const palanca = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.02, 0.42, 6), mate({ color: 0x3A3A3A }));
+  palanca.position.set(0.36, TABLA + 0.22, 0.05); palanca.rotation.x = 0.5; g.add(palanca);
+  const pomo = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 6), mate({ color: 0xD6382B }));
+  pomo.position.set(0.36, TABLA + 0.41, -0.05); g.add(pomo);
   // Los tacos donde se apoyan los ejes, y el número atrás.
   const taco = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.1, 0.12), mate({ map: TEX.madera }));
   for (const z of [0.78, -0.78]) { const t = taco.clone(); t.position.set(0, 0.17, z); g.add(t); }
+  // El banderín con el color de la pareja, atrás, para verlo en la carrera.
+  const mastil = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.9, 5), metal);
+  mastil.position.set(-0.3, TABLA + 0.45, -0.85); g.add(mastil);
+  const bandera = new THREE.Mesh(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0.9, 0), new THREE.Vector3(0, 0.66, 0), new THREE.Vector3(0.34, 0.8, 0)]),
+    new THREE.MeshBasicMaterial({ color: eq.placa, side: THREE.DoubleSide }));
+  bandera.geometry.computeVertexNormals();
+  bandera.position.set(-0.3, TABLA, -0.85); bandera.rotation.y = Math.PI / 2; g.add(bandera);
   const num = lienzo(128, 64, (c, w, h) => {
     c.fillStyle = eq.placa; c.fillRect(0, 0, w, h);
     c.fillStyle = '#fff'; c.font = '800 46px system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(String(eq.num), w / 2, h / 2 + 2);
@@ -1913,7 +2000,7 @@ const ST = { tope: 1, empuje: 1, giro: 1 };
 function reinicia() {
   for (const o of obstaculos) { o.tomada = false; o.golpe = -9; if (o.sp) o.sp.visible = true; if (o.mesh) { o.mesh.visible = true; o.mesh.material.opacity = prog.album.includes(o.id) ? 0.35 : 1; } }
   cromosNuevos.length = 0;
-  const grilla = (k) => ({ x: k % 2 ? 1.3 : -1.3, s: SALIDA - 2 - Math.floor(k / 2) * 4.5 - (k % 2) * 1.6 });
+  const grilla = (k) => ({ x: k % 2 ? 1.9 : -1.9, s: SALIDA - 2 - Math.floor(k / 2) * 5 - (k % 2) * 1.8 });
   // El jugador sale último, como en todo kart que se respete.
   rivales.forEach((rv, k) => {
     const p = grilla(k);
@@ -2427,7 +2514,7 @@ function colocaCoche(cc, s, x, h, giro, vuelco, v, dt) {
   colocaEnCalle(cc.g, s, x, h, -giro * 0.18, vuelco);
   cc.g.updateMatrixWorld(true);
   cc.delante.rotation.y = -giro * 0.35;
-  for (const w of cc.ruedas) w.rotation.x += (v * dt) / 0.09;
+  for (const w of cc.ruedas) w.rotation.x += (v * dt) / 0.11;
   cc.sombra.visible = Math.abs(vuelco) < 0.3;
 }
 
