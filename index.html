@@ -21,9 +21,9 @@
 <!-- El sello ?v= se sube a mano en cada cambio del juego (CSS, JS y, con el
      JS, los modelos, que heredan su sello): así el navegador no se queda con
      la versión anterior. -->
-<link rel="stylesheet" href="coches.css?v=c564b2fbbb">
+<link rel="stylesheet" href="coches.css?v=af95a5c6d1">
 <!-- La piel del juego: variante del tema juegos (ver tema/LEEME.md). Va al final para mandar. -->
-<link rel="stylesheet" href="tema/tema.css?v=c564b2fbbb">
+<link rel="stylesheet" href="tema/tema.css?v=af95a5c6d1">
 <script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js", "three/addons/": "./vendor/addons/" } }</script>
 <script type="application/ld+json">
 {
@@ -211,7 +211,7 @@
       <div><dt>Un juego de</dt><dd>MAL, en una.red</dd></div>
       <div><dt>Los cuerpos</dt><dd>Modo Incógnito (César, Manu y Fran)</dd></div>
       <div><dt>La gente, las animaciones y las casas</dt><dd>Estado Decepción</dd></div>
-      <div><dt>Las parejas</dt><dd>las leyendas y las fiestas de Quito: los cucuruchos, Cantuña y el Diablo, el Gallo de la Catedral y Don Ramón, las guarichas, la Mamá Negra y el Ángel de la Estrella</dd></div>
+      <div><dt>Las parejas</dt><dd>las leyendas y las fiestas de Quito —los cucuruchos, Cantuña y el Diablo, el Gallo de la Catedral y Don Ramón, las guarichas— y, desde Latacunga, la Mamá Negra y el Ángel de la Estrella</dd></div>
       <div><dt>La música</dt><dd>un sanjuanito, sintetizado en el navegador</dd></div>
       <div><dt>Las letras</dt><dd>Bangers (Vernon Adams) y Bungee (David Jonathan Ross), con licencia OFL</dd></div>
       <div><dt>El motor</dt><dd>Three.js</dd></div>
@@ -271,7 +271,7 @@
 <div class="coches-capa" id="album" hidden>
   <div class="coches-panel coches-menu coches-panel--ancho">
     <p class="coches-banner">El álbum de las Fiestas</p>
-    <p class="caption">Hay estampitas escondidas por las pistas: tres en cada una. Tócalas al pasar.
+    <p class="caption">Hay estampitas escondidas por las pistas: tres en cada pista de día y una en cada pista de noche. Tócalas al pasar.
     Llevas <b id="album-cuenta">0 de 0</b>.</p>
     <ul class="coches-album" id="album-lista"></ul>
     <button class="btn btn-ghost btn-block" id="b-volver-album" type="button">
@@ -299,7 +299,7 @@
     <button class="btn btn--rojo boton-juego btn-block" id="b-seguir" type="button">
       <svg class="icono" aria-hidden="true"><use href="#i-play"/></svg> Seguir</button>
     <button class="btn boton-juego btn-block" id="b-reintentar" type="button">
-      <svg class="icono" aria-hidden="true"><use href="#i-reiniciar"/></svg> Otra vez desde arriba</button>
+      <svg class="icono" aria-hidden="true"><use href="#i-reiniciar"/></svg> Otra vez desde la salida</button>
     <button class="btn btn-ghost btn-block" id="b-salir" type="button">
       <svg class="icono" aria-hidden="true"><use href="#i-salir"/></svg> Salir al menú</button>
   </div>
@@ -308,7 +308,7 @@
 <!-- El podio: los tres primeros de la Copa, en 3D, con la gente -->
 <div class="coches-capa coches-capa--podio" id="podio" hidden role="button" tabindex="0" aria-label="Seguir">
   <div class="coches-podio-cab">
-    <p class="coches-banner">Copa de las Fiestas</p>
+    <p class="coches-banner" id="podio-kicker">Copa de las Fiestas</p>
     <h2 class="coches-logo__nombre coches-podio-titulo" id="podio-titulo">El podio</h2>
   </div>
   <ol class="coches-podio-nombres" id="podio-nombres"></ol>
@@ -338,6 +338,6 @@
 </div>
 
 <script src="../ds/mal/mal.js?v=1.0.18" defer></script>
-<script type="module" src="coches.js?v=c564b2fbbb"></script>
+<script type="module" src="coches.js?v=af95a5c6d1"></script>
 </body>
 </html>
