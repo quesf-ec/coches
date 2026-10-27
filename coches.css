@@ -110,6 +110,12 @@ body.coches{
 /* Con mandos, el tablero queda entre los dos pulgares, a su altura. */
 .coches.con-mandos .hud-juego__abajo{padding-bottom:clamp(70px, 20vw, 90px)}
 
+/* Las rayas de velocidad: cuñas blancas que salen de los bordes hacia el
+   centro, apagadas en el centro y en reposo. */
+.coches-velo{position:fixed;inset:0;z-index:21;pointer-events:none;opacity:0;transition:opacity .25s;
+  background:repeating-conic-gradient(from 0deg at 50% 52%, rgba(255,255,255,.7) 0 .5deg, transparent .5deg 3.7deg);
+  -webkit-mask-image:radial-gradient(ellipse at 50% 52%, transparent 38%, #000 80%);mask-image:radial-gradient(ellipse at 50% 52%, transparent 38%, #000 80%)}
+
 /* ─── la cuenta atrás y los avisos ─────────────────────────────
    Lo único que sale en el centro, y solo un segundo: es lo que hay
    que mirar en ese momento. */
