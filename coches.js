@@ -449,20 +449,20 @@ const ICONOS = {
 };
 const CROMOS = [
   { id: 'virgen', nombre: 'La Virgen de Quito', desc: 'La única Virgen con alas: la del Panecillo, de aluminio y 41 metros.', pista: 'panecillo', zona: 'panecillo', d: 200, x: -2.2, fachada: 'virgen' },
-  { id: 'chulla', nombre: 'El Chulla Quiteño', desc: 'Terno, sombrero y bastón: el personaje de la canción y de la ciudad.', pista: 'panecillo', zona: 'ronda', d: 60, x: 1.8, icono: 'chulla' },
-  { id: 'farol', nombre: 'Los faroles de La Ronda', desc: 'La calle de los artesanos, con sus faroles encendidos en las Fiestas.', pista: 'panecillo', zona: 'garcia', d: 25, x: -1.9, icono: 'farol' },
-  { id: 'santuario', nombre: 'El santuario de Guápulo', desc: 'Del siglo XVII, al pie de la cuesta, mirando al valle.', pista: 'guapulo', zona: 'guapulo', d: 120, x: 2, fachada: 'santuario' },
+  { id: 'chulla', nombre: 'El Chulla Quiteño', desc: 'Terno, sombrero y bastón: el personaje de la canción y de la ciudad.', pista: 'panecillo', zona: 'garcia', d: 40, x: 1.8, icono: 'chulla' },
+  { id: 'farol', nombre: 'Los faroles de La Ronda', desc: 'La calle de los artesanos, con sus faroles encendidos en las Fiestas.', pista: 'panecillo', zona: 'ronda', d: 25, x: -1.9, icono: 'farol' },
+  { id: 'santuario', nombre: 'El Santuario de Guápulo', desc: 'Del siglo XVII, al pie de la cuesta, mirando al valle.', pista: 'guapulo', zona: 'guapulo', d: 120, x: 2, fachada: 'santuario' },
   { id: 'canelazo', nombre: 'El canelazo', desc: 'Naranjilla, canela y un chorro de puntas: lo que calienta la noche.', pista: 'guapulo', zona: 'mirador', d: 70, x: -1.6, icono: 'canelazo' },
   { id: 'guagua', nombre: 'La guagua de pan', desc: 'El pan con forma de niño que se come en noviembre con la colada.', pista: 'guapulo', zona: 'guapulo', d: 280, x: -2.1, icono: 'guagua' },
   { id: 'basilica', nombre: 'La Basílica del Voto Nacional', desc: 'Neogótica y con gárgolas de iguanas y tortugas, al norte del centro.', pista: 'sanjuan', zona: 'basilica', d: 30, x: 2.2, fachada: 'basilica' },
   { id: 'colada', nombre: 'La colada morada', desc: 'Mora, mortiño, piña y harina de maíz negro: morada y espesa.', pista: 'sanjuan', zona: 'venezuela', d: 100, x: 1.7, fachada: 'colada' },
   { id: 'chiva', nombre: 'La chiva', desc: 'El bus abierto, con banda arriba, que recorre la ciudad en las Fiestas.', pista: 'sanjuan', zona: 'rocafuerte', d: 110, x: -1.8, icono: 'chiva' },
   { id: 'banderin', nombre: 'Los banderines', desc: 'Rojo y azul, los colores de Quito, cruzando las calles.', pista: 'vuelta', zona: 'panecillo', d: 100, x: 2.4, icono: 'banderin' },
-  { id: 'cometa', nombre: 'La cometa', desc: 'En agosto el Panecillo se llena de cometas; alguna queda para noviembre.', pista: 'vuelta', zona: 'mirador', d: 70, x: -2.4, icono: 'cometa' },
+  { id: 'cometa', nombre: 'La cometa', desc: 'En agosto el Panecillo se llena de cometas; alguna queda para noviembre.', pista: 'vuelta', zona: 'miradorpanecillo', d: 70, x: -2.4, icono: 'cometa' },
   { id: 'hornado', nombre: 'El hornado', desc: 'Chancho entero al horno, con mote y agrio, en cualquier mercado.', pista: 'vuelta', zona: 'cumbre', d: 90, x: 2.2, icono: 'hornado' },
   { id: 'capirote', nombre: 'El cucurucho', desc: 'El penitente morado de la procesión de Viernes Santo.', pista: 'subida', zona: 'subida', d: 60, x: 2.3, icono: 'capirote' },
   { id: 'gallo', nombre: 'El Gallo de la Catedral', desc: 'La veleta de la Catedral que, según la leyenda, bajó a picotear a un borracho.', pista: 'subida', zona: 'subida', d: 160, x: -2.3, icono: 'gallo' },
-  { id: 'corona', nombre: 'La Reina de Quito', desc: 'Se elige cada noviembre desde 1955; la corona es lo de menos.', pista: 'subida', zona: 'cumbre', d: 25, x: 1.9, icono: 'corona' },
+  { id: 'corona', nombre: 'La Reina de Quito', desc: 'Cada año, antes de las Fiestas, se elige una; la corona es lo de menos.', pista: 'subida', zona: 'cumbre', d: 25, x: 1.9, icono: 'corona' },
   { id: 'cohete', nombre: 'Los fuegos artificiales', desc: 'La noche del 5 de diciembre el cielo de Quito se llena de luces.', pista: 'noche-vuelta', zona: 'panecillo', d: 60, x: -2.3, icono: 'cohete' },
   { id: 'vaca', nombre: 'La vaca loca', desc: 'Un armazón de vaca cargado de cohetes que alguien se pone y sale a corretear a la gente.', pista: 'noche-sanjuan', zona: 'rocafuerte', d: 60, x: 1.9, icono: 'vaca' },
   { id: 'castillo', nombre: 'El castillo', desc: 'La torre de carrizo con ruedas de fuegos que se enciende de abajo arriba.', pista: 'noche-guapulo', zona: 'guapulo', d: 200, x: -2, icono: 'castillo' },
@@ -558,6 +558,7 @@ const ZONAS = {
   ronda: { nombre: 'La Ronda', calle: 'adoquin', lado: 'vereda', hw: 3.4, casas: true, faroles: true, banderas: true, peatones: true, puestos: 40, publico: [10, 4] },
   garcia: { nombre: 'La García Moreno', calle: 'adoquin', lado: 'vereda', hw: 3.4, casas: true, faroles: true, banderas: true, peatones: true, cajones: 3, publico: [14, 4] },
   plaza: { nombre: 'Plaza Grande', calle: 'adoquin', lado: 'plaza', hw: 5.0, casas: true, faroles: true, banderas: true, peatones: true, puestos: 20, publico: [5, 7] },
+  miradorpanecillo: { nombre: 'El mirador del Panecillo', calle: 'asfalto', lado: 'pasto', hw: 3.8, arboles: true, publico: [30, 4] },
   mirador: { nombre: 'El Mirador de Guápulo', calle: 'asfalto', lado: 'pasto', hw: 3.8, arboles: true, publico: [30, 4] },
   guapulo: { nombre: 'La cuesta de Guápulo', calle: 'adoquin', lado: 'vereda', hw: 3.0, casas: true, faroles: true, banderas: true, peatones: true, publico: [12, 4] },
   plazaguapulo: { nombre: 'Plaza de Guápulo', calle: 'adoquin', lado: 'plaza', hw: 4.6, casas: true, faroles: true, banderas: true, peatones: true, puestos: 18, publico: [5, 6] },
@@ -618,10 +619,10 @@ const PISTAS = [
   {
     id: 'vuelta', nombre: 'La vuelta al Panecillo', salida: 'EL PANECILLO', meta: 'EL PANECILLO', real: 'panecillo-vuelta', vueltas: 2, arbolesLado: -1,
     lema: 'Dos vueltas al cerro por la carretera que lo rodea: la Virgen siempre a la vista y el que empuja, sin descanso en las subidas.',
-    zonas: [['panecillo', 0], ['mirador', 130], ['cumbre', 230], ['panecillo', 330]],
+    zonas: [['panecillo', 0], ['miradorpanecillo', 130], ['cumbre', 230], ['panecillo', 330]],
     hitos: [['cerro', null, 0, 0, 40, 30]],
-    rampas: [['panecillo', 70, 0], ['mirador', 50, -1.2], ['cumbre', 60, 1.2]],
-    coladas: [['panecillo', 40], ['mirador', 20], ['cumbre', 20], ['panecillo', 360]],
+    rampas: [['panecillo', 70, 0], ['miradorpanecillo', 50, -1.2], ['cumbre', 60, 1.2]],
+    coladas: [['panecillo', 40], ['miradorpanecillo', 20], ['cumbre', 20], ['panecillo', 360]],
   },
   {
     id: 'subida', nombre: 'La subida del Panecillo', salida: 'LA AMBATO', meta: 'LA VIRGEN', premio: true,
@@ -1809,8 +1810,8 @@ const PERSONAJES = {
 // stats de 1 a 5, como en los karts: velocidad, empuje y giro.
 const EQUIPOS = [
   { id: 'cucuruchos', nombre: 'Los Cucuruchos', lema: 'La procesión baja a ochenta por hora.', piloto: 'cucurucho', empuja: 'cucurucha', tabla: '#9C7BC0', placa: '#5B2A86', num: 1, stats: [3, 3, 3], hab: 0.95 },
-  { id: 'cantuna', nombre: 'Cantuña y el Diablo', lema: 'El diablo empuja; Cantuña ya escondió la piedra.', piloto: 'cantuna', empuja: 'diablo', tabla: '#A87445', placa: '#D3271F', num: 6, stats: [3, 5, 2], hab: 0.97 },
-  { id: 'gallo', nombre: 'El Gallo y Don Ramón', lema: 'Don Ramón le gritó al gallo de la Catedral. Ahora maneja el gallo.', piloto: 'gallo', empuja: 'borracho', tabla: '#C8955A', placa: '#B98325', num: 3, stats: [5, 1, 3], hab: 0.96 },
+  { id: 'cantuna', nombre: 'Cantuña y el Diablo', lema: 'El Diablo empuja; Cantuña ya escondió la piedra.', piloto: 'cantuna', empuja: 'diablo', tabla: '#A87445', placa: '#D3271F', num: 6, stats: [3, 5, 2], hab: 0.97 },
+  { id: 'gallo', nombre: 'El Gallo y Don Ramón', lema: 'Don Ramón le gritó al Gallo de la Catedral. Ahora maneja el Gallo.', piloto: 'gallo', empuja: 'borracho', tabla: '#C8955A', placa: '#B98325', num: 3, stats: [5, 1, 3], hab: 0.96 },
   { id: 'guarichas', nombre: 'Las Guarichas', lema: 'Fueron a la guerra de la Independencia: una bajada no las asusta.', piloto: 'guaricha', empuja: 'guaricha2', tabla: '#B98250', placa: '#1F4E9E', num: 9, stats: [2, 4, 5], hab: 0.94 },
   { id: 'mamanegra', nombre: 'La Mamá Negra y el Ángel', lema: 'Desde Latacunga, con el Ángel de la Estrella empujando.', piloto: 'mamanegra', empuja: 'angel', tabla: '#D2A26A', placa: '#E01B6A', num: 11, stats: [4, 2, 4], hab: 0.93 },
 ];
@@ -2130,7 +2131,7 @@ function actualizaEmpujador(dt) {
       if (j.aire || j.volcado > 0) break;
       if (j.v >= ENGANCHE) {
         e.estado = 'a_bordo'; cocheJ.empujador.pon('montado');
-        tono(520, 0.1, 'triangle', 0.15); avisa('¡Se trepó!', 900);
+        tono(520, 0.1, 'triangle', 0.15);
       }
       break;
     case 'piso':
@@ -2154,7 +2155,7 @@ function actualiza(dt) {
       actualiza.n = n;
       const el = $('#cuenta');
       el.classList.remove('is-sale'); void el.offsetWidth;
-      el.textContent = n > 0 ? String(n) : '¡A bajar!';
+      el.textContent = n > 0 ? String(n) : pistaActual.premio ? '¡A subir!' : LARGO_VUELTA ? '¡A correr!' : '¡A bajar!';
       el.dataset.n = Math.max(0, n);
       el.classList.add('is-sale');
       tono(n > 0 ? 440 : 880, n > 0 ? 0.18 : 0.45, 'square', 0.12);
@@ -2625,15 +2626,15 @@ const guarda = () => { try { localStorage.setItem(GUARDA, JSON.stringify(prog));
 // Qué se gana y cómo. Las pistas de la Copa se abren para la carrera suelta
 // en cuanto se corren; la de premio, ganando la Copa.
 const DESBLOQUEOS = [
-  { tipo: 'pareja', id: 'cantuna', cuando: (p) => p.medallas.panecillo <= 3, como: 'una medalla en La bajada del Panecillo' },
-  { tipo: 'pareja', id: 'gallo', cuando: (p) => p.medallas.guapulo <= 3, como: 'una medalla en La cuesta de Guápulo' },
-  { tipo: 'pareja', id: 'mamanegra', cuando: (p) => p.medallas.sanjuan <= 3, como: 'una medalla en La bajada de San Juan' },
-  { tipo: 'pista', id: 'vuelta', cuando: (p) => p.copa >= 1, como: 'terminar la Copa de las Fiestas' },
-  { tipo: 'pista', id: 'subida', cuando: (p) => p.copa === 1, como: 'ganar la Copa de las Fiestas' },
-  { tipo: 'pintura', id: 'fiesta', cuando: (p) => p.album.length >= 4, como: 'cuatro estampitas' },
-  { tipo: 'pintura', id: 'anil', cuando: (p) => p.album.length >= 9, como: 'nueve estampitas' },
-  { tipo: 'pintura', id: 'morada', cuando: (p) => p.album.length >= 14, como: 'catorce estampitas' },
-  { tipo: 'pintura', id: 'oro', cuando: (p) => p.copas.noche === 1, como: 'ganar la Copa de la Noche' },
+  { tipo: 'pareja', id: 'cantuna', cuando: (p) => p.medallas.panecillo <= 3, como: 'con una medalla en La bajada del Panecillo' },
+  { tipo: 'pareja', id: 'gallo', cuando: (p) => p.medallas.guapulo <= 3, como: 'con una medalla en La cuesta de Guápulo' },
+  { tipo: 'pareja', id: 'mamanegra', cuando: (p) => p.medallas.sanjuan <= 3, como: 'con una medalla en La bajada de San Juan' },
+  { tipo: 'pista', id: 'vuelta', cuando: (p) => p.copa >= 1, como: 'al terminar la Copa de las Fiestas' },
+  { tipo: 'pista', id: 'subida', cuando: (p) => p.copa === 1, como: 'ganando la Copa de las Fiestas' },
+  { tipo: 'pintura', id: 'fiesta', cuando: (p) => p.album.length >= 4, como: 'con cuatro estampitas' },
+  { tipo: 'pintura', id: 'anil', cuando: (p) => p.album.length >= 9, como: 'con nueve estampitas' },
+  { tipo: 'pintura', id: 'morada', cuando: (p) => p.album.length >= 14, como: 'con catorce estampitas' },
+  { tipo: 'pintura', id: 'oro', cuando: (p) => p.copas.noche === 1, como: 'ganando la Copa de la Noche' },
 ];
 const COPAS = {
   fiestas: { nombre: 'Copa de las Fiestas', pistas: ['panecillo', 'guapulo', 'sanjuan'], campeones: '¡Campeones de las Fiestas!', ruta: 'el Panecillo, Guápulo y San Juan' },
@@ -2645,7 +2646,7 @@ const listaDe = (tipo) => (tipo === 'pareja' ? prog.parejas : tipo === 'pista' ?
 const abierta = (tipo, id) => listaDe(tipo).includes(id);
 const comoSeGana = (tipo, id) => {
   const d = DESBLOQUEOS.find((q) => q.tipo === tipo && q.id === id);
-  return d ? `Se gana con ${d.como}.` : tipo === 'pista' ? 'Se abre corriéndola en su Copa.' : 'Todavía no se gana.';
+  return d ? `Se gana ${d.como}.` : tipo === 'pista' ? 'Se abre corriéndola en su Copa.' : 'Todavía no se gana.';
 };
 
 // ─── los dibujos de los premios ────────────────────────────────────
@@ -2746,7 +2747,7 @@ function trasCarrera() {
     fanfarria: p <= 3,
     kicker: `${def.nombre} · ${recordNuevo ? '¡récord nuevo!' : `récord ${formato(record)}`}`,
     nombre: PUESTOS[p - 1],
-    desc: `${def.premio ? 'Subieron' : 'Bajaron'} en ${formato(j.llegada)}. ${FRASES[p - 1]}`,
+    desc: `${def.premio ? 'Subieron' : LARGO_VUELTA ? 'Dieron las vueltas' : 'Bajaron'} en ${formato(j.llegada)}. ${FRASES[p - 1]}`,
     lista: filas.map((f, k) => ({ texto: `${k + 1}. ${f.nombre}`, valor: formato(f.t), tu: f.tu })),
   }];
   let despues = abreElegir;
@@ -2770,7 +2771,8 @@ function trasCarrera() {
         creditos: true,
         pie: 'Toca para seguir',
       });
-      despues = () => muestraPodio(tabla);
+      const nombreCopa = laCopa.nombre;
+      despues = () => muestraPodio(tabla, nombreCopa);
       copa = null; modo = 'suelta';
     }
   }
@@ -2806,7 +2808,8 @@ function trasCarrera() {
 // Al acabar la Copa, los tres primeros posan en la meta con la gente
 // saltando, y la cámara les da la vuelta. Los otros dos miran de lejos.
 let podioS = 0;
-function muestraPodio(tabla) {
+function muestraPodio(tabla, nombreCopa) {
+  $('#podio-kicker').textContent = nombreCopa || 'Copa de las Fiestas';
   estado = 'podio';
   podioS = META - 7;
   const sitio = [[0, 0], [-1.9, -2.6], [1.9, -3.4], [-1.2, -14], [1.4, -16]];
@@ -3110,7 +3113,8 @@ function pintaAlbum() {
       li.append(c);
     }
     const p = document.createElement('p'); p.className = 'caption';
-    p.textContent = tiene ? cr.desc : `Está en ${pista ? pista.nombre : cr.pista}, por ${ZONAS[cr.zona].nombre}.`;
+    const zona = ZONAS[cr.zona].nombre, baja = (t) => t.replace(/^(La|El|Las|Los) /, (m) => m.toLowerCase());
+    p.textContent = tiene ? cr.desc : pista && pista.nombre !== zona ? `Está en ${baja(pista.nombre)}, por ${baja(zona)}.` : `Está en ${baja(pista ? pista.nombre : zona)}.`;
     const b = document.createElement('b'); b.textContent = tiene ? cr.nombre : '¿?';
     li.append(b, p);
     caja.append(li);
