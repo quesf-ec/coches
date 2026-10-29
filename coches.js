@@ -2065,7 +2065,7 @@ function reinicia() {
   Object.assign(c, { suelto: false, s: 0, x: 0, v: 0 });
   for (const pe of peatones) pe.estado = 'libre';
   reloj = 0; zonaActual = ''; sacudida = 0; tPeaton = 1; vueltaActual = 1;
-  Object.assign(pasos, { ultimo: 0, t: -9, combo: 0, burst: 0 });
+  Object.assign(pasos, { ultimo: 0, t: -9, combo: 0, burst: 0, tIzq: -9, tDer: -9 });
   fantasma.trazo = [];
   // En la contrarreloj los rivales se esconden, y sale el fantasma si hay récord.
   const solo = modo === 'tiempo';
@@ -2260,15 +2260,20 @@ function endereza() {
 // derecha son sus pasos. Cada paso que va detrás del anterior (pie distinto)
 // le da un empujón; a buen ritmo (cada 0,2–0,55 s), más, y la racha sube el
 // multiplicador. Dos veces el mismo pie es un tropiezo: se corta la racha.
-// Mantener un lado sigue girando; un toque suelto no gira casi nada.
-const pasos = { ultimo: 0, t: -9, combo: 0, mejor: 0, prevIzq: false, prevDer: false, burst: 0 };
+// Mantener un lado sigue girando; un toque suelto no gira nada: mientras se
+// empuja, el volante solo responde a lo que se sostiene. Da igual que el otro
+// pulgar siga apoyado al pisar: alternar de verdad es solaparse un poco.
+const pasos = { ultimo: 0, t: -9, combo: 0, mejor: 0, prevIzq: false, prevDer: false, burst: 0, tIzq: -9, tDer: -9 };
 function pasaPasos(dt) {
   const subeIzq = teclas.izq && !pasos.prevIzq, subeDer = teclas.der && !pasos.prevDer;
   pasos.prevIzq = teclas.izq; pasos.prevDer = teclas.der;
+  if (subeIzq) pasos.tIzq = reloj;
+  if (subeDer) pasos.tDer = reloj;
   pasos.burst = Math.max(0, pasos.burst - dt);
   if (!subeIzq && !subeDer) return;
-  if ((teclas.izq && teclas.der) || e.estado !== 'empujando' || j.aire || j.volcado > 0) return;
-  const lado = subeIzq ? -1 : 1;
+  if (e.estado !== 'empujando' || j.aire || j.volcado > 0) return;
+  // Los dos a la vez es un pisotón doble: cuenta el que no se acaba de pisar.
+  const lado = subeIzq && subeDer ? -pasos.ultimo || -1 : subeIzq ? -1 : 1;
   const hace = reloj - pasos.t;
   pasos.t = reloj;
   if (lado === pasos.ultimo) {
@@ -2287,10 +2292,12 @@ function pasaPasos(dt) {
     j.v = Math.min(j.v + 0.6 * ST.empuje, TOPE_TURBO * ST.tope);
   }
   pasos.ultimo = lado;
-  // El pie que se pisa, adelante: el compás del cuerpo sigue al paso.
+  // El pie que se pisa, adelante: el compás del cuerpo se va al paso en unas
+  // décimas, sin saltar de golpe.
   const r = cocheJ.carrera || (cocheJ.carrera = { fase: 0, inclina: 0 });
   const obj = lado < 0 ? Math.PI / 2 : (3 * Math.PI) / 2;
-  r.fase = obj + 2 * Math.PI * Math.round((r.fase - obj) / (2 * Math.PI));
+  r.obj = obj + 2 * Math.PI * Math.round((r.fase - obj) / (2 * Math.PI));
+  r.lleva = 0.3;
 }
 
 function actualizaEmpujador(dt) {
@@ -2374,9 +2381,10 @@ function actualiza(dt) {
     if (j.volcado <= 0) endereza();
   } else {
     if (estado === 'carrera') pasaPasos(dt);
-    // Justo después de un paso, el volante casi no responde: el toque era para pisar.
-    const tras = reloj - pasos.t < 0.25 && e.estado === 'empujando' ? 0.3 : 1;
-    const mando = estado === 'llegada' ? 0 : ((teclas.izq ? -1 : 0) + (teclas.der ? 1 : 0)) * tras;
+    // Mientras se empuja, un toque es un paso y no gira: el volante entra
+    // solo cuando el lado se sostiene más de una décima, y sube en un cuarto.
+    const sost = (k, t0) => !teclas[k] ? 0 : e.estado === 'empujando' ? limita((reloj - t0 - 0.12) / 0.25, 0, 1) : 1;
+    const mando = estado === 'llegada' ? 0 : sost('der', pasos.tDer) - sost('izq', pasos.tIzq);
     j.giro = mezcla(j.giro, mando, Math.min(1, dt * 10));
     const piedra = ZONAS[zona].calle === 'adoquin';
     let a = -AIRE * j.v * j.v;
@@ -2611,6 +2619,8 @@ function enCoche(persona, coche, z, pose, corre) {
 function pasoCarrera(cc, v, dt) {
   const r = cc.carrera || (cc.carrera = { fase: 0, inclina: 0 });
   r.fase += dt * (9 + Math.min(v, CORRE) * 1.6);
+  // Tras un paso del jugador, el compás se acomoda al pie que pisó.
+  if (r.lleva > 0) { r.lleva -= dt; r.fase = mezcla(r.fase, r.obj, Math.min(1, dt * 16)); }
   r.inclina = 0.3 + 0.22 * (1 - Math.min(1, v / CORRE));
   return r;
 }
@@ -2679,8 +2689,10 @@ function dibujaCamara(dt) {
   camS = j.volcado > 0 ? mezcla(camS, j.s, Math.min(1, dt * 1.5)) : j.s;
   // Alta y atrás, mirando más adelante que el coche: se ve venir la curva y
   // el de atrás no tapa la calle.
-  const lejos = 4.8 + j.v * 0.035;
-  const objetivo = punto(camS - lejos, j.x * 0.75, 2.6 + j.v * 0.01);
+  // Cada buen paso la acerca un pelo: se siente el empujón.
+  const empujon = pasos.burst / 0.35;
+  const lejos = 4.8 + j.v * 0.035 - empujon * 0.4;
+  const objetivo = punto(camS - lejos, j.x * 0.75, 2.6 + j.v * 0.01 - empujon * 0.08);
   // La cámara no se mete bajo la calle en las bajadas fuertes.
   const suelo = muestra(camS - lejos).y + 1.4;
   if (objetivo.y < suelo) objetivo.y = suelo;
@@ -2693,7 +2705,7 @@ function dibujaCamara(dt) {
   if (tiembla > 0 && !quieto.matches) camara.position.add(_v.set((Math.random() - 0.5) * tiembla * 0.12, (Math.random() - 0.5) * tiembla * 0.12, 0));
   camara.lookAt(mira);
   camara.rotateZ(-j.giro * 0.035);   // se ladea un poco con el volante
-  const fov = 62 + 16 * Math.min(1, j.v / 36) + (j.turbo > 0 ? 6 : 0);
+  const fov = 62 + 16 * Math.min(1, j.v / 36) + (j.turbo > 0 ? 6 : 0) + empujon * 2;
   if (Math.abs(camara.fov - fov) > 0.05) { camara.fov = mezcla(camara.fov, fov, Math.min(1, dt * 3)); camara.updateProjectionMatrix(); }
   panorama.position.set(camara.position.x, camara.position.y + 30, camara.position.z);
   sigueSol(cocheJ.g.position);
@@ -2733,7 +2745,8 @@ function dibujaPortada(t) {
 // ─── el HUD ────────────────────────────────────────────────────────
 const hud = {
   puesto: $('#h-puesto'), tiempo: $('#h-tiempo'), vel: $('#h-vel'),
-  empujador: $('#h-empujador'), ruta: $('#h-ruta'), turbo: $('#h-turbo'), velo: $('#velo'), pasos: $('#h-pasos'),
+  empujador: $('#h-empujador'), ruta: $('#h-ruta'), turbo: $('#h-turbo'), velo: $('#velo'),
+  pasos: $('#h-pasos'), pieIzq: $('#h-pie-izq'), pieDer: $('#h-pie-der'), racha: $('#h-racha'),
   caja: $('.coches-puesto'), puntos: [],
 };
 // Un punto por coche en la línea de la carrera, con su color y su número.
@@ -2787,9 +2800,18 @@ function pintaHud() {
     if (pos !== q.ultimo) { q.el.style.left = pos; q.ultimo = pos; }
   }
   hud.turbo.hidden = !(j.turbo > 0);
-  // Cuál pie toca: el que sigue en el compás de los pasos.
-  hud.pasos.hidden = e.estado !== 'empujando' || estado !== 'carrera';
-  if (!hud.pasos.hidden) hud.pasos.textContent = `Pisa ${pasos.ultimo === -1 ? '▶' : '◀'}${pasos.combo > 1 ? `  ·  ×${pasos.combo}` : ''}`;
+  // Los pies: se enciende el que toca (los dos, antes del primer paso), la
+  // racha en medio, y la píldora se ilumina con cada buen paso.
+  const pisa = e.estado === 'empujando' && estado === 'carrera';
+  if (pisa !== ultimoHud.pisa) { hud.pasos.hidden = !pisa; ultimoHud.pisa = pisa; }
+  if (pisa) {
+    const toca = -pasos.ultimo;
+    if (toca !== ultimoHud.toca) { hud.pieIzq.classList.toggle('is-toca', toca <= 0); hud.pieDer.classList.toggle('is-toca', toca >= 0); ultimoHud.toca = toca; }
+    const racha = pasos.combo > 1 ? `×${pasos.combo}` : '¡Pisa!';
+    if (racha !== ultimoHud.racha) { hud.racha.textContent = racha; ultimoHud.racha = racha; }
+    const bien = pasos.burst > 0;
+    if (bien !== ultimoHud.bien) { hud.pasos.classList.toggle('is-bien', bien); ultimoHud.bien = bien; }
+  }
   // Las rayas de velocidad, cuando de verdad va rápido.
   const velo = quieto.matches ? 0 : limita((j.v - 22) / 16, 0, 0.75) + (j.turbo > 0 ? 0.2 : 0);
   if (velo !== ultimoHud.velo) hud.velo.style.opacity = velo.toFixed(2);

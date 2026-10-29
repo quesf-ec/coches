@@ -21,9 +21,9 @@
 <!-- El sello ?v= se sube a mano en cada cambio del juego (CSS, JS y, con el
      JS, los modelos, que heredan su sello): así el navegador no se queda con
      la versión anterior. -->
-<link rel="stylesheet" href="coches.css?v=098782d8b9">
+<link rel="stylesheet" href="coches.css?v=28f53a4f47">
 <!-- La piel del juego: variante del tema juegos (ver tema/LEEME.md). Va al final para mandar. -->
-<link rel="stylesheet" href="tema/tema.css?v=098782d8b9">
+<link rel="stylesheet" href="tema/tema.css?v=28f53a4f47">
 <script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js", "three/addons/": "./vendor/addons/" } }</script>
 <script type="application/ld+json">
 {
@@ -96,12 +96,18 @@
             <svg class="icono icono--s" aria-hidden="true"><use href="#i-rayo"/></svg> Colada</span>
           <span class="coches-empujador" id="h-empujador" data-estado="empujando">Empujando</span>
         </div>
-        <p class="coches-pasos" id="h-pasos" hidden></p>
       </div>
     </div>
   </div>
 
-  <div class="hud-juego__abajo"></div>
+  <div class="hud-juego__abajo">
+    <!-- Los pies del que empuja: el que toca se enciende; la racha, en medio. -->
+    <p class="coches-pasos" id="h-pasos" hidden>
+      <span class="coches-pie" id="h-pie-izq" aria-hidden="true">◀</span>
+      <span class="coches-pasos__racha" id="h-racha">¡Pisa!</span>
+      <span class="coches-pie" id="h-pie-der" aria-hidden="true">▶</span>
+    </p>
+  </div>
 </div>
 
 <!-- Los mandos táctiles: la mitad izquierda de la pantalla gira a la izquierda,
@@ -342,6 +348,6 @@
 </div>
 
 <script src="../ds/mal/mal.js?v=1.0.18" defer></script>
-<script type="module" src="coches.js?v=098782d8b9"></script>
+<script type="module" src="coches.js?v=28f53a4f47"></script>
 </body>
 </html>

@@ -285,5 +285,6 @@
 }
 
 /* El paso que toca, en la piel arcade. */
-[data-variante="coches"] .coches-pasos{font-family:"Bangers",var(--mal-display);font-size:1rem;letter-spacing:.06em;color:var(--arc-amarillo);
-  background:var(--arc-tinta);border:2px solid var(--arc-blanco)}
+[data-variante="coches"] .coches-pasos{font-family:"Bangers",var(--mal-display);font-size:1.1rem;letter-spacing:.06em;color:var(--arc-amarillo);
+  background:var(--arc-tinta);border:2px solid var(--arc-blanco);box-shadow:0 3px 0 rgba(0,0,0,.4)}
+[data-variante="coches"] .coches-pasos.is-bien{background:var(--arc-amarillo);color:var(--arc-tinta);border-color:var(--arc-tinta)}
