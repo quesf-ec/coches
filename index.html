@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <title>Coches de madera · Copa de las Fiestas</title>
 <meta name="description" content="Carreras de coches de madera en 3D por Quito: uno maneja y otro empuja. La Copa de las Fiestas en tres bajadas, medallas, récords y parejas que se abren.">
 <link rel="canonical" href="https://franciscombp.github.io/mal/coches/">
@@ -21,9 +23,9 @@
 <!-- El sello ?v= se sube a mano en cada cambio del juego (CSS, JS y, con el
      JS, los modelos, que heredan su sello): así el navegador no se queda con
      la versión anterior. -->
-<link rel="stylesheet" href="coches.css?v=28f53a4f47">
+<link rel="stylesheet" href="coches.css?v=b7e84bf19b">
 <!-- La piel del juego: variante del tema juegos (ver tema/LEEME.md). Va al final para mandar. -->
-<link rel="stylesheet" href="tema/tema.css?v=28f53a4f47">
+<link rel="stylesheet" href="tema/tema.css?v=b7e84bf19b">
 <script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js", "three/addons/": "./vendor/addons/" } }</script>
 <script type="application/ld+json">
 {
@@ -113,7 +115,7 @@
 <!-- Los mandos táctiles: la mitad izquierda de la pantalla gira a la izquierda,
      la derecha a la derecha, como en un juego de karts de teléfono; el freno
      es un botón en el centro, al alcance de los dos pulgares. El que empuja
-     lo hace solo. -->
+     pisa con cada toque: cuanto más rápido toques, más empuja. -->
 <div class="coches-mandos" id="mandos" hidden>
   <button class="coches-mando coches-zona coches-zona--izq" data-tecla="izq" type="button" aria-label="Girar a la izquierda">
     <svg class="icono icono--l" aria-hidden="true"><use href="#i-chevron-izq"/></svg></button>
@@ -179,10 +181,12 @@
   <div class="coches-panel coches-menu">
     <p class="coches-banner">Cómo se juega</p>
     <p class="caption">Cero motores y dos en cada coche: uno maneja y el otro
-    empuja. El de atrás empuja solo al arrancar y en las subidas, y se trepa cuando el coche ya va rápido.</p>
+    empuja a pie. Cada pisada, izquierda o derecha, es un paso: cuantos más pasos por segundo, más empuja. Los dos lados a la vez dan un empujón fuerte y se sube al carro. Cuando el coche ya va rápido, se trepa solo.</p>
     <dl class="coches-teclas">
       <div><dt>← →</dt><dd>girar</dd></div>
       <div><dt>↓</dt><dd>frenar con la suela</dd></div>
+      <div><dt>← →</dt><dd>pisar: cada paso empuja</dd></div>
+      <div><dt>← + →</dt><dd>empujón fuerte y se sube al carro</dd></div>
 
       <div><dt>Esc</dt><dd>pausa</dd></div>
     </dl>
@@ -348,6 +352,6 @@
 </div>
 
 <script src="../ds/mal/mal.js?v=1.0.18" defer></script>
-<script type="module" src="coches.js?v=28f53a4f47"></script>
+<script type="module" src="coches.js?v=b7e84bf19b"></script>
 </body>
 </html>
