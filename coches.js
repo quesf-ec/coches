@@ -615,6 +615,8 @@ const ZONAS = {
 const PISTAS = [
   {
     id: 'panecillo', nombre: 'La bajada del Panecillo', salida: 'EL PANECILLO', meta: 'PLAZA GRANDE',
+    // Con coches/pistas/panecillo.json, las calles de verdad; si no, los tramos.
+    real: 'panecillo', callesZonas: [['Benavides|Bah[ií]a', 'panecillo'], ['Ambato', 'ambato'], ['24 de Mayo', 'bulevar'], ['Morales', 'ronda'], ['Garc[ií]a', 'garcia'], ['.', 'plaza']],
     lema: 'De la Virgen a la Plaza Grande: las curvas del Panecillo, la Ambato empinada, La Ronda y la subida de la García Moreno.',
     tramos: ['panecillo', [0, 40, 0, 0, 0], ['salida', 34], [12, 20, 12, 0, -6], [14, 22, 14, -5, -8], [14, 22, 14, 5, -9],
       [16, 30, 16, 5, -14], [14, 20, 14, -4, -7], [10, 14, 10, 2, -3],
@@ -630,6 +632,7 @@ const PISTAS = [
   },
   {
     id: 'guapulo', nombre: 'La cuesta de Guápulo', salida: 'MIRADOR DE GUÁPULO', meta: 'SANTUARIO DE GUÁPULO',
+    real: 'guapulo', callesZonas: [['Gonz[aá]lez', 'mirador'], ['Orellana|Conquistadores|Leonidas|Compte', 'guapulo'], ['.', 'guapulo']],
     lema: 'Del mirador al santuario por la cuesta más empinada de Quito: horquillas de piedra y una recta que da miedo.',
     tramos: ['mirador', [0, 40, 0, 0, 0], ['salida', 34], [10, 30, 10, 0, -4], [12, 20, 12, -4, -5],
       'guapulo', [10, 14, 10, 6, -7], [10, 14, 10, -6, -7], [10, 16, 10, 7, -8], [10, 14, 10, -6, -7],
@@ -644,6 +647,7 @@ const PISTAS = [
   },
   {
     id: 'sanjuan', nombre: 'La bajada de San Juan', salida: 'LA BASÍLICA', meta: 'SAN FRANCISCO',
+    real: 'sanjuan', callesZonas: [['Carchi|Imbabura', 'basilica'], ['Venezuela', 'venezuela'], ['Rocafuerte|Cuenca', 'rocafuerte'], ['Bol[ií]var', 'sanfrancisco'], ['.', 'venezuela']],
     lema: 'De la Basílica a la Plaza de San Francisco: la Venezuela en picada y los puestos de la Rocafuerte.',
     tramos: ['basilica', [0, 40, 0, 0, 0], ['salida', 34], [10, 20, 10, 0, -2],
       'venezuela', [14, 50, 14, 0, -22], [10, 20, 10, -3, -4], [12, 40, 12, 0, -12], [10, 16, 10, 4, -4],
@@ -663,11 +667,18 @@ const PISTAS = [
   },
   {
     id: 'vuelta', nombre: 'La vuelta al Panecillo', salida: 'EL PANECILLO', meta: 'EL PANECILLO', real: 'panecillo-vuelta', vueltas: 2, arbolesLado: -1,
+    callesZonas: [['.', 'panecillo']],
     lema: 'Dos vueltas al cerro por la carretera que lo rodea: la Virgen siempre a la vista y el que empuja, sin descanso en las subidas.',
     zonas: [['panecillo', 0], ['miradorpanecillo', 130], ['cumbre', 230], ['panecillo', 330]],
     hitos: [['cerro', null, 0, 0, 40, 30]],
     rampas: [['panecillo', 70, 0], ['miradorpanecillo', 50, -1.2], ['cumbre', 60, 1.2]],
     coladas: [['panecillo', 40], ['miradorpanecillo', 20], ['cumbre', 20], ['panecillo', 360]],
+  },
+  {
+    id: 'centro', nombre: 'La vuelta a la Plaza Grande', salida: 'PLAZA GRANDE', meta: 'PLAZA GRANDE', real: 'centro-vuelta', vueltas: 3, libre: true,
+    lema: 'Tres vueltas a la manzana de la Plaza Grande por las calles de verdad, entre las casas del centro.',
+    callesZonas: [['Venezuela', 'venezuela'], ['.', 'garcia']],
+    hitos: [], rampas: [], coladas: [['garcia', 30], ['venezuela', 40], ['garcia', 160]],
   },
   {
     id: 'subida', nombre: 'La subida del Panecillo', salida: 'LA AMBATO', meta: 'LA VIRGEN', premio: true,
@@ -706,6 +717,12 @@ let N = 0, SALIDA = 0, META = 0;
 // En un circuito, lo que mide una vuelta y hasta dónde llega el decorado
 // (una vuelta: las demás pasan por el mismo sitio).
 let LARGO_VUELTA = 0, DECO_INI = 0, DECO_FIN = 0;
+// Con calles de verdad: los datos de la pista (edificios incluidos) y los
+// lugares con nombre por los que pasa, en metros de la pista.
+let DATOS_PISTA = null, LUGARES = [];
+// Una pista está si no pide calles de verdad, si sus datos llegaron o si
+// tiene tramos a mano con que suplirlos.
+const disponible = (def) => !def.real || !!DATOS_REALES[def.real] || !!def.tramos;
 // Un filtro de caja cíclico: para la vuelta de un circuito, donde el final
 // sigue en el principio.
 function suavizaCiclico(arr, R, pasadas) {
@@ -783,7 +800,23 @@ function construyePistaReal(def) {
     const giro = (a, b) => { let d = a - b; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; return d; };
     lapK = suavizaCiclico(ths.map((t, m) => giro(t, ths[(m + 1) % largo])), 4, 2);
   }
-  const zonaDe = (m) => { let z = def.zonas[0][0]; for (const [n, desde] of def.zonas) if (m >= desde) z = n; return z; };
+  // Las zonas: las de la pista o, con calles de verdad y `callesZonas`, una
+  // por calle según su nombre. Y el nombre real de la calle en cada metro.
+  const calles = d.generada ? [] : (d.calles || []);
+  let zonas = def.zonas;
+  if (calles.length && def.callesZonas) {
+    zonas = [];
+    for (const [s0, nombre] of calles) {
+      const z = (def.callesZonas.find(([re]) => new RegExp(re, 'i').test(nombre)) || def.callesZonas[def.callesZonas.length - 1])[1];
+      if (!zonas.length || zonas[zonas.length - 1][0] !== z) zonas.push([z, Math.max(0, Math.round(s0))]);
+    }
+    zonas[0][1] = 0;
+  }
+  if (!zonas) zonas = [[def.callesZonas ? def.callesZonas[0][1] : 'panecillo', 0]];
+  const zonaDe = (m) => { let z = zonas[0][0]; for (const [n, desde] of zonas) if (m >= desde) z = n; return z; };
+  const calleDe = (m) => { let c = calles[0][1]; for (const [desde, n] of calles) if (m >= desde) c = n; return c; };
+  P.calle = calles.length ? [] : null;
+  DATOS_PISTA = d;
   let desde, hasta;
   if (cerrada) {
     LARGO_VUELTA = largo;
@@ -805,7 +838,11 @@ function construyePistaReal(def) {
     // «metros desde que empieza la zona» cuentan desde la línea.
     if (zn !== zona || (cerrada && i === 0)) { zona = zn; tramos.push({ zona, i: P.x.length }); }
     P.x.push(x); P.z.push(z); P.y.push(cerrada ? lapY[m] : y); P.th.push(th); P.zona.push(zona); P.hw.push(ZONAS[zona].hw); P.k.push(cerrada ? lapK[m] : 0);
+    if (P.calle) P.calle.push(calleDe(m));
   }
+  // Los lugares con nombre, en el metro de la primera vuelta donde se pasan.
+  LUGARES = (d.lugares || []).map(([s0, , , nombre]) => ({ i: Math.round(s0) - desde, nombre }))
+    .filter((l) => l.i >= 0 && l.i < P.x.length).sort((a, b) => a.i - b.i);
   // Sin saltos de 2π en el rumbo, y la curva es lo que gira cada metro.
   for (let i = 1; i < P.th.length; i++) {
     while (P.th[i] - P.th[i - 1] > Math.PI) P.th[i] -= Math.PI * 2;
@@ -819,7 +856,8 @@ function construyePista(def) {
   P = { x: [], z: [], y: [], th: [], k: [], hw: [], zona: [], pend: [] };
   tramos.length = 0;
   LARGO_VUELTA = 0;
-  if (def.real) {
+  DATOS_PISTA = null; LUGARES = [];
+  if (def.real && (DATOS_REALES[def.real] || !def.tramos)) {
     if (!construyePistaReal(def)) return false;
     N = P.x.length;
     DECO_INI = LARGO_VUELTA ? SALIDA : 0;
@@ -1197,6 +1235,114 @@ const FACHADAS = {
   palacio: [() => palacio(), 30, 19, 14], basilica: [() => basilica(), 20, 30, 16], santuario: [() => santuario(), 18, 22, 14],
 };
 
+// ─── los edificios de verdad ──────────────────────────────────────
+// Con datos de OpenStreetMap, cada edificio es su planta levantada a su
+// altura: muros con ventanas por piso (una textura blanca teñida con el
+// color de cada casa, como las del centro) y techo de teja o de losa. El
+// que se mete en la calle se corre hacia atrás hasta la vereda.
+const COLORES_CASA = [0xF1EDE4, 0xF1EDE4, 0xEDE3C8, 0xE3B95F, 0x5D8FC7, 0x9CC7D9, 0xE8A8A0, 0x8FBF8A, 0xC97B4A];
+let texFachada = null;
+const fachadaReal = () => lienzo(256, 128, (c, w, h) => {
+  c.fillStyle = '#FFFFFF'; c.fillRect(0, 0, w, h);
+  c.fillStyle = '#E6E1D8'; c.fillRect(0, 0, w, 8);                      // cornisa
+  for (let b = 0; b < 2; b++) {
+    const x0 = b * 128 + 40, y0 = 26, ww = 48, hh = 72;
+    c.fillStyle = '#E9E4DA'; c.fillRect(x0 - 6, y0 - 6, ww + 12, hh + 12);  // marco
+    c.fillStyle = '#2E3440'; c.fillRect(x0, y0, ww, hh);                   // vidrio
+    c.fillStyle = '#7F8792'; c.fillRect(x0 + ww / 2 - 2, y0, 4, hh); c.fillRect(x0, y0 + hh / 2 - 2, ww, 4);
+    c.fillStyle = '#34343A'; c.fillRect(x0 - 10, y0 + hh - 4, ww + 20, 5);   // balcón
+    for (let k = 0; k <= 6; k++) c.fillRect(x0 - 9 + k * (ww + 16) / 6, y0 + hh - 20, 2, 16);
+  }
+});
+function construyeEdificios(edificios) {
+  if (!texFachada) texFachada = textura(fachadaReal(), true);
+  const M = { pos: [], nor: [], uv: [], col: [] }, T = { pos: [], nor: [], col: [] };
+  const color = new THREE.Color(), a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(), n = new THREE.Vector3();
+  // El punto de la calle más cercano: a saltos de 2 m y luego fino.
+  const cerca = (x, z) => {
+    let mejor = Infinity, im = 0;
+    const d2 = (i) => (P.x[i] - x) ** 2 + (P.z[i] - z) ** 2;
+    for (let i = 0; i < N; i += 2) { const d = d2(i); if (d < mejor) { mejor = d; im = i; } }
+    for (let i = Math.max(0, im - 2); i <= Math.min(N - 1, im + 2); i++) { const d = d2(i); if (d < mejor) { mejor = d; im = i; } }
+    return im;
+  };
+  // Un triángulo, girado si hace falta para que mire hacia `fuera`.
+  const tri = (G, p, q, r, fuera, uvs) => {
+    a.fromArray(p); b.fromArray(q); c.fromArray(r);
+    n.subVectors(b, a).cross(c.clone().sub(a));
+    let orden = [0, 1, 2];
+    if (n.dot(fuera) < 0) orden = [0, 2, 1];
+    const v = [p, q, r];
+    for (const k of orden) {
+      G.pos.push(...v[k]); G.nor.push(fuera.x, fuera.y, fuera.z); G.col.push(color.r, color.g, color.b);
+      if (uvs) G.uv.push(...uvs[k]);
+    }
+  };
+  const arriba = new THREE.Vector3(0, 1, 0), fuera = new THREE.Vector3();
+  edificios.forEach((ed, k) => {
+    let pts = ed.p.map(([x, z]) => [x, z]);
+    if (pts.length < 3) return;
+    // ¿Se mete en la calle? Se corre hacia atrás, del lado donde está.
+    let falta = 0, rx = 0, rz = 0, lados = new Set(), iRef = 0;
+    for (const [x, z] of pts) {
+      const i = cerca(x, z), th = P.th[i];
+      const ux = -Math.cos(th), uz = Math.sin(th);
+      const lat = (x - P.x[i]) * ux + (z - P.z[i]) * uz;
+      const libre = P.hw[i] + ACERA + 0.3;
+      lados.add(Math.sign(lat) || 1);
+      if (Math.abs(lat) < libre && libre - Math.abs(lat) > falta) { falta = libre - Math.abs(lat); rx = ux * Math.sign(lat || 1); rz = uz * Math.sign(lat || 1); iRef = i; }
+      if (!falta) iRef = i;
+    }
+    if (lados.size > 1 && falta > 0) return;      // cruza la calle: fuera
+    if (falta > 14) return;                       // casi entero en la calle
+    if (falta) pts = pts.map(([x, z]) => [x + rx * falta, z + rz * falta]);
+    // Altura: la de la calle al lado, salvo que el terreno de verdad esté
+    // mucho más arriba o abajo (en la ladera del cerro, por ejemplo).
+    const ry = P.y[iRef];
+    const yb = ed.y != null && Math.abs(ed.y - ry) > 4 ? ed.y : ry;
+    const h = ed.h || 7, y0 = yb - 3, y1 = yb + h;
+    // Orientación: que el área salga positiva en (x, z).
+    let area = 0;
+    for (let q = 0; q < pts.length; q++) { const [x1, z1] = pts[q], [x2, z2] = pts[(q + 1) % pts.length]; area += x1 * z2 - x2 * z1; }
+    if (area < 0) pts.reverse();
+    const iglesia = ed.tipo === 'iglesia';
+    color.setHex(iglesia ? 0xF4F1EA : h > 16 ? [0xC9C6C0, 0xB8B4AC, 0xD8D2C4][k % 3] : COLORES_CASA[(k * 7 + (ed.p.length * 3)) % COLORES_CASA.length]);
+    // Los muros: u a lo largo del perímetro (dos ventanas cada 6 m), v por piso.
+    let u = 0;
+    for (let q = 0; q < pts.length; q++) {
+      const [ax, az] = pts[q], [bx, bz] = pts[(q + 1) % pts.length];
+      const l = Math.hypot(bx - ax, bz - az);
+      if (l < 0.05) continue;
+      fuera.set((bz - az) / l, 0, -(bx - ax) / l);
+      const u0 = u / 6, u1 = (u + l) / 6, v0 = (y0 - yb) / 3.2, v1 = (y1 - yb) / 3.2;
+      const A0 = [ax, y0, az], B0 = [bx, y0, bz], B1 = [bx, y1, bz], A1 = [ax, y1, az];
+      tri(M, A0, B0, B1, fuera, [[u0, v0], [u1, v0], [u1, v1]]);
+      tri(M, A0, B1, A1, fuera, [[u0, v0], [u1, v1], [u0, v1]]);
+      u += l;
+    }
+    // El techo: teja en las casas bajas y en las iglesias; losa en lo alto.
+    color.setHex(iglesia || h <= 12 ? 0xA8442C : 0x8E8A84);
+    const contorno = pts.map(([x, z]) => new THREE.Vector2(x, z));
+    for (const [p, q, r] of THREE.ShapeUtils.triangulateShape(contorno, [])) {
+      tri(T, [pts[p][0], y1, pts[p][1]], [pts[q][0], y1, pts[q][1]], [pts[r][0], y1, pts[r][1]], arriba);
+    }
+  });
+  const malla = (G, mat) => {
+    if (!G.pos.length) return;
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(G.pos, 3));
+    geo.setAttribute('normal', new THREE.Float32BufferAttribute(G.nor, 3));
+    geo.setAttribute('color', new THREE.Float32BufferAttribute(G.col, 3));
+    if (G.uv) geo.setAttribute('uv', new THREE.Float32BufferAttribute(G.uv, 2));
+    const m = new THREE.Mesh(geo, mat);
+    m.castShadow = m.receiveShadow = true;
+    mundo.add(m);
+  };
+  malla(M, mate({ map: texFachada, vertexColors: true }));
+  delete T.uv;
+  malla(T, mate({ vertexColors: true }));
+}
+
 function construyeDecorado(def) {
   const r = azar(2024 + def.id.length * 97);
   const f = new Fundidor();
@@ -1220,15 +1366,18 @@ function construyeDecorado(def) {
     mundo.add(caja);
     reservas.push({ s0: s - ancho / 2 - 2, s1: s + ancho / 2 + 2, lado });
   };
-  for (const [tipo, z, d, lado] of def.hitos) {
-    if (!FACHADAS[tipo]) continue;
+  // Con edificios de verdad no se inventan fachadas, salvo la Virgen del cerro.
+  const reales = !!(DATOS_PISTA && DATOS_PISTA.edificios && DATOS_PISTA.edificios.length);
+  for (const [tipo, z, d, lado] of def.hitos || []) {
+    if (!FACHADAS[tipo] || (reales && tipo !== 'virgen')) continue;
     const [pinta, ancho, alto, fondo] = FACHADAS[tipo];
     fachada(pinta(), enZona(z, d), lado, ancho, alto, fondo);
   }
 
   // Las casas, seguidas a los dos lados donde la zona las tiene.
+  if (reales) construyeEdificios(DATOS_PISTA.edificios);
   for (const cr of corridas) {
-    if (!ZONAS[cr.zona].casas) continue;
+    if (!ZONAS[cr.zona].casas || reales) continue;
     for (const lado of [-1, 1]) {
       let s = cr.z0 + 2;
       while (s < hasta(cr.z1, 60)) {
@@ -1297,15 +1446,19 @@ function construyeDecorado(def) {
 
   // El rótulo de cada calle, al empezar la zona, en una placa azul.
   const matPoste = mate({ color: 0x2A2A2E });
-  for (const cr of corridas) {
-    const zz = ZONAS[cr.zona];
-    if (!zz.casas || cr.z1 - cr.z0 < 30) continue;
-    const s = cr.z0 + 10, hw = muestra(s).hw, lado = cr.z0 % 2 ? 1 : -1;
+  const rotulos = [];
+  if (P.calle) {
+    for (let i = Math.max(1, DECO_INI); i < Math.min(N - 20, DECO_FIN); i++) if (P.calle[i] !== P.calle[i - 1] || i === Math.max(1, DECO_INI)) rotulos.push({ s: i + 10, nombre: P.calle[i] });
+  } else {
+    for (const cr of corridas) if (ZONAS[cr.zona].casas && cr.z1 - cr.z0 >= 30) rotulos.push({ s: cr.z0 + 10, nombre: ZONAS[cr.zona].nombre.replace(/^(La|El) (bajada|cuesta|subida) de (la )?/i, '') });
+  }
+  for (const rt of rotulos) {
+    const s = rt.s, hw = muestra(s).hw, lado = Math.floor(s) % 2 ? 1 : -1;
     const grupo = new THREE.Group();
     grupo.add(new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 2.6, 6).translate(0, 1.3, 0), matPoste));
     const placa = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 0.28), mate({ map: textura(lienzo(352, 90, (c, w, h) => {
       c.fillStyle = '#1F4E9E'; c.fillRect(0, 0, w, h); c.strokeStyle = '#F3F1EC'; c.lineWidth = 6; c.strokeRect(6, 6, w - 12, h - 12);
-      c.fillStyle = '#F3F1EC'; c.font = '700 40px system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(zz.nombre.replace(/^(La|El) (bajada|cuesta|subida) de (la )?/i, ''), w / 2, h / 2 + 2);
+      c.fillStyle = '#F3F1EC'; c.font = '700 40px system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(rt.nombre.replace(/^(Calle|Avenida|Av\.) /i, ''), w / 2, h / 2 + 2, w - 24);
     })), side: THREE.DoubleSide }));
     placa.position.set(0, 2.45, 0); grupo.add(placa);
     grupo.applyMatrix4(matrizEn(s, lado * (hw + ACERA - 0.3), BORDILLO, -lado));
@@ -2044,6 +2197,7 @@ const foto = { s: 0, x: 0, h: 2, giro: 0 };
 const fantasma = { trazo: [], datos: null, coche: null, t: 0 };
 const fantasmaClave = (id) => `coches3d-fantasma-${id}`;
 const cromosNuevos = [];
+let lugarSig = 0;
 let reloj = 0, cuenta = 0, tLlegada = 0, zonaActual = '', sacudida = 0, tPeaton = 0, llegadaVista = false, vueltaActual = 1;
 const vueltaDe = (s) => LARGO_VUELTA ? limita(Math.floor((s - SALIDA) / LARGO_VUELTA) + 1, 1, pistaActual.vueltas) : 1;
 const teclas = { izq: false, der: false, empuja: false, freno: false };
@@ -2065,7 +2219,7 @@ function reinicia() {
   Object.assign(e, { estado: 'empujando', s: j.s - 1.3, x: j.x, t: 0, tSube: -9 });
   Object.assign(c, { suelto: false, s: 0, x: 0, v: 0 });
   for (const pe of peatones) pe.estado = 'libre';
-  reloj = 0; zonaActual = ''; sacudida = 0; tPeaton = 1; vueltaActual = 1;
+  reloj = 0; zonaActual = ''; lugarSig = 0; sacudida = 0; tPeaton = 1; vueltaActual = 1;
   Object.assign(pasos, { ultimo: 0, combo: 0, burst: 0, tIzq: -9, tDer: -9, prevEmp: false, pulsos: [], unPie: 0, sesgo: 0 });
   demoPaso = 0;
   fantasma.trazo = [];
@@ -2387,9 +2541,16 @@ function actualiza(dt) {
 
   const m = muestra(j.s);
   const hw = m.hw, pend = m.pend, k = m.k, zona = m.zona;
-  if (zona !== zonaActual) {
-    zonaActual = zona;
-    if (reloj > 1) avisa(ZONAS[zona].nombre);
+  // Con calles de verdad se anuncia la calle por su nombre; si no, la zona.
+  const nombreAqui = P.calle ? P.calle[limita(Math.floor(j.s), 0, N - 1)] : ZONAS[zona].nombre;
+  if (nombreAqui !== zonaActual) {
+    zonaActual = nombreAqui;
+    if (reloj > 1) avisa(nombreAqui);
+  }
+  // Y los lugares con nombre, al pasar por delante.
+  while (lugarSig < LUGARES.length && LUGARES[lugarSig].i <= j.s) {
+    if (reloj > 1 && LUGARES[lugarSig].i > j.s - 15) avisa(LUGARES[lugarSig].nombre, 1300);
+    lugarSig++;
   }
   if (LARGO_VUELTA && estado === 'carrera' && vueltaDe(j.s) !== vueltaActual) {
     vueltaActual = vueltaDe(j.s);
@@ -2916,7 +3077,7 @@ function logrosDelProgreso() {
 const copaAbierta = (id) => id === 'fiestas' || prog.copa === 1;
 const PUNTOS = [10, 7, 5, 3, 1];
 const listaDe = (tipo) => (tipo === 'pareja' ? prog.parejas : tipo === 'pista' ? prog.pistas : prog.pinturas);
-const abierta = (tipo, id) => listaDe(tipo).includes(id);
+const abierta = (tipo, id) => listaDe(tipo).includes(id) || (tipo === 'pista' && PISTAS.some((p) => p.id === id && p.libre));
 const comoSeGana = (tipo, id) => {
   const d = DESBLOQUEOS.find((q) => q.tipo === tipo && q.id === id);
   return d ? `Se gana ${d.como}.` : tipo === 'pista' ? 'Se abre corriéndola en su Copa.' : 'Todavía no se gana.';
@@ -3372,6 +3533,7 @@ function pintaElegir() {
   const caja = $('#pistas');
   caja.textContent = '';
   for (const q of PISTAS) {
+    if (!disponible(q)) continue;
     const b = document.createElement('button');
     const ok = abierta('pista', q.id);
     b.type = 'button'; b.className = 'chip' + (ok ? '' : ' is-cerrada');
@@ -3423,6 +3585,7 @@ function pintaMedallas() {
   const ul = $('#lista-pistas');
   ul.textContent = '';
   for (const q of PISTAS) {
+    if (!disponible(q)) continue;
     const li = document.createElement('li');
     const med = prog.medallas[q.id];
     const rec = prog.records[q.id];
@@ -3738,8 +3901,11 @@ async function carga() {
   const avanza = () => { listos++; texto.textContent = `Cargando… ${Math.round((listos / total) * 100)}%`; };
   const cargador = new GLTFLoader();
   const pide = (n) => cargador.loadAsync(modeloUrl(n)).then((g) => { avanza(); return g; });
-  const pideCalle = (n) => (GENERADAS[n] ? Promise.resolve(GENERADAS[n]()) : fetch(new URL(`pistas/${n}.json${SELLO}`, import.meta.url)).then((r) => r.json()))
-    .then((d) => { DATOS_REALES[n] = d; avanza(); });
+  // Las calles de verdad que hay (coches/pistas/indice.json, lo escribe
+  // tools/calles.py); las que no, se generan en código o la pista usa sus tramos.
+  const hay = await fetch(new URL(`pistas/indice.json${SELLO}`, import.meta.url)).then((r) => (r.ok ? r.json() : [])).catch(() => []);
+  const pideCalle = (n) => (hay.includes(n) ? fetch(new URL(`pistas/${n}.json${SELLO}`, import.meta.url)).then((r) => (r.ok ? r.json() : null)).catch(() => null) : Promise.resolve(null))
+    .then((d) => { d = d || (GENERADAS[n] ? { ...GENERADAS[n](), generada: true } : null); if (d) DATOS_REALES[n] = d; avanza(); });
   const [chico, chica, generico, policia, ministro, anim, quito] = await Promise.all([...nombres.map(pide), ...reales.map(pideCalle)]);
   Object.assign(MODELOS, { 'base-chico': chico, 'base-chica': chica, generico, policia, ministro });
   for (const n of ['montado', 'correr', 'rol', 'golpe', 'salto', 'arrancar']) {
