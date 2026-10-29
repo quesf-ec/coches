@@ -322,56 +322,43 @@ body.pixel #pista{image-rendering:pixelated;image-rendering:crisp-edges}
 }
 
 
-/* De lado en un teléfono bajito, los menús caben sin bajar: los botones de
-   la portada en dos columnas, y la pantalla de elegir con la pareja a la
-   izquierda y la pista a la derecha. */
-@media (orientation:landscape) and (max-height:600px){
-  .coches-menu:has(> .coches-opciones){width:min(94vw, 640px)}
-  .coches-menu > .coches-opciones{grid-template-columns:1fr 1fr;gap:var(--mal-e2) var(--mal-e3)}
-  .coches-menu:has(#parejas){width:min(96vw, 920px);display:grid;grid-template-columns:1fr 1fr;
-    gap:var(--mal-e2) var(--mal-e5);align-items:start}
-  .coches-menu:has(#parejas) > :is(.coches-banner, .coches-subtitulo){grid-column:1 / -1}
-  .coches-menu:has(#parejas) > .btn{margin-top:0}
-  .coches-menu:has(#parejas) .coches-elige{gap:var(--mal-e1)}
-  .coches-menu:has(#parejas) .coches-parejas .chip{padding-block:4px}
-  .coches-menu:has(#parejas) .coches-stats{gap:0 var(--mal-e2)}
-}
-@media (orientation:landscape) and (max-height:600px){
-  #elegir .coches-menu,#portada .coches-menu{max-height:calc(100dvh - 1.5rem)}
-}
-@media (orientation:landscape) and (max-height:600px){
-  .coches-menu > .coches-opciones{gap:var(--mal-e1) var(--mal-e2)}
-  .coches-menu:has(#parejas) > .coches-subtitulo{display:none}
-  .coches-menu:has(#parejas) .coches-parejas{display:grid;grid-template-columns:1fr 1fr;gap:var(--mal-e1)}
-  .coches-menu:has(#parejas) .coches-mapa{display:none}
-  .coches-menu:has(#parejas) .coches-pareja-nombre{font-size:1.1rem}
-  .coches-menu:has(#parejas) .coches-elige .caption{font-size:.85rem;line-height:1.25}
-  .coches-menu:has(#parejas) .btn{min-height:40px;padding-block:6px}
-}
-@media (orientation:landscape) and (max-height:600px){
-  .coches-menu:has(#parejas) .coches-parejas .chip{white-space:nowrap;font-size:.8rem;padding:4px 10px}
-  .coches-menu:has(#parejas) #pareja-stats{display:grid;grid-template-columns:repeat(3, 1fr);gap:0 var(--mal-e2)}
-  .coches-menu:has(#parejas) #pintura-lema{display:none}
-}
-@media (orientation:landscape) and (max-height:600px){
-  .coches-menu:has(#parejas) .coches-parejas .chip{font-size:.74rem;padding:3px 8px}
-  .coches-menu:has(#parejas) #pistas .chip{white-space:normal;line-height:1.15}
-  .coches-menu:has(#parejas) .caption{display:none}
-}
-@media (orientation:landscape) and (max-height:600px){
-  .coches-menu:has(#parejas) .chip{min-height:0;padding-block:4px}
-  .coches-menu:has(#parejas) .micro{display:none}
-  .coches-menu:has(> .coches-opciones) > .coches-banner{display:none}
-}
-@media (orientation:landscape) and (max-height:600px){
-  .coches-menu > .coches-opciones .btn,.coches-menu:has(#parejas) > .btn{min-height:36px;padding-block:5px}
-}
+/* ─── el menú de elegir, en pasos ─────────────────────────────
+   Primero la pareja y la pintura; luego la pista. Cada paso cabe en la
+   pantalla sin bajar. */
+.coches-etapas{display:flex;gap:var(--mal-e2);margin:0;padding:0;list-style:none;
+  font-family:var(--mal-mono);font-weight:700;font-size:var(--mal-t-micro)}
+.coches-etapas li{padding:2px 10px;border-radius:99px;border:1px solid currentColor;opacity:.55}
+.coches-etapas li.is-activo{opacity:1;background:var(--mal-primary);color:var(--mal-on-primary);border-color:transparent}
+.coches-menu [hidden]{display:none !important}
+.coches-paso-botones{display:grid;grid-template-columns:1fr 1fr;gap:var(--mal-e2)}
+.coches-paso-botones .btn[hidden]{display:none}
+
+/* De lado en un teléfono bajito: el panel más ancho, el paso de pareja a dos
+   columnas de fichas, y el de pista con la lista a la izquierda y el mapa a la derecha. */
 @media (orientation:landscape) and (max-height:600px){
   .coches-capa .coches-menu{padding:var(--mal-e2) var(--mal-e4);gap:var(--mal-e2)}
+  #portada,#elegir{padding:0 var(--mal-e4)}
+  #portada .coches-menu,#elegir .coches-menu{max-height:calc(100dvh - 0.5rem)}
+  #elegir .coches-menu{width:min(94vw, 680px);padding:var(--mal-e1) var(--mal-e4)}
+  #elegir .coches-subtitulo{display:none}
+  #elegir .coches-banner{margin-bottom:0}
+  #elegir .micro,#elegir .caption{display:none}
+  #elegir .coches-paso{gap:4px}
+  #elegir .coches-etapas{font-size:.7rem}
+  #elegir .coches-parejas{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+  #elegir .coches-parejas .chip{white-space:nowrap;font-size:.8rem;padding:4px 8px;min-height:0}
+  #elegir #pareja-stats{display:grid;grid-template-columns:repeat(3, 1fr);gap:0 var(--mal-e2)}
+  #elegir #paso-pista{display:grid;grid-template-columns:1fr 1fr;gap:var(--mal-e2);align-items:start}
+  #elegir #paso-pista .coches-parejas{grid-template-columns:1fr 1fr}
+  #elegir #paso-pista .coches-parejas .chip{white-space:normal;line-height:1.15}
+  #elegir #paso-pista .coches-pista{display:block}
+  #elegir #paso-pista .coches-mapa{display:block;width:100%;height:auto}
+  #elegir .coches-paso-botones .btn{min-height:34px;padding-block:4px;white-space:nowrap}
+  #elegir .coches-pareja-nombre{font-size:1.2rem}
+  .coches-menu > .coches-opciones{grid-template-columns:1fr 1fr;gap:var(--mal-e1) var(--mal-e2)}
+  .coches-menu:has(> .coches-opciones) > .coches-banner{display:none}
+  .coches-menu > .coches-opciones .btn{min-height:36px;padding-block:5px}
 }
 @media (orientation:landscape) and (max-height:600px){
-  #portada,#elegir{padding:var(--mal-e1) var(--mal-e4)}
-  #elegir .coches-menu,#portada .coches-menu{max-height:calc(100dvh - 0.75rem)}
-  .coches-menu:has(#parejas){gap:var(--mal-e1) var(--mal-e4)}
-  .coches-menu:has(#parejas) .coches-parejas{gap:4px}
+  .coches-menu:has(> .coches-opciones){width:min(94vw, 640px)}
 }

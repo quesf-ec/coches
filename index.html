@@ -23,9 +23,9 @@
 <!-- El sello ?v= se sube a mano en cada cambio del juego (CSS, JS y, con el
      JS, los modelos, que heredan su sello): así el navegador no se queda con
      la versión anterior. -->
-<link rel="stylesheet" href="coches.css?v=b7e84bf19b">
+<link rel="stylesheet" href="coches.css?v=912e0429e0">
 <!-- La piel del juego: variante del tema juegos (ver tema/LEEME.md). Va al final para mandar. -->
-<link rel="stylesheet" href="tema/tema.css?v=b7e84bf19b">
+<link rel="stylesheet" href="tema/tema.css?v=912e0429e0">
 <script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js", "three/addons/": "./vendor/addons/" } }</script>
 <script type="application/ld+json">
 {
@@ -242,8 +242,12 @@
 <div class="coches-capa" id="elegir" hidden>
   <div class="coches-panel coches-menu">
     <p class="coches-banner" id="elegir-kicker">Carrera suelta</p>
-    <h2 class="coches-subtitulo" id="elegir-titulo">Elige pareja y pista</h2>
-    <div class="coches-elige">
+    <h2 class="coches-subtitulo" id="elegir-titulo">Elige tu pareja</h2>
+    <ol class="coches-etapas" id="etapas-elegir" aria-label="Pasos">
+      <li id="etapa-pareja" class="is-activo">1 · Pareja</li>
+      <li id="etapa-pista">2 · Pista</li>
+    </ol>
+    <section class="coches-paso coches-elige" id="paso-pareja">
       <div class="coches-parejas" id="parejas" role="radiogroup" aria-label="Pareja"></div>
       <p class="coches-pareja-nombre" id="pareja-nombre"></p>
       <p class="caption" id="pareja-lema"></p>
@@ -251,19 +255,24 @@
       <p class="micro">Pintura de la tabla</p>
       <div class="coches-parejas" id="pinturas" role="radiogroup" aria-label="Pintura"></div>
       <p class="caption" id="pintura-lema"></p>
-    </div>
-    <div class="coches-elige" id="elegir-pistas">
-      <p class="micro">Pista</p>
+    </section>
+    <section class="coches-paso coches-elige" id="paso-pista" hidden>
       <div class="coches-parejas" id="pistas" role="radiogroup" aria-label="Pista"></div>
       <div class="coches-pista">
         <canvas class="coches-mapa" id="mapa" width="200" height="140" role="img" aria-label="El trazado de la pista"></canvas>
         <p class="caption" id="pista-lema"></p>
       </div>
+    </section>
+    <div class="coches-paso-botones">
+      <button class="btn btn-ghost btn-block" id="b-volver-elegir" type="button">
+        <svg class="icono" aria-hidden="true"><use href="#i-flecha-izq"/></svg> Volver</button>
+      <button class="btn btn--rojo boton-juego btn-block" id="b-siguiente" type="button">
+        Pista <svg class="icono" aria-hidden="true"><use href="#i-flecha-der"/></svg></button>
+      <button class="btn btn--rojo boton-juego btn-block" id="b-empezar" type="button" hidden>
+        <svg class="icono" aria-hidden="true"><use href="#i-play"/></svg> A la salida</button>
     </div>
-    <button class="btn btn--rojo boton-juego btn-block" id="b-empezar" type="button">
-      <svg class="icono" aria-hidden="true"><use href="#i-play"/></svg> A la salida</button>
-    <button class="btn btn-ghost btn-block" id="b-volver-elegir" type="button">
-      <svg class="icono" aria-hidden="true"><use href="#i-flecha-izq"/></svg> Volver</button>
+  </div>
+</div>
   </div>
 </div>
 
@@ -352,6 +361,6 @@
 </div>
 
 <script src="../ds/mal/mal.js?v=1.0.18" defer></script>
-<script type="module" src="coches.js?v=b7e84bf19b"></script>
+<script type="module" src="coches.js?v=912e0429e0"></script>
 </body>
 </html>

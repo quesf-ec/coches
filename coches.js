@@ -3279,13 +3279,28 @@ function abreElegir() {
   pintaElegir();
   estado = 'elegir';
   pantalla('elegir');
-  $('#b-empezar').focus({ preventScroll: true });
+  ponPaso('pareja');
+}
+// El elegir va en dos pasos: primero la pareja y la pintura, luego la pista.
+// Cada paso cabe en la pantalla sin bajar. En Copa solo hay pareja.
+let pasoElegir = 'pareja';
+function ponPaso(paso) {
+  const enCopa = modo === 'copa';
+  pasoElegir = enCopa ? 'pareja' : paso;
+  const esPareja = pasoElegir === 'pareja';
+  $('#paso-pareja').hidden = !esPareja;
+  $('#paso-pista').hidden = esPareja;
+  $('#etapa-pareja').classList.toggle('is-activo', esPareja);
+  $('#etapa-pista').classList.toggle('is-activo', !esPareja);
+  $('#etapas-elegir').hidden = enCopa;
+  $('#elegir-titulo').textContent = esPareja ? (enCopa ? 'Elige tu pareja para toda la Copa' : 'Elige tu pareja') : 'Elige la pista';
+  $('#b-siguiente').hidden = enCopa || !esPareja;
+  $('#b-empezar').hidden = !(enCopa || !esPareja);
+  $(esPareja && !enCopa ? '#b-siguiente' : '#b-empezar').focus({ preventScroll: true });
 }
 function pintaElegir() {
   const enCopa = modo === 'copa';
   $('#elegir-kicker').textContent = enCopa ? `${COPAS[copa.id].nombre} · carrera 1 de ${COPAS[copa.id].pistas.length}` : modo === 'tiempo' ? 'Contrarreloj' : 'Carrera suelta';
-  $('#elegir-titulo').textContent = enCopa ? 'Elige tu pareja para toda la Copa' : 'Elige pareja y pista';
-  $('#elegir-pistas').hidden = enCopa;
   for (const b of document.querySelectorAll('#parejas .chip')) {
     const ok = abierta('pareja', b.dataset.id);
     b.classList.toggle('is-cerrada', !ok);
@@ -3511,7 +3526,8 @@ function navegaMenu(ev) {
   return true;
 }
 $('#b-volver-medallas').addEventListener('click', aMenu);
-$('#b-volver-elegir').addEventListener('click', aMenu);
+$('#b-siguiente').addEventListener('click', () => ponPaso('pista'));
+$('#b-volver-elegir').addEventListener('click', () => (pasoElegir === 'pista' ? ponPaso('pareja') : aMenu()));
 $('#b-empezar').addEventListener('click', empieza);
 $('#b-pausa').addEventListener('click', pausa);
 $('#b-seguir').addEventListener('click', sigue);
