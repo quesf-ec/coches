@@ -23,9 +23,9 @@
 <!-- El sello ?v= se sube a mano en cada cambio del juego (CSS, JS y, con el
      JS, los modelos, que heredan su sello): así el navegador no se queda con
      la versión anterior. -->
-<link rel="stylesheet" href="coches.css?v=912e0429e0">
+<link rel="stylesheet" href="coches.css?v=cc0a928a49">
 <!-- La piel del juego: variante del tema juegos (ver tema/LEEME.md). Va al final para mandar. -->
-<link rel="stylesheet" href="tema/tema.css?v=912e0429e0">
+<link rel="stylesheet" href="tema/tema.css?v=cc0a928a49">
 <script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js", "three/addons/": "./vendor/addons/" } }</script>
 <script type="application/ld+json">
 {
@@ -95,7 +95,7 @@
         <p class="coches-vel"><span id="h-vel">0</span><small>km/h</small></p>
         <div class="coches-tablero__fila">
           <span class="coches-turbo" id="h-turbo" hidden>
-            <svg class="icono icono--s" aria-hidden="true"><use href="#i-rayo"/></svg> Colada</span>
+            <svg class="icono icono--s" aria-hidden="true"><use href="#i-rayo"/></svg> <span id="h-coladas">Colada</span></span>
           <span class="coches-empujador" id="h-empujador" data-estado="empujando">Empujando</span>
         </div>
       </div>
@@ -181,18 +181,19 @@
   <div class="coches-panel coches-menu">
     <p class="coches-banner">Cómo se juega</p>
     <p class="caption">Cero motores y dos en cada coche: uno maneja y el otro
-    empuja a pie. Cada pisada, izquierda o derecha, es un paso: cuantos más pasos por segundo, más empuja. Los dos lados a la vez dan un empujón fuerte y se sube al carro. Cuando el coche ya va rápido, se trepa solo.</p>
+    empuja a pie. La flecha izquierda mueve su pie izquierdo y la derecha el derecho: cuantos más pasos por segundo, más empuja. Alternando va recto; dos veces el mismo pie sube el otro a la tabla y el coche se va hacia el lado contrario. Cuando el coche ya va rápido, se trepa solo.</p>
     <dl class="coches-teclas">
       <div><dt>← →</dt><dd>girar</dd></div>
       <div><dt>↓</dt><dd>frenar con la suela</dd></div>
-      <div><dt>← →</dt><dd>pisar: cada paso empuja</dd></div>
-      <div><dt>← + →</dt><dd>empujón fuerte y se sube al carro</dd></div>
+      <div><dt>← →</dt><dd>a pie: pie izquierdo, pie derecho</dd></div>
+      <div><dt>← ←</dt><dd>un pie en la tabla: gira al otro lado</dd></div>
+      <div><dt>← + →</dt><dd>con colada: empujón fuerte y se sube</dd></div>
 
       <div><dt>Esc</dt><dd>pausa</dd></div>
     </dl>
     <p class="caption coches-solo-tactil">Toca la mitad izquierda de la pantalla para girar a la izquierda
     y la derecha para girar a la derecha. «Freno», en el centro, para las curvas cerradas.</p>
-    <p class="caption">En las rampas no se gira en el aire. Las coladas moradas dan turbo.
+    <p class="caption">En las rampas no se gira en el aire. Las coladas moradas se guardan (hasta tres) para el empujón fuerte, que solo sirve a pie.
     Las medallas abren parejas nuevas y ganar la Copa abre la subida del Panecillo.</p>
     <button class="btn btn-ghost btn-block" id="b-volver-ayuda" type="button">
       <svg class="icono" aria-hidden="true"><use href="#i-flecha-izq"/></svg> Volver</button>
@@ -361,6 +362,6 @@
 </div>
 
 <script src="../ds/mal/mal.js?v=1.0.18" defer></script>
-<script type="module" src="coches.js?v=912e0429e0"></script>
+<script type="module" src="coches.js?v=cc0a928a49"></script>
 </body>
 </html>
