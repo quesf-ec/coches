@@ -28,7 +28,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as clonaEsqueleto } from 'three/addons/utils/SkeletonUtils.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import * as perfil from '../perfil/perfil.js?v=1';
+import * as perfil from '../perfil/perfil.js?v=2';
 
 // Los modelos se piden con el mismo sello que trae este módulo: si la página
 // estrena versión, estrenan URL también ellos.
@@ -3175,7 +3175,7 @@ function trasCarrera() {
   const recordNuevo = !record || j.llegada < record;
   if (recordNuevo) { prog.records[def.id] = j.llegada; guardaFantasma(def.id); }
   if (p <= 3 && !(prog.medallas[def.id] <= p)) prog.medallas[def.id] = p;
-  // al perfil compartido: guaguas por llegar, más por el podio, y los logros
+  // al perfil compartido: sucres por llegar, más por el podio, y los logros
   perfil.ganar(1 + (p <= 3 ? 4 - p : 0), 'coches');
   if (record && j.llegada < record) perfil.desbloquear('coches-fantasma');
   logrosDelProgreso();
