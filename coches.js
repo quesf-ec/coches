@@ -28,6 +28,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as clonaEsqueleto } from 'three/addons/utils/SkeletonUtils.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import * as perfil from '../perfil/perfil.js?v=1';
 
 // Los modelos se piden con el mismo sello que trae este módulo: si la página
 // estrena versión, estrenan URL también ellos.
@@ -2471,7 +2472,7 @@ function actualiza(dt) {
         for (const q of obstaculos) if (q.tipo === 'cromo' && q.id === o.id) q.tomada = true;   // también en las otras vueltas
         o.mesh.visible = false;
         const cr = CROMOS.find((q) => q.id === o.id);
-        if (modo !== 'demo' && !prog.album.includes(o.id)) { prog.album.push(o.id); cromosNuevos.push(o.id); guarda(); }
+        if (modo !== 'demo' && !prog.album.includes(o.id)) { prog.album.push(o.id); cromosNuevos.push(o.id); guarda(); logrosDelProgreso(); }
         avisa(`¡Estampita: ${cr.nombre}!`, 1400);
         jingle([784, 988, 1175, 1568], 0.07, 'triangle');
       } else if (o.tipo === 'colada' && dx < 0.8 && !j.aire) {
@@ -2901,6 +2902,17 @@ const COPAS = {
   fiestas: { nombre: 'Copa de las Fiestas', pistas: ['tobogan', 'panecillo', 'guapulo', 'sanjuan'], campeones: '¡Campeones de las Fiestas!', ruta: 'la bajada grande, el Panecillo, Guápulo y San Juan' },
   noche: { nombre: 'Copa de la Noche', pistas: ['noche-tobogan', 'noche-vuelta', 'noche-guapulo', 'noche-sanjuan'], campeones: '¡Campeones de la Noche!', ruta: 'la bajada grande, la vuelta al cerro, Guápulo y San Juan, de noche' },
 };
+// Los logros del perfil compartido salen del progreso guardado: así
+// también los recibe quien ya había corrido antes de que existieran.
+function logrosDelProgreso() {
+  const med = Object.values(prog.medallas);
+  if (Object.keys(prog.records).length || med.length) perfil.desbloquear('coches-primera');
+  if (med.some((m) => m <= 3)) perfil.desbloquear('coches-podio');
+  if (med.includes(1)) perfil.desbloquear('coches-oro');
+  if (prog.copas.fiestas === 1) perfil.desbloquear('coches-copa-fiestas');
+  if (prog.copas.noche === 1) perfil.desbloquear('coches-copa-noche');
+  if (CROMOS.every((c) => prog.album.includes(c.id))) perfil.desbloquear('coches-album');
+}
 const copaAbierta = (id) => id === 'fiestas' || prog.copa === 1;
 const PUNTOS = [10, 7, 5, 3, 1];
 const listaDe = (tipo) => (tipo === 'pareja' ? prog.parejas : tipo === 'pista' ? prog.pistas : prog.pinturas);
@@ -3002,6 +3014,10 @@ function trasCarrera() {
   const recordNuevo = !record || j.llegada < record;
   if (recordNuevo) { prog.records[def.id] = j.llegada; guardaFantasma(def.id); }
   if (p <= 3 && !(prog.medallas[def.id] <= p)) prog.medallas[def.id] = p;
+  // al perfil compartido: guaguas por llegar, más por el podio, y los logros
+  perfil.ganar(1 + (p <= 3 ? 4 - p : 0), 'coches');
+  if (record && j.llegada < record) perfil.desbloquear('coches-fantasma');
+  logrosDelProgreso();
   if (!prog.pistas.includes(def.id)) prog.pistas.push(def.id);
   const premios = [{
     disco: p <= 3 ? SVG.medalla(p) : SVG.coche(),
@@ -3021,6 +3037,7 @@ function trasCarrera() {
       const puesto = tabla.findIndex((f) => f.id === eqJ.id) + 1;
       if (copa.id === 'fiestas' && (!prog.copa || puesto < prog.copa)) prog.copa = puesto;
       if (!prog.copas[copa.id] || puesto < prog.copas[copa.id]) prog.copas[copa.id] = puesto;
+      logrosDelProgreso();
       premios.push({
         disco: puesto <= 3 ? SVG.trofeo(puesto) : SVG.coche(),
         kicker: `${laCopa.nombre} · el final`,
@@ -3120,6 +3137,9 @@ function trasContrarreloj(def) {
   const antes = record;
   if (recordNuevo) { prog.records[def.id] = j.llegada; guardaFantasma(def.id); }
   if (!prog.pistas.includes(def.id)) prog.pistas.push(def.id);
+  perfil.ganar(1, 'coches');
+  if (antes && recordNuevo) perfil.desbloquear('coches-fantasma');
+  logrosDelProgreso();
   const dif = antes ? j.llegada - antes : 0;
   const premios = [{
     disco: recordNuevo ? SVG.trofeo(1) : SVG.coche(),
@@ -3196,6 +3216,7 @@ function aTitulo() {
   tocaMusica(null);
   pantalla('titulo');
   $('#titulo').focus({ preventScroll: true });
+  logrosDelProgreso();   // los de quien ya jugaba antes del perfil
   // Si nadie toca nada, al rato la consola se pone a jugar sola.
   clearTimeout(demoTimer);
   if (cocheJ) demoTimer = setTimeout(empiezaDemo, 25000);
