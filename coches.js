@@ -606,6 +606,9 @@ const ZONAS = {
   trepada: { nombre: 'La trepada', calle: 'asfalto', lado: 'pasto', hw: 5.4, arboles: true, publico: [12, 5] },
   cumbre: { nombre: 'La cumbre', calle: 'asfalto', lado: 'pasto', hw: 5.2, arboles: true, publico: [6, 6] },
 };
+// Las calles, más anchas que las de verdad: los seis coches salen a la vez,
+// en una fila, y en carrera hay sitio para adelantar y para chocarse.
+for (const z of Object.values(ZONAS)) z.hw = Math.max(z.hw + 1.2, 6);
 
 // Las pistas. Cada una es una lista de tramos: el nombre de una zona la
 // empieza; [entrada, sostén, salida, curva, desnivel] es un tramo en metros
@@ -1343,8 +1346,44 @@ function construyeEdificios(edificios) {
   malla(T, mate({ vertexColors: true }));
 }
 
+// La colada morada: un jarro de barro vidriado, con su filo azul y la
+// colada espesa y brillante.
+let tazaBase = null, tazas = [], listaColadas = [];
+const vuelos = [];
+function construyeTaza() {
+  const g = new THREE.Group();
+  const barro = mate({ color: 0xF3EEE4, roughness: 0.45 });
+  const filo = mate({ color: 0x2D5DA8, roughness: 0.45 });
+  const morado = new THREE.MeshStandardMaterial({ color: 0x6B2380, emissive: 0x4A1260, emissiveIntensity: 0.7, roughness: 0.25 });
+  g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.15, 0.3, 18), barro));
+  const banda = new THREE.Mesh(new THREE.CylinderGeometry(0.203, 0.197, 0.05, 18, 1, true), filo);
+  banda.position.y = 0.1; g.add(banda);
+  // La colada espesa asoma en cúpula sobre el filo: se ve morada de lejos.
+  const liquido = new THREE.Mesh(new THREE.SphereGeometry(0.19, 18, 8, 0, Math.PI * 2, 0, Math.PI / 2), morado);
+  liquido.scale.y = 0.55; liquido.position.y = 0.12; g.add(liquido);
+  const asa = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.022, 6, 12, Math.PI), barro);
+  asa.position.set(0.19, 0, 0); asa.rotation.z = -Math.PI / 2; g.add(asa);
+  // Un trozo de piña asomando, que así se sirve.
+  const pina = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.07, 0.07), mate({ color: 0xF2C14E }));
+  pina.position.set(-0.05, 0.2, 0.04); pina.rotation.set(0.5, 0.3, 0.2); g.add(pina);
+  g.scale.setScalar(1.7);
+  return g;
+}
+// Alguien se lleva un jarro: desaparece y vuelve a los seis segundos.
+function tomaColada(o) { o.obj.visible = false; o.obj.userData.vuelve = reloj + 6; }
+// Un jarro que vuela de un coche a otro cuando uno le quita la colada al otro.
+function vuelaColada(desde, hacia) {
+  if (!tazaBase) return;
+  const t = tazaBase.clone();
+  t.scale.multiplyScalar(0.75);
+  t.position.copy(desde).add(_v.set(0, 1, 0));
+  mundo.add(t);
+  vuelos.push({ t, desde: t.position.clone(), hacia, f: 0 });
+}
+
 function construyeDecorado(def) {
   const r = azar(2024 + def.id.length * 97);
+  tazas = [];
   const f = new Fundidor();
   const halos = [];
   // En un circuito el decorado se arma una vez: las vueltas pasan por ahí.
@@ -1658,16 +1697,26 @@ function construyeDecorado(def) {
     mundo.add(m);
     obstaculos.push({ s, x, r: 0.9, largo: 1.2, tipo: 'rampa' });
   }
-  const matColada = new THREE.SpriteMaterial({ map: textura(colada()) });
+  // Las coladas: filas de tres jarros a lo ancho de la calle, para que
+  // todos puedan ir por una, lejos de las rampas. Flotan sobre un aro morado
+  // y, cuando alguien se lleva una, vuelve a los seis segundos.
+  if (!tazaBase) tazaBase = construyeTaza();
+  const geoAro = new THREE.RingGeometry(0.36, 0.55, 24).rotateX(-Math.PI / 2);
+  const matAro = new THREE.MeshBasicMaterial({ color: 0xB45CC8, transparent: true, opacity: 0.55, depthWrite: false });
   for (const [z, d] of def.coladas) {
-    const s0 = enZona(z, d), lado = r() < 0.5 ? -1 : 1;
-    for (let k = 0; k < 3; k++) {
-      const s = s0 + k * 3, x = lado * (k - 1) * 1.3;
-      const sp = new THREE.Sprite(matColada);
-      sp.scale.set(0.55, 0.7, 1);
-      sp.position.copy(punto(s, x, 0.9));
-      mundo.add(sp);
-      obstaculos.push({ s, x, r: 0.4, largo: 0.5, tipo: 'colada', sp, base: sp.position.y });
+    let s0 = enZona(z, d);
+    for (let k = 0; k < 4 && obstaculos.some((o) => o.tipo === 'rampa' && Math.abs(o.s - s0) < 7); k++) s0 += 8;
+    const hw = muestra(s0).hw, paso = Math.min(2.4, hw * 0.45);
+    for (let k = -1; k <= 1; k++) {
+      const x = k * paso, t = tazaBase.clone();
+      t.position.copy(punto(s0, x, 0.75));
+      t.userData = { base: t.position.y, vuelve: 0 };
+      mundo.add(t);
+      const aro = new THREE.Mesh(geoAro, matAro);
+      aro.applyMatrix4(matrizEn(s0, x, 0.1, 0));
+      mundo.add(aro);
+      tazas.push(t);
+      obstaculos.push({ s: s0, x, r: 0.4, largo: 0.7, tipo: 'colada', obj: t });
     }
   }
   // Las estampitas de esta pista, flotando y girando a un lado de la calle.
@@ -1688,6 +1737,7 @@ function construyeDecorado(def) {
     for (let v = 1; v < def.vueltas; v++) for (const o of base) obstaculos.push({ ...o, s: o.s + v * LARGO_VUELTA });
   }
   obstaculos.sort((a, b) => a.s - b.s);
+  listaColadas = obstaculos.filter((o) => o.tipo === 'colada');
 }
 
 // Cambia de pista: vacía el mundo y lo arma de nuevo con la calle, el
@@ -2060,6 +2110,8 @@ const PIEZA = {
 
 // Las parejas. El primero maneja; el segundo empuja.
 const PERSONAJES = {
+  torero: { base: 'base-chico', pinta: { piel: '#C68B5E', pelo: '#1C1A18', ropa: '#D9A93A', pantalon: '#B0302A', zapatos: '#1C1A18' }, piezas: [PIEZA.tricornio('#1C1A18')] },
+  vacaloca: { base: 'base-chico', pinta: { piel: '#E0A88A', pelo: '#F3F1EC', ropa: '#F3F1EC', pantalon: '#1C1A18', zapatos: '#1C1A18' }, piezas: [PIEZA.cuernos('#F2E6C8'), PIEZA.cola('#F3F1EC')] },
   cucurucho: { base: 'base-chico', pinta: { piel: '#C68B5E', pelo: '#5B2A86', ropa: '#5B2A86', pantalon: '#5B2A86', zapatos: '#1C1A18' }, piezas: [PIEZA.capirote('#5B2A86'), PIEZA.falda('#5B2A86')] },
   cucurucha: { base: 'base-chica', pinta: { piel: '#A86E48', pelo: '#6E3597', ropa: '#6E3597', pantalon: '#6E3597', zapatos: '#1C1A18' }, piezas: [PIEZA.capirote('#6E3597'), PIEZA.falda('#6E3597')] },
   cantuna: { base: 'base-chico', pinta: { piel: '#A86E48', pelo: '#1C1A18', ropa: '#B0302A', pantalon: '#F3F1EC', zapatos: '#C9A26B' }, piezas: [PIEZA.sombrero('#2A2420', '#B0302A'), PIEZA.trenza('#1C1A18')] },
@@ -2077,6 +2129,7 @@ const EQUIPOS = [
   { id: 'cantuna', nombre: 'Cantuña y el Diablo', lema: 'El Diablo empuja; Cantuña ya escondió la piedra.', piloto: 'cantuna', empuja: 'diablo', tabla: '#A87445', placa: '#D3271F', num: 6, stats: [3, 5, 2], hab: 0.97 },
   { id: 'gallo', nombre: 'El Gallo y Don Ramón', lema: 'Don Ramón le gritó al Gallo de la Catedral. Ahora maneja el Gallo.', piloto: 'gallo', empuja: 'borracho', tabla: '#C8955A', placa: '#B98325', num: 3, stats: [5, 1, 3], hab: 0.96 },
   { id: 'guarichas', nombre: 'Las Guarichas', lema: 'Fueron a la guerra de la Independencia: una bajada no las asusta.', piloto: 'guaricha', empuja: 'guaricha2', tabla: '#B98250', placa: '#1F4E9E', num: 9, stats: [2, 4, 5], hab: 0.94 },
+  { id: 'vacaloca', nombre: 'La Vaca Loca y el Torero', lema: 'En las fiestas de Quito la vaca loca echa chispas; el torero maneja y la vaca empuja.', piloto: 'torero', empuja: 'vacaloca', tabla: '#C9A36B', placa: '#0F7A5A', num: 7, stats: [4, 4, 2], hab: 0.95 },
   { id: 'mamanegra', nombre: 'La Mamá Negra y el Ángel', lema: 'Desde Latacunga, con el Ángel de la Estrella empujando.', piloto: 'mamanegra', empuja: 'angel', tabla: '#D2A26A', placa: '#E01B6A', num: 11, stats: [4, 2, 4], hab: 0.93 },
 ];
 const STATS = ['Velocidad', 'Empuje', 'Giro'];
@@ -2208,13 +2261,21 @@ const ST = { tope: 1, empuje: 1, giro: 1 };
 function reinicia() {
   for (const o of obstaculos) { o.tomada = false; o.golpe = -9; if (o.sp) o.sp.visible = true; if (o.mesh) { o.mesh.visible = true; o.mesh.material.opacity = prog.album.includes(o.id) ? 0.35 : 1; } }
   cromosNuevos.length = 0;
-  const grilla = (k) => ({ x: k % 2 ? 1.9 : -1.9, s: SALIDA - 2 - Math.floor(k / 2) * 5 - (k % 2) * 1.8 });
-  // El jugador sale último, como en todo kart que se respete.
+  // Todos salen a la vez, en una sola fila a lo ancho de la calle; el
+  // jugador, en medio.
+  const n = rivales.length + 1, hwS = muestra(SALIDA - 2).hw;
+  const sep = Math.min(1.6, (2 * (hwS - 0.9)) / Math.max(1, n - 1));
+  const enFila = (k) => ({ x: (k - (n - 1) / 2) * sep, s: SALIDA - 2 });
+  const tuSitio = Math.floor((n - 1) / 2);
+  const sitios = [...Array(n).keys()].filter((k) => k !== tuSitio);
   rivales.forEach((rv, k) => {
-    const p = grilla(k);
-    Object.assign(rv, { s: p.s, x: p.x, carril: p.x, v: 0, llegada: 0, empuja: true });
+    const p = enFila(sitios[k]);
+    Object.assign(rv, { s: p.s, x: p.x, carril: p.x, v: 0, llegada: 0, empuja: true, coladas: 0, turbo: 0, tChoque: -9 });
   });
-  const p = grilla(rivales.length);
+  for (const t of tazas) t.visible = true;
+  for (const q of vuelos) mundo.remove(q.t);
+  vuelos.length = 0;
+  const p = enFila(tuSitio);
   Object.assign(j, { s: p.s, x: p.x, v: 0, vx: 0, h: 0, vh: 0, aire: false, volcado: 0, turbo: 0, coladas: 0, giro: 0, puesto: rivales.length + 1, llegada: 0 });
   Object.assign(e, { estado: 'empujando', s: j.s - 1.3, x: j.x, t: 0, tSube: -9 });
   Object.assign(c, { suelto: false, s: 0, x: 0, v: 0 });
@@ -2422,7 +2483,8 @@ const COLADAS_MAX = 3;       // coladas que se pueden guardar para el empujón
 const PASOS_VENTANA = 1;     // segundos que cuentan para el ritmo
 const PASOS_TOPE = 4;        // pasos en ese segundo para el empuje entero
 const DOBLE_VENTANA = 0.1;   // los dos lados en una décima son a la vez
-const BAJA_EMPUJE = 4;       // por debajo de esta velocidad se baja a empujar (m/s)
+const BAJA_EMPUJE = 4;       // por debajo de esta velocidad se baja solo a empujar (m/s)
+const BAJA_MANUAL = 8.5;     // y por debajo de esta, se puede bajar con la tecla de empujar
 
 // Cuánto empuja lo que pisa, de 0 a 1: los pasos del último segundo.
 function ritmo() {
@@ -2443,8 +2505,22 @@ function pasaPasos(dt) {
   if (subeDer) pasos.tDer = reloj;
   if (!subeIzq && !subeDer && !subeEmp) return;
   if (j.aire || j.volcado > 0) return;
-  const doble = subeEmp
-    || (subeIzq && teclas.der && reloj - pasos.tDer < DOBLE_VENTANA)
+  // La tecla de empujar: lento y a bordo, se baja a empujar; a pie, salta
+  // al carro, y el salto lleva el impulso del ritmo que traía.
+  if (subeEmp) {
+    if (e.estado === 'a_bordo' && j.v < BAJA_MANUAL) {
+      e.estado = 'empujando'; cocheJ.empujador.pon('correr');
+      Object.assign(pasos, { ultimo: 0, combo: 0, unPie: 0, sesgo: 0 });
+      tono(320, 0.08, 'triangle', 0.15);
+    } else if (e.estado === 'empujando') {
+      j.v = Math.min(j.v + (1 + 3 * ritmo()) * ST.empuje, TOPE_TURBO * ST.tope);
+      Object.assign(pasos, { burst: 0.4, unPie: 0, sesgo: 0 });
+      e.estado = 'a_bordo'; e.tSube = reloj; cocheJ.empujador.pon('montado');
+      tono(520, 0.1, 'triangle', 0.15); setTimeout(() => tono(700, 0.1, 'triangle', 0.12), 70);
+    }
+    if (!subeIzq && !subeDer) return;
+  }
+  const doble = (subeIzq && teclas.der && reloj - pasos.tDer < DOBLE_VENTANA)
     || (subeDer && teclas.izq && reloj - pasos.tIzq < DOBLE_VENTANA);
   if (doble) {
     pasos.tIzq = pasos.tDer = -9;
@@ -2636,9 +2712,9 @@ function actualiza(dt) {
         if (modo !== 'demo' && !prog.album.includes(o.id)) { prog.album.push(o.id); cromosNuevos.push(o.id); guarda(); logrosDelProgreso(); }
         avisa(`¡Estampita: ${cr.nombre}!`, 1400);
         jingle([784, 988, 1175, 1568], 0.07, 'triangle');
-      } else if (o.tipo === 'colada' && dx < 0.8 && !j.aire) {
+      } else if (o.tipo === 'colada' && dx < 0.8 && !j.aire && o.obj.visible) {
         // La colada se guarda: es el empujón fuerte, para cuando se empuja a pie.
-        o.tomada = true; if (!LARGO_VUELTA) o.sp.visible = false;
+        tomaColada(o);
         j.coladas = Math.min(COLADAS_MAX, (j.coladas || 0) + 1);
         tono(660, 0.12, 'triangle', 0.2); setTimeout(() => tono(990, 0.18, 'triangle', 0.2), 90);
         avisa(j.coladas > 1 ? `¡Colada morada! ×${j.coladas}` : '¡Colada morada!', 900);
@@ -2656,20 +2732,38 @@ function actualiza(dt) {
   // Los rivales, los peatones y los choques entre coches. En la
   // contrarreloj no hay rivales: solo el fantasma, que no choca.
   if (modo !== 'tiempo') for (const rv of rivales) actualizaRival(rv, dt);
+  // Choques: de lado rebotan los dos; por detrás, el que embiste le pasa
+  // parte de su velocidad al de delante. Y el que pega le quita una colada
+  // al otro, si tiene.
   if (modo !== 'tiempo') for (const rv of rivales) {
-    const ds = rv.s - j.s, dx = Math.abs(rv.x - j.x);
-    if (Math.abs(ds) < 1.9 && dx < 0.72 && j.volcado <= 0) {
-      if (ds > 0 && j.v > rv.v) { j.v = rv.v * 0.93; j.s = rv.s - 1.9; sacudida = 0.7; golpe(0.5, 900); }
-      else if (ds < 0 && rv.v > j.v) { rv.v = j.v * 0.95; rv.s = j.s - 1.9; j.v += 0.4; }
-      rv.x += (rv.x > j.x ? 1 : -1) * dt * 1.5;
+    const ds = rv.s - j.s, dx = rv.x - j.x;
+    if (Math.abs(ds) < 1.9 && Math.abs(dx) < 0.72 && j.volcado <= 0) {
+      const lado = Math.sign(dx) || 1;
+      if (Math.abs(ds) < 1.1) {
+        const mete = (0.72 - Math.abs(dx)) * 0.5 + (reloj - rv.tChoque > 1.2 ? 0.3 : 0);
+        j.x -= lado * mete; rv.x += lado * mete;
+        sacudida = Math.max(sacudida, 0.5);
+        choque(rv, j.v >= rv.v);
+      } else if (ds > 0 && j.v > rv.v) {
+        const dv = j.v - rv.v;
+        rv.v += dv * 0.6; j.v = rv.v * 0.93; j.s = rv.s - 1.9; sacudida = 0.7;
+        choque(rv, true);
+      } else if (ds < 0 && rv.v > j.v) {
+        const dv = rv.v - j.v;
+        j.v += dv * 0.6; rv.v = j.v * 0.95; rv.s = j.s - 1.9; sacudida = Math.max(sacudida, 0.6);
+        choque(rv, false);
+      }
+      rv.x += lado * dt * 1.5;
     }
   }
   actualizaPeatones(dt);
 
   sacudida = Math.max(0, sacudida - dt * 2.4);
+  for (const t of tazas) if (!t.visible && reloj > t.userData.vuelve) t.visible = true;
   for (const o of obstaculos) {
     if (Math.abs(o.s - j.s) > 120) continue;
     if (o.sp && o.sp.visible) o.sp.position.y = o.base + Math.sin(reloj * 4 + o.s) * 0.12;
+    if (o.obj && o.obj.visible) { o.obj.position.y = o.obj.userData.base + Math.sin(reloj * 3 + o.s + o.x) * 0.1; o.obj.rotation.y = reloj * 1.8 + o.x; }
     if (o.mesh && o.mesh.visible) { o.mesh.position.y = o.base + Math.sin(reloj * 3 + o.s) * 0.1; o.mesh.rotation.y = reloj * 2.2; }
   }
 
@@ -2681,6 +2775,21 @@ function actualiza(dt) {
   if (estado === 'llegada') {
     tLlegada += dt;
     if (tLlegada > 2.4 && !llegadaVista) { llegadaVista = true; if (modo === 'demo') terminaDemo(); else trasCarrera(); }
+  }
+}
+
+// Un choque con un rival: suena y, si el que pierde tiene colada, se la
+// lleva el que gana (y se ve volar el jarro de un coche al otro).
+function choque(rv, ganas) {
+  if (reloj - (rv.tChoque ?? -9) < 1.2) return;
+  rv.tChoque = reloj;
+  golpe(0.5, 800);
+  const de = ganas ? rv : j, a = ganas ? j : rv;
+  if ((de.coladas || 0) > 0 && (a.coladas || 0) < COLADAS_MAX) {
+    de.coladas--; a.coladas = (a.coladas || 0) + 1;
+    vuelaColada((ganas ? rv.cruce : cocheJ).g.position, ganas ? cocheJ : rv.cruce);
+    avisa(ganas ? `¡Le quitaste una colada a ${rv.cruce.eq.nombre}!` : `¡${rv.cruce.eq.nombre} te quitó una colada!`, 1400);
+    if (ganas) tono(880, 0.12, 'triangle', 0.18); else tono(220, 0.18, 'sawtooth', 0.12);
   }
 }
 
@@ -2696,6 +2805,12 @@ function actualizaRival(rv, dt) {
   }
   // Cuesta arriba empujan con todo: si no, en la subida no hay carrera.
   if (rv.empuja) a += EMPUJE * (m.pend > 0.01 ? 1 : 0.85) * hab * Math.max(0, 1 - rv.v / CORRE) + (rv.v < 1 ? 1 : 0);
+  // Sus coladas: las toman al pasar y las gastan al arrancar o en la subida.
+  for (const o of listaColadas) {
+    if (Math.abs(o.s - rv.s) < 0.7 && Math.abs(o.x - rv.x) < 0.8 && o.obj.visible && (rv.coladas || 0) < COLADAS_MAX) { tomaColada(o); rv.coladas = (rv.coladas || 0) + 1; }
+  }
+  if (rv.coladas > 0 && rv.empuja && estado === 'carrera' && Math.random() < dt * 0.7) { rv.coladas--; rv.v += 5 * hab; rv.turbo = 1.2; }
+  if (rv.turbo > 0) { rv.turbo -= dt; a += 4.5; }
   const ventaja = rv.s - j.s;
   if (estado === 'carrera') {
     if (ventaja > 40) a -= 1.2;
@@ -2716,7 +2831,10 @@ function actualizaRival(rv, dt) {
   }
   if (esquiva) rv.x += esquiva * dt * 1.6;
   else {
-    if (Math.random() < dt * 0.2) rv.carril = (Math.random() - 0.5) * (m.hw - 1.4) * 2;
+    // Van por la colada que tengan cerca, si les cabe otra.
+    const meta = (rv.coladas || 0) < COLADAS_MAX && listaColadas.find((o) => o.s > rv.s + 3 && o.s < rv.s + 25 && o.obj.visible);
+    if (meta) rv.carril = meta.x;
+    else if (Math.random() < dt * 0.2) rv.carril = (Math.random() - 0.5) * (m.hw - 1.4) * 2;
     rv.x += limita(rv.carril - rv.x, -dt * 0.8, dt * 0.8);
   }
   rv.x = limita(rv.x, -(m.hw - 1.1), m.hw - 1.1);
@@ -2822,6 +2940,13 @@ function colocaCoche(cc, s, x, h, giro, vuelco, v, dt) {
 }
 
 function dibujaMundo(dt) {
+  for (let k = vuelos.length - 1; k >= 0; k--) {
+    const q = vuelos[k];
+    q.f = Math.min(1, q.f + dt / 0.55);
+    q.t.position.lerpVectors(q.desde, q.hacia.g.position, q.f).add(_v.set(0, 1 + Math.sin(q.f * Math.PI) * 1.4, 0));
+    q.t.rotation.y += dt * 9;
+    if (q.f >= 1) { mundo.remove(q.t); vuelos.splice(k, 1); }
+  }
   // El coche del jugador.
   let alabeo = 0, salto = 0;
   if (j.volcado > 0) {
@@ -2936,7 +3061,7 @@ function dibujaPortada(t) {
 const hud = {
   puesto: $('#h-puesto'), tiempo: $('#h-tiempo'), vel: $('#h-vel'),
   empujador: $('#h-empujador'), ruta: $('#h-ruta'), turbo: $('#h-turbo'), velo: $('#velo'),
-  pasos: $('#h-pasos'), coladas: $('#h-coladas'), pieIzq: $('#h-pie-izq'), pieDer: $('#h-pie-der'), racha: $('#h-racha'),
+  pasos: $('#h-pasos'), coladas: $('#h-coladas'), accion: $('#b-empuja'), pieIzq: $('#h-pie-izq'), pieDer: $('#h-pie-der'), racha: $('#h-racha'),
   caja: $('.coches-puesto'), puntos: [],
 };
 // Un punto por coche en la línea de la carrera, con su color y su número.
@@ -2972,7 +3097,7 @@ function pintaHud() {
     puesto: String(puesto),
     tiempo: formato(estado === 'llegada' ? j.llegada : reloj),
     vel: String(Math.round(j.v * 3.6)),
-    empujador: ESTADOS_EMPUJADOR[e.estado],
+    empujador: e.estado === 'a_bordo' && j.v < BAJA_MANUAL && !j.aire && estado === 'carrera' ? '¡Bájate!' : ESTADOS_EMPUJADOR[e.estado],
   };
   if (datos.puesto !== ultimoHud.puesto) {
     // Al ganar un puesto, el número salta.
@@ -2988,7 +3113,12 @@ function pintaHud() {
   for (const q of hud.puntos) {
     const pos = `${(limita(((q.rv ? q.rv.s : j.s) - SALIDA) / (META - SALIDA), 0, 1) * 100).toFixed(1)}%`;
     if (pos !== q.ultimo) { q.el.style.left = pos; q.ultimo = pos; }
+    const tiene = ((q.rv ? q.rv.coladas : j.coladas) || 0) > 0;
+    if (tiene !== q.colada) { q.el.classList.toggle('con-colada', tiene); q.colada = tiene; }
   }
+  // El botón de empujar dice qué hace ahora: bajarse o subirse.
+  const accion = estado !== 'carrera' || j.aire ? '' : e.estado === 'empujando' ? '¡Sube!' : e.estado === 'a_bordo' && j.v < BAJA_MANUAL ? 'Bájate' : '';
+  if (accion !== ultimoHud.accion) { hud.accion.hidden = !accion; hud.accion.textContent = accion; hud.accion.classList.toggle('es-sube', accion === '¡Sube!'); ultimoHud.accion = accion; }
   const nc = j.coladas || 0;
   const coladas = !(nc > 0 || j.turbo > 0) ? '' : e.estado === 'empujando' && nc > 0 ? `◀+▶ ×${nc}` : nc > 0 ? `Colada ×${nc}` : 'Colada';
   if (coladas !== ultimoHud.coladas) {
@@ -3052,6 +3182,7 @@ const DESBLOQUEOS = [
   { tipo: 'pareja', id: 'cantuna', cuando: (p) => p.medallas.panecillo <= 3, como: 'con una medalla en La bajada del Panecillo' },
   { tipo: 'pareja', id: 'gallo', cuando: (p) => p.medallas.guapulo <= 3, como: 'con una medalla en La cuesta de Guápulo' },
   { tipo: 'pareja', id: 'mamanegra', cuando: (p) => p.medallas.sanjuan <= 3, como: 'con una medalla en La bajada de San Juan' },
+  { tipo: 'pareja', id: 'vacaloca', cuando: (p) => p.medallas.tobogan <= 3, como: 'con una medalla en La bajada grande' },
   { tipo: 'pista', id: 'vuelta', cuando: (p) => p.copa >= 1, como: 'al terminar la Copa de las Fiestas' },
   { tipo: 'pista', id: 'subida', cuando: (p) => p.copa === 1, como: 'ganando la Copa de las Fiestas' },
   { tipo: 'pintura', id: 'fiesta', cuando: (p) => p.album.length >= 4, como: 'con cuatro estampitas' },
@@ -3970,6 +4101,9 @@ window.coches = {
   pisa: () => pasos.pulsos.push({ t: reloj, peso: 1 }),
   paso: (lado, espera) => { const k = lado < 0 ? 'izq' : 'der'; teclas[k] = true; window.coches.simula(0.03); teclas[k] = false; window.coches.simula(espera || 0); },
   combo: () => pasos.combo,
+  rivales: () => rivales.map((rv) => ({ s: rv.s, x: rv.x, v: rv.v, coladas: rv.coladas || 0, id: rv.cruce.eq.id })),
+  rival: (k, o) => Object.assign(rivales[k], o),
+  tazas: () => tazas.map((t) => t.visible),
   demo: empiezaDemo, ajustes,
   // Pinta unos segundos de una canción sin sonar, para medir que suena.
   rindeMusica: async (nombre, seg) => {

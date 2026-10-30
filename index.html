@@ -23,9 +23,9 @@
 <!-- El sello ?v= se sube a mano en cada cambio del juego (CSS, JS y, con el
      JS, los modelos, que heredan su sello): así el navegador no se queda con
      la versión anterior. -->
-<link rel="stylesheet" href="coches.css?v=3e8d5cf3d8">
+<link rel="stylesheet" href="coches.css?v=05ae8f9788">
 <!-- La piel del juego: variante del tema juegos (ver tema/LEEME.md). Va al final para mandar. -->
-<link rel="stylesheet" href="tema/tema.css?v=3e8d5cf3d8">
+<link rel="stylesheet" href="tema/tema.css?v=05ae8f9788">
 <script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js", "three/addons/": "./vendor/addons/" } }</script>
 <script type="application/ld+json">
 {
@@ -122,6 +122,8 @@
   <button class="coches-mando coches-zona coches-zona--der" data-tecla="der" type="button" aria-label="Girar a la derecha">
     <svg class="icono icono--l" aria-hidden="true"><use href="#i-chevron-der"/></svg></button>
   <button class="coches-mando coches-mando--freno" data-tecla="freno" type="button" aria-label="Frenar">Freno</button>
+  <!-- Bajarse a empujar (lento, a bordo) o saltar al carro (a pie). -->
+  <button class="coches-mando coches-mando--empuja" id="b-empuja" data-tecla="empuja" type="button" hidden>Bájate</button>
 </div>
 
 <!-- Las rayas de velocidad, que salen de los bordes cuando va rápido. -->
@@ -188,12 +190,13 @@
       <div><dt>← →</dt><dd>a pie: pie izquierdo, pie derecho</dd></div>
       <div><dt>← ←</dt><dd>un pie en la tabla: gira al otro lado</dd></div>
       <div><dt>← + →</dt><dd>con colada: empujón fuerte y se sube</dd></div>
+      <div><dt>↑</dt><dd>lento: bajarse a empujar · a pie: saltar al carro con impulso</dd></div>
 
       <div><dt>Esc</dt><dd>pausa</dd></div>
     </dl>
     <p class="caption coches-solo-tactil">Toca la mitad izquierda de la pantalla para girar a la izquierda
     y la derecha para girar a la derecha. «Freno», en el centro, para las curvas cerradas.</p>
-    <p class="caption">En las rampas no se gira en el aire. Las coladas moradas se guardan (hasta tres) para el empujón fuerte, que solo sirve a pie.
+    <p class="caption">En las rampas no se gira en el aire. Las coladas moradas se guardan (hasta tres) para el empujón fuerte, que solo sirve a pie. En un choque, el que embiste le quita una colada al otro.
     Las medallas abren parejas nuevas y ganar la Copa abre la subida del Panecillo.</p>
     <button class="btn btn-ghost btn-block" id="b-volver-ayuda" type="button">
       <svg class="icono" aria-hidden="true"><use href="#i-flecha-izq"/></svg> Volver</button>
@@ -364,6 +367,6 @@
 </div>
 
 <script src="../ds/mal/mal.js?v=1.0.18" defer></script>
-<script type="module" src="coches.js?v=3e8d5cf3d8"></script>
+<script type="module" src="coches.js?v=05ae8f9788"></script>
 </body>
 </html>

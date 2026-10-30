@@ -107,6 +107,14 @@ body.coches{
   width:clamp(64px, 17vw, 80px);height:clamp(64px, 17vw, 80px);z-index:2;
 }
 .coches-mando--freno.is-on{transform:translateY(3px)}
+/* Bajarse o subirse: a la derecha, en espejo del freno. */
+.coches-mando--empuja{
+  position:fixed;right:calc(env(safe-area-inset-right, 0px) + var(--mal-e5));top:calc(50% + 16px);
+  width:clamp(64px, 17vw, 80px);height:clamp(64px, 17vw, 80px);z-index:2;font-size:.85rem;
+}
+.coches-mando--empuja[hidden]{display:none}
+.coches-mando--empuja.is-on{transform:translateY(3px)}
+.coches-punto.con-colada{box-shadow:0 0 0 3px #B45CC8, 0 0 8px #B45CC8}
 /* Con mandos, el tablero queda entre los dos pulgares, a su altura. */
 .coches.con-mandos .hud-juego__abajo{padding-bottom:clamp(70px, 20vw, 90px)}
 
