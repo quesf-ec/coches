@@ -2251,6 +2251,7 @@ const fantasma = { trazo: [], datos: null, coche: null, t: 0 };
 const fantasmaClave = (id) => `coches3d-fantasma-${id}`;
 const cromosNuevos = [];
 let lugarSig = 0;
+const tiemposVuelta = [];
 let reloj = 0, cuenta = 0, tLlegada = 0, zonaActual = '', sacudida = 0, tPeaton = 0, llegadaVista = false, vueltaActual = 1;
 const vueltaDe = (s) => LARGO_VUELTA ? limita(Math.floor((s - SALIDA) / LARGO_VUELTA) + 1, 1, pistaActual.vueltas) : 1;
 const teclas = { izq: false, der: false, empuja: false, freno: false };
@@ -2280,7 +2281,7 @@ function reinicia() {
   Object.assign(e, { estado: 'empujando', s: j.s - 1.3, x: j.x, t: 0, tSube: -9 });
   Object.assign(c, { suelto: false, s: 0, x: 0, v: 0 });
   for (const pe of peatones) pe.estado = 'libre';
-  reloj = 0; zonaActual = ''; lugarSig = 0; sacudida = 0; tPeaton = 1; vueltaActual = 1;
+  reloj = 0; zonaActual = ''; lugarSig = 0; tiemposVuelta.length = 0; sacudida = 0; tPeaton = 1; vueltaActual = 1;
   Object.assign(pasos, { ultimo: 0, combo: 0, burst: 0, tIzq: -9, tDer: -9, prevEmp: false, pulsos: [], unPie: 0, sesgo: 0 });
   demoPaso = 0;
   fantasma.trazo = [];
@@ -2512,6 +2513,8 @@ function pasaPasos(dt) {
       e.estado = 'empujando'; cocheJ.empujador.pon('correr');
       Object.assign(pasos, { ultimo: 0, combo: 0, unPie: 0, sesgo: 0 });
       tono(320, 0.08, 'triangle', 0.15);
+    } else if (e.estado === 'empujando' && j.coladas > 0) {
+      empujonColada();
     } else if (e.estado === 'empujando') {
       j.v = Math.min(j.v + (1 + 3 * ritmo()) * ST.empuje, TOPE_TURBO * ST.tope);
       Object.assign(pasos, { burst: 0.4, unPie: 0, sesgo: 0 });
@@ -2526,6 +2529,15 @@ function pasaPasos(dt) {
     pasos.tIzq = pasos.tDer = -9;
     // Sin colada guardada, o ya a bordo, no hay empujón: solo un golpe sordo.
     if (e.estado !== 'empujando' || !(j.coladas > 0)) { tono(140, 0.08, 'triangle', 0.08); return; }
+    empujonColada();
+    return;
+  }
+  if (e.estado !== 'empujando') return;   // a bordo, los pies no cuentan
+  pisaUnPie(subeIzq ? -1 : 1);
+}
+// El empujón fuerte: gasta una colada, sale disparado y se sube al carro.
+function empujonColada() {
+  {
     j.coladas--;
     j.v = Math.min(j.v + 6 * ST.empuje, TOPE_TURBO * ST.tope);
     j.turbo = Math.max(j.turbo, 1.2);
@@ -2534,10 +2546,9 @@ function pasaPasos(dt) {
     e.estado = 'a_bordo'; e.tSube = reloj; cocheJ.empujador.pon('montado');
     tono(520, 0.12, 'triangle', 0.18); setTimeout(() => tono(880, 0.14, 'triangle', 0.16), 80);
     avisa('¡Empujón de colada!', 800);
-    return;
   }
-  if (e.estado !== 'empujando') return;   // a bordo, los pies no cuentan
-  const lado = subeIzq ? -1 : 1;
+}
+function pisaUnPie(lado) {
   const alterna = lado !== pasos.ultimo;
   pasos.pulsos.push({ t: reloj, peso: alterna ? 1 : 0.8 });
   if (alterna) {
@@ -2629,6 +2640,7 @@ function actualiza(dt) {
     lugarSig++;
   }
   if (LARGO_VUELTA && estado === 'carrera' && vueltaDe(j.s) !== vueltaActual) {
+    if (vueltaDe(j.s) > vueltaActual) tiemposVuelta.push(reloj);
     vueltaActual = vueltaDe(j.s);
     avisa(vueltaActual === pistaActual.vueltas ? '¡Última vuelta!' : `Vuelta ${vueltaActual}`, 1300);
     tono(880, 0.15, 'square', 0.12, 1320);
@@ -3059,24 +3071,25 @@ function dibujaPortada(t) {
 
 // ─── el HUD ────────────────────────────────────────────────────────
 const hud = {
-  puesto: $('#h-puesto'), tiempo: $('#h-tiempo'), vel: $('#h-vel'),
+  tiempo: $('#h-tiempo'), vel: $('#h-vel'), vuelta: $('#h-vuelta'), vueltaEt: $('#h-vuelta-et'), parciales: $('#h-parciales'), accionTxt: $('#b-empuja-txt'),
   empujador: $('#h-empujador'), ruta: $('#h-ruta'), turbo: $('#h-turbo'), velo: $('#velo'),
   pasos: $('#h-pasos'), coladas: $('#h-coladas'), accion: $('#b-empuja'), pieIzq: $('#h-pie-izq'), pieDer: $('#h-pie-der'), racha: $('#h-racha'),
-  caja: $('.coches-puesto'), puntos: [],
+  puntos: [], filas: [],
 };
 // Un punto por coche en la línea de la carrera, con su color y su número.
+// Las posiciones, en una columna a la izquierda: una fila por puesto, y en
+// cada fila la placa de quien va ahí (la tuya resalta).
 function armaRuta() {
   hud.ruta.textContent = '';
   $('#hud').classList.toggle('sin-rivales', modo === 'tiempo');
-  hud.puntos = [{ eq: eqJ, tu: true }, ...(modo === 'tiempo' ? [] : rivales.map((rv) => ({ eq: rv.cruce.eq, rv })))].map((q) => {
-    const el = document.createElement('i');
-    el.className = 'coches-punto' + (q.tu ? ' es-tu' : '');
-    el.style.setProperty('--c', q.eq.placa);
-    el.textContent = q.eq.num;
-    el.title = q.eq.nombre;
-    hud.ruta.append(el);
-    return { ...q, el, ultimo: '' };
+  hud.puntos = [{ eq: eqJ, tu: true }, ...(modo === 'tiempo' ? [] : rivales.map((rv) => ({ eq: rv.cruce.eq, rv })))];
+  hud.filas = hud.puntos.map((_, k) => {
+    const li = document.createElement('li');
+    li.innerHTML = `<b>${k + 1}<sup>o</sup></b><i class="coches-punto"></i><span></span>`;
+    hud.ruta.append(li);
+    return { li, punto: li.querySelector('i'), nombre: li.querySelector('span'), quien: null, colada: null };
   });
+  hud.vueltaEt.textContent = LARGO_VUELTA ? 'Vuelta' : 'Meta';
   pintaRutaTitulo();
 }
 function pintaRutaTitulo() {
@@ -3092,40 +3105,61 @@ const formato = (t) => {
 const ESTADOS_EMPUJADOR = { a_bordo: 'A bordo', empujando: 'Empujando', piso: 'En el piso' };
 let ultimoHud = {};
 function pintaHud() {
-  const puesto = estado === 'llegada' ? j.puesto : 1 + rivales.filter((rv) => rv.s > j.s).length;
+  const sDe = (q) => (q.rv ? q.rv.s : j.s);
+  const orden = hud.puntos.slice().sort((a, b) => sDe(b) - sDe(a));
+  const puesto = estado === 'llegada' ? j.puesto : orden.findIndex((q) => q.tu) + 1;
   const datos = {
     puesto: String(puesto),
     tiempo: formato(estado === 'llegada' ? j.llegada : reloj),
     vel: String(Math.round(j.v * 3.6)),
     empujador: e.estado === 'a_bordo' && j.v < BAJA_MANUAL && !j.aire && estado === 'carrera' ? '¡Bájate!' : ESTADOS_EMPUJADOR[e.estado],
   };
-  if (datos.puesto !== ultimoHud.puesto) {
-    // Al ganar un puesto, el número salta.
-    if (+datos.puesto < +ultimoHud.puesto) { hud.caja.classList.remove('is-sube'); void hud.caja.offsetWidth; hud.caja.classList.add('is-sube'); }
-    hud.puesto.textContent = datos.puesto;
+  // Cada fila, con quien va en ese puesto; al ganar uno, tu fila salta.
+  hud.filas.forEach((f, k) => {
+    const q = orden[k];
+    if (!q) return;
+    if (f.quien !== q) {
+      f.quien = q;
+      f.punto.textContent = q.eq.num; f.punto.style.setProperty('--c', q.eq.placa);
+      f.nombre.textContent = q.tu ? 'Tú' : q.eq.nombre.replace(/^(Los|Las|La|El) /, '').split(' y ')[0];
+      f.li.classList.toggle('es-tu', !!q.tu);
+      if (q.tu && ultimoHud.puesto && k + 1 < +ultimoHud.puesto) { f.li.classList.remove('is-sube'); void f.li.offsetWidth; f.li.classList.add('is-sube'); }
+    }
+    const tiene = ((q.rv ? q.rv.coladas : j.coladas) || 0) > 0;
+    if (tiene !== f.colada) { f.punto.classList.toggle('con-colada', tiene); f.colada = tiene; }
+  });
+  const vuelta = LARGO_VUELTA ? `${Math.min(vueltaActual, pistaActual.vueltas)}/${pistaActual.vueltas}` : `${Math.max(0, Math.round(META - j.s))} m`;
+  if (vuelta !== ultimoHud.vuelta) hud.vuelta.textContent = vuelta;
+  datos.vuelta = vuelta;
+  if (tiemposVuelta.length !== ultimoHud.parciales) {
+    const v = LARGO_VUELTA ? pistaActual.vueltas : 0, l = [];
+    for (let k = 0; k < v; k++) l.push(k < tiemposVuelta.length ? formato(tiemposVuelta[k] - (k ? tiemposVuelta[k - 1] : 0)) : '–:––');
+    hud.parciales.innerHTML = l.map((x, k) => `<span>V${k + 1} ${x}</span>`).join('');
   }
+  datos.parciales = tiemposVuelta.length;
   if (datos.tiempo !== ultimoHud.tiempo) hud.tiempo.textContent = datos.tiempo;
   if (datos.vel !== ultimoHud.vel) hud.vel.textContent = datos.vel;
   if (datos.empujador !== ultimoHud.empujador) {
     hud.empujador.textContent = datos.empujador;
     hud.empujador.dataset.estado = e.estado;
   }
-  for (const q of hud.puntos) {
-    const pos = `${(limita(((q.rv ? q.rv.s : j.s) - SALIDA) / (META - SALIDA), 0, 1) * 100).toFixed(1)}%`;
-    if (pos !== q.ultimo) { q.el.style.left = pos; q.ultimo = pos; }
-    const tiene = ((q.rv ? q.rv.coladas : j.coladas) || 0) > 0;
-    if (tiene !== q.colada) { q.el.classList.toggle('con-colada', tiene); q.colada = tiene; }
-  }
-  // El botón de empujar dice qué hace ahora: bajarse o subirse.
-  const accion = estado !== 'carrera' || j.aire ? '' : e.estado === 'empujando' ? '¡Sube!' : e.estado === 'a_bordo' && j.v < BAJA_MANUAL ? 'Bájate' : '';
-  if (accion !== ultimoHud.accion) { hud.accion.hidden = !accion; hud.accion.textContent = accion; hud.accion.classList.toggle('es-sube', accion === '¡Sube!'); ultimoHud.accion = accion; }
+  // El botón de acción dice qué hace ahora: bajarse, subirse o, a pie y con
+  // colada, el empujón fuerte.
   const nc = j.coladas || 0;
-  const coladas = !(nc > 0 || j.turbo > 0) ? '' : e.estado === 'empujando' && nc > 0 ? `◀+▶ ×${nc}` : nc > 0 ? `Colada ×${nc}` : 'Colada';
-  if (coladas !== ultimoHud.coladas) {
-    hud.turbo.hidden = !coladas; hud.coladas.textContent = coladas;
-    hud.turbo.classList.toggle('is-lista', e.estado === 'empujando' && nc > 0);
-    ultimoHud.coladas = coladas;
+  const accion = estado !== 'carrera' || j.aire ? '' : e.estado === 'empujando' ? (nc > 0 ? '¡Colada!' : '¡Sube!') : e.estado === 'a_bordo' && j.v < BAJA_MANUAL ? 'Bájate' : '';
+  if (accion !== ultimoHud.accion) {
+    hud.accion.hidden = !accion; hud.accionTxt.textContent = accion;
+    hud.accion.classList.toggle('es-sube', accion === '¡Sube!');
+    hud.accion.classList.toggle('es-colada', accion === '¡Colada!');
   }
+  datos.accion = accion;
+  const coladas = `${nc}|${e.estado === 'empujando' && nc > 0}|${j.turbo > 0}`;
+  if (coladas !== ultimoHud.coladas) {
+    hud.coladas.textContent = `×${nc}`;
+    hud.turbo.classList.toggle('is-lista', e.estado === 'empujando' && nc > 0);
+    hud.turbo.classList.toggle('is-turbo', j.turbo > 0);
+  }
+  datos.coladas = coladas;
   // Los pies: se enciende el que toca (los dos, antes del primer paso), la
   // racha en medio, y la píldora se ilumina con cada buen paso.
   const pisa = e.estado === 'empujando' && estado === 'carrera';
@@ -3144,7 +3178,7 @@ function pintaHud() {
   const velo = quieto.matches ? 0 : limita((j.v - 22) / 16, 0, 0.75) + (j.turbo > 0 ? 0.2 : 0);
   if (velo !== ultimoHud.velo) hud.velo.style.opacity = velo.toFixed(2);
   datos.velo = velo;
-  ultimoHud = datos;
+  Object.assign(ultimoHud, datos);
 }
 
 // ─── el progreso ───────────────────────────────────────────────────
@@ -3484,11 +3518,11 @@ function muestraTablaCopa() {
 function sigueCopa() {
   copa.k++;
   cargaPista(COPAS[copa.id].pistas[copa.k]);
-  empieza();
+  presenta();
 }
 
 // ─── las pantallas ─────────────────────────────────────────────────
-const CAPAS = ['titulo', 'portada', 'ayuda', 'elegir', 'medallas', 'album', 'opciones', 'creditos', 'copa', 'pausa', 'podio'];
+const CAPAS = ['titulo', 'portada', 'presenta', 'ayuda', 'elegir', 'medallas', 'album', 'opciones', 'creditos', 'copa', 'pausa', 'podio'];
 function pantalla(id, sinCortina) {
   for (const p of CAPAS) $('#' + p).hidden = p !== id;
   $('#premio').hidden = true;
@@ -3577,8 +3611,8 @@ function aMenu() {
 }
 // El mapa de la pista, en la pantalla de elegir: el trazado visto desde
 // arriba, con la salida en verde y la meta a cuadros.
-function dibujaMapa() {
-  const cv = $('#mapa'); if (!cv) return;
+function dibujaMapa(cv = $('#mapa'), grueso = 1) {
+  if (!cv) return;
   const g = cv.getContext('2d'), W = cv.width, H = cv.height;
   g.clearRect(0, 0, W, H);
   let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
@@ -3589,23 +3623,32 @@ function dibujaMapa() {
   const py = (i) => 12 + (P.z[i] - z0) * esc + ((H - 24) - (z1 - z0) * esc) / 2;
   const traza = () => { g.beginPath(); for (let i = SALIDA; i <= FIN; i += 2) i === SALIDA ? g.moveTo(px(i), py(i)) : g.lineTo(px(i), py(i)); if (LARGO_VUELTA) g.closePath(); };
   g.lineCap = 'round'; g.lineJoin = 'round';
-  traza(); g.strokeStyle = TINTA; g.lineWidth = 9; g.stroke();
-  traza(); g.strokeStyle = '#F3F1EC'; g.lineWidth = 5; g.stroke();
-  traza(); g.strokeStyle = '#E2B13C'; g.lineWidth = 1; g.setLineDash([3, 4]); g.stroke(); g.setLineDash([]);
-  g.fillStyle = '#5DBB4F'; g.strokeStyle = TINTA; g.lineWidth = 2;
-  g.beginPath(); g.arc(px(SALIDA), py(SALIDA), 5, 0, Math.PI * 2); g.fill(); g.stroke();
-  const mx = px(LARGO_VUELTA ? SALIDA : META - 1), my = py(LARGO_VUELTA ? SALIDA : META - 1);
-  for (let a = 0; a < 2; a++) for (let b = 0; b < 2; b++) { g.fillStyle = (a + b) % 2 ? '#fff' : TINTA; g.fillRect(mx - 5 + a * 5, my - 5 + b * 5, 5, 5); }
-  g.strokeRect(mx - 5, my - 5, 10, 10);
+  const k = grueso;
+  traza(); g.strokeStyle = TINTA; g.lineWidth = 9 * k; g.stroke();
+  traza(); g.strokeStyle = '#F3F1EC'; g.lineWidth = 5 * k; g.stroke();
+  traza(); g.strokeStyle = '#E2B13C'; g.lineWidth = 1 * k; g.setLineDash([3 * k, 4 * k]); g.stroke(); g.setLineDash([]);
+  g.fillStyle = '#5DBB4F'; g.strokeStyle = TINTA; g.lineWidth = 2 * k;
+  g.beginPath(); g.arc(px(SALIDA), py(SALIDA), 5 * k, 0, Math.PI * 2); g.fill(); g.stroke();
+  const mx = px(LARGO_VUELTA ? SALIDA : META - 1), my = py(LARGO_VUELTA ? SALIDA : META - 1), c = 5 * k;
+  for (let a = 0; a < 2; a++) for (let b = 0; b < 2; b++) { g.fillStyle = (a + b) % 2 ? '#fff' : TINTA; g.fillRect(mx - c + a * c, my - c + b * c, c, c); }
+  g.strokeRect(mx - c, my - c, 2 * c, 2 * c);
 }
+// El rango de la ficha, por medallas y copas.
+const rangoDe = (med) => (prog.copas && Object.keys(prog.copas).length ? 'Campeón de las fiestas' : med >= 8 ? 'Corredor de fiestas' : med >= 4 ? 'Piloto' : med >= 1 ? 'Empujador' : 'Aprendiz');
 function pintaPortada() {
   const medallas = PISTAS.filter((q) => prog.medallas[q.id] <= 3).length;
+  const total = PISTAS.filter(disponible).length;
+  const foto = $('#ficha-foto');
+  if (eqJ) { foto.textContent = eqJ.num; foto.style.setProperty('--c', eqJ.placa); $('#ficha-pareja').textContent = `· ${eqJ.nombre}`; }
+  $('#ficha-rango').textContent = rangoDe(medallas);
+  $('#ficha-medallas').textContent = `${medallas}/${total}`;
+  try { $('#ficha-sucres').textContent = String(perfil.saldo()); } catch (err) { /* sin perfil */ }
   const copaTxt = prog.copa ? ` · en la Copa: ${prog.copa}.º` : '';
   const bn = $('#b-copa-noche');
   bn.classList.toggle('is-cerrada', !copaAbierta('noche'));
   bn.setAttribute('aria-disabled', String(!copaAbierta('noche')));
   bn.title = copaAbierta('noche') ? '' : 'Se abre ganando la Copa de las Fiestas';
-  $('#progreso').textContent = `Medallas: ${medallas} de ${PISTAS.length} · parejas: ${prog.parejas.length} de ${EQUIPOS.length} · estampitas: ${prog.album.length} de ${CROMOS.length}${copaTxt}`;
+  $('#progreso').textContent = `Medallas: ${medallas} de ${total} · parejas: ${prog.parejas.length} de ${EQUIPOS.length} · estampitas: ${prog.album.length} de ${CROMOS.length}${copaTxt}`;
 }
 function abreElegir() {
   tocaMusica('menu');
@@ -3788,6 +3831,21 @@ function eligePareja(id) {
 
 // ─── el flujo ──────────────────────────────────────────────────────
 let esTactil = tactilMQ.matches;
+// Antes de la carrera: la copa a un lado y el trazado grande al otro, unos
+// segundos (o hasta que se toque), con la pista de fondo.
+let presentaT = 0;
+function presenta() {
+  if (estado === 'cargando' || !pistaActual) return;
+  arrancaSonido();
+  const def = pistaActual;
+  $('#pr-copa').textContent = modo === 'copa' && copa ? `${COPAS[copa.id].nombre} · carrera ${copa.k + 1} de ${COPAS[copa.id].pistas.length}` : modo === 'tiempo' ? 'Contrarreloj' : 'Carrera suelta';
+  $('#pr-texto').textContent = def.lema || '';
+  $('#pr-nombre').textContent = def.nombre;
+  $('#pr-vueltas').textContent = LARGO_VUELTA ? `Vueltas: ${def.vueltas}` : `${def.premio ? 'Subida' : 'Bajada'}: ${Math.round(META - SALIDA)} m`;
+  dibujaMapa($('#pr-mapa'), 2);
+  pantalla('presenta');
+  estado = 'presenta'; presentaT = 2.8;
+}
 function empieza() {
   if (estado === 'cargando') return;
   arrancaSonido();
@@ -3867,7 +3925,7 @@ function navegaMenu(ev) {
 $('#b-volver-medallas').addEventListener('click', aMenu);
 $('#b-siguiente').addEventListener('click', () => ponPaso('pista'));
 $('#b-volver-elegir').addEventListener('click', () => (pasoElegir === 'pista' ? ponPaso('pareja') : aMenu()));
-$('#b-empezar').addEventListener('click', empieza);
+$('#b-empezar').addEventListener('click', presenta);
 $('#b-pausa').addEventListener('click', pausa);
 $('#b-seguir').addEventListener('click', sigue);
 $('#b-reintentar').addEventListener('click', () => { if (son.ctx) son.ctx.resume(); empieza(); });
@@ -3919,7 +3977,8 @@ addEventListener('keydown', (ev) => {
   teclas[t] = true;
 });
 addEventListener('keyup', (ev) => { if (modo === 'demo') return; const t = MAPA[ev.code]; if (t) teclas[t] = false; });
-document.addEventListener('pointerdown', () => { if (modo === 'demo') terminaDemo(); });
+document.addEventListener('pointerdown', () => { if (modo === 'demo') terminaDemo(); if (estado === 'presenta') presentaT = Math.min(presentaT, 0.05); });
+addEventListener('keydown', () => { if (estado === 'presenta') presentaT = Math.min(presentaT, 0.05); });
 addEventListener('blur', () => { for (const k in teclas) teclas[k] = false; });
 
 // Muchos toques o clics seguidos no deben seleccionar texto ni hacer zoom:
@@ -4001,7 +4060,8 @@ function bucle(ahora) {
     render.render(escena, camara);
     requestAnimationFrame(bucle); return;
   }
-  if (estado === 'menu' || estado === 'cargando' || estado === 'titulo' || estado === 'elegir' || estado === 'podio') {
+  if (estado === 'presenta') { presentaT -= dt; if (presentaT <= 0) empieza(); }
+  if (estado === 'menu' || estado === 'cargando' || estado === 'titulo' || estado === 'elegir' || estado === 'podio' || estado === 'presenta') {
     if (!N) { requestAnimationFrame(bucle); return; }
     if (cocheJ) dibujaMundo(dt);
     if (estado === 'elegir') dibujaPortada(ahora / 1000);

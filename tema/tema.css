@@ -262,6 +262,7 @@
 [data-variante="coches"] .coches-mando.is-on{filter:brightness(1.15);box-shadow:inset 0 3px 0 rgba(255,255,255,.4), 0 1px 0 var(--arc-tinta);transform:translateY(4px)}
 [data-variante="coches"] .coches-mando--freno,[data-variante="coches"] .coches-mando--freno.is-on{background:linear-gradient(180deg, #FF7A6B, var(--arc-rojo) 50%, #B01E16);border-color:var(--arc-tinta)}
 [data-variante="coches"] .coches-mando--empuja{background:linear-gradient(180deg, #C77BDB, #7B2D8E 55%, #4E1660);border-color:var(--arc-tinta);color:#fff}
+[data-variante="coches"] .coches-mando--empuja.es-colada{background:radial-gradient(circle at 35% 30%, #E7B3F5, #8E3BB0 55%, #4E1660);color:#fff;box-shadow:0 0 0 4px #B45CC8, 0 0 18px #B45CC8}
 [data-variante="coches"] .coches-mando--empuja.es-sube{background:linear-gradient(180deg, #FFE27A, var(--arc-amarillo) 50%, #C9921A);color:var(--arc-tinta)}
 /* Las mitades de la pantalla que giran: sin disco, solo la flecha. */
 [data-variante="coches"] .coches-zona,[data-variante="coches"] .coches-zona.is-on{background:transparent;border:0;box-shadow:none;opacity:1;color:var(--arc-blanco);filter:none}
@@ -274,7 +275,11 @@
 [data-variante="coches"] .coches-cuenta[data-n="2"]{color:var(--arc-amarillo)}
 [data-variante="coches"] .coches-cuenta[data-n="1"]{color:var(--arc-verde)}
 [data-variante="coches"] .coches-cuenta[data-n="0"]{color:var(--arc-cian);font-size:clamp(3.5rem, 15vw, 8rem)}
-[data-variante="coches"] .coches-aviso{color:var(--arc-blanco);font-size:clamp(1.6rem, 6vw, 2.8rem);transform:rotate(-2deg)}
+/* Los avisos, como banda arriba al centro, a lo kart de consola. */
+[data-variante="coches"] .coches-aviso{left:50%;right:auto;top:calc(env(safe-area-inset-top, 0px) + 50px);transform:translateX(-50%);
+  padding:5px 34px 7px;white-space:nowrap;color:var(--arc-blanco);font-family:"Bangers",var(--mal-display);font-size:clamp(1.05rem, .9rem + 1vw, 1.6rem);
+  letter-spacing:.04em;-webkit-text-stroke:0;text-shadow:0 2px 0 rgba(10,24,60,.6);
+  background:linear-gradient(90deg, transparent, rgba(123,45,142,.9) 12%, rgba(123,45,142,.9) 88%, transparent)}
 
 /* la cortina y el cartel de girar */
 [data-variante="coches"] .coches-cortina{background:var(--noche)}

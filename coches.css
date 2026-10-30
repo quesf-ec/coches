@@ -383,3 +383,124 @@ body.pixel #pista{image-rendering:pixelated;image-rendering:crisp-edges}
 @media (orientation:landscape) and (max-height:600px){
   .coches-menu:has(> .coches-opciones){width:min(94vw, 640px)}
 }
+
+/* ═══ Al estilo de un kart de consola ═══════════════════════════════════
+   El HUD: la banda arriba al centro, las píldoras a la derecha, las
+   posiciones en columna a la izquierda, el tiempo abajo a la izquierda y el
+   botón redondo de acción abajo a la derecha. */
+.coches-banda{flex:0 1 auto;max-width:46vw;margin:0 auto;padding:5px 26px 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  font-family:"Bangers",var(--mal-display);font-size:clamp(.95rem, .8rem + .8vw, 1.35rem);letter-spacing:.04em;color:#fff;
+  background:linear-gradient(90deg, transparent, rgba(34,104,210,.82) 14%, rgba(34,104,210,.82) 86%, transparent);text-shadow:0 2px 0 rgba(10,24,60,.6)}
+.coches-derecha{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+.coches-pildora{margin:0;display:inline-flex;align-items:center;gap:.35em;padding:3px 14px;border-radius:99px;white-space:nowrap;
+  font-family:"Bangers",var(--mal-display);font-size:clamp(1rem, .85rem + .7vw, 1.35rem);letter-spacing:.03em;color:#16233F;
+  background:rgba(170,222,246,.9);border:2px solid #fff;box-shadow:0 3px 0 rgba(10,24,60,.35)}
+.coches-pildora small{font-size:.72em;opacity:.75}
+.coches-pildora--colada{background:rgba(214,170,240,.92)}
+.coches-pildora--colada.is-turbo{box-shadow:0 0 0 3px #B45CC8, 0 0 14px #B45CC8}
+.coches-hud .coches-turbo{animation:none}
+.coches-hud .coches-turbo.is-lista{animation:coches-toca .45s ease-in-out infinite alternate}
+.coches-jarrito{display:inline-block;width:1.15em;height:1.15em;flex:none;background:center/contain no-repeat
+  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M17 9.5c3.2 0 3.2 5.5 0 5.5' fill='none' stroke='%2316233F' stroke-width='1.6'/%3E%3Cpath d='M4.5 7h13l-1.6 13.5h-9.8z' fill='%23F3EEE4' stroke='%2316233F' stroke-width='1.5'/%3E%3Crect x='5.2' y='10' width='11.6' height='2' fill='%232D5DA8'/%3E%3Cellipse cx='11' cy='7' rx='6.5' ry='2.6' fill='%236B2380' stroke='%2316233F' stroke-width='1.2'/%3E%3C/svg%3E")}
+.coches-posiciones{position:absolute;left:calc(env(safe-area-inset-left, 0px) + var(--mal-e5));top:calc(env(safe-area-inset-top, 0px) + 76px);
+  margin:0;padding:0;list-style:none;display:grid;gap:3px;pointer-events:none}
+.coches-posiciones li{display:flex;align-items:center;gap:6px;height:24px;padding:0 10px 0 7px;border-radius:99px;
+  font-family:"Bangers",var(--mal-display);font-size:1rem;letter-spacing:.03em;color:#16233F;background:rgba(170,222,246,.8);border:2px solid rgba(255,255,255,.9)}
+.coches-posiciones li b{min-width:2em;font-weight:400}
+.coches-posiciones li span{font-size:.8rem;max-width:6.5em;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.coches-posiciones li.es-tu{background:linear-gradient(90deg, #FFE27A, #F2A93B);border-color:#fff;transform:translateX(6px)}
+.coches-posiciones li.is-sube{animation:coches-sube-fila .5s var(--mal-ease)}
+@keyframes coches-sube-fila{from{transform:translateX(6px) scale(1.25)}to{transform:translateX(6px) scale(1)}}
+.coches-posiciones .coches-punto{position:static;margin:0;width:18px;height:18px;font-size:10px;line-height:18px;transform:none}
+.sin-rivales .coches-posiciones{display:none}
+.coches-crono{position:absolute;left:calc(env(safe-area-inset-left, 0px) + var(--mal-e5));bottom:calc(env(safe-area-inset-bottom, 0px) + 10px);pointer-events:none}
+.coches-crono .coches-tiempo{margin:0}
+.coches-parciales{margin:3px 0 0;display:grid;gap:1px;font-family:"Bungee",var(--mal-mono);font-size:.68rem;color:#fff;text-shadow:0 1px 0 #16233F, 0 0 3px #16233F}
+.coches-parciales:empty{display:none}
+/* El botón de acción: redondo, abajo a la derecha. */
+.coches-mando--empuja{top:auto;bottom:calc(env(safe-area-inset-bottom, 0px) + var(--mal-e4));width:clamp(76px, 20vw, 96px);height:clamp(76px, 20vw, 96px);
+  border-radius:50%;display:grid;place-items:center;align-content:center;gap:0;font-family:"Bangers",var(--mal-display);font-size:1.05rem;letter-spacing:.04em}
+.coches-mando--empuja .coches-jarrito{display:none}
+.coches-mando--empuja.es-colada .coches-jarrito{display:block;width:30px;height:30px}
+.coches-mando--empuja.es-colada{animation:coches-toca .45s ease-in-out infinite alternate}
+/* El freno, un poco más abajo: deja sitio a las posiciones. */
+.coches-mando--freno{bottom:calc(env(safe-area-inset-bottom, 0px) + clamp(84px, 24vh, 116px))}
+
+/* El menú principal: la ficha y las baldosas a la izquierda, el botón grande
+   para correr abajo a la derecha. */
+#portada.coches-capa--inicio{justify-items:start}
+.coches-inicio{width:min(92vw, 520px);gap:var(--mal-e3)}
+.coches-ficha{display:flex;align-items:center;gap:var(--mal-e3);padding:8px 14px;border-radius:14px;color:#16233F;
+  background:linear-gradient(90deg, #FFFFFF, #E2F1FB);border:3px solid #FFE27A;box-shadow:0 4px 0 rgba(10,24,60,.35)}
+.coches-ficha__foto{flex:none;width:54px;height:54px;border-radius:50%;display:grid;place-items:center;font-style:normal;
+  font-family:"Bangers",var(--mal-display);font-size:1.7rem;color:#fff;background:var(--c, #5B2A86);border:3px solid #16233F;box-shadow:inset 0 -5px 0 rgba(0,0,0,.25)}
+.coches-ficha__texto{min-width:0}
+.coches-ficha__tu{margin:0;font-family:"Bangers",var(--mal-display);font-size:1.3rem;letter-spacing:.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.coches-ficha__tu span{font-size:.8em;opacity:.7}
+.coches-ficha__rango{margin:0;font-family:"Bungee",var(--mal-texto);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:#1F5FB8}
+.coches-ficha__datos{margin:3px 0 0;display:flex;gap:14px;font-family:"Bungee",var(--mal-texto);font-size:.82rem}
+.coches-ficha__datos span{display:inline-flex;align-items:center;gap:4px}
+.coches-baldosas{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px}
+.coches-baldosa{appearance:none;display:flex;align-items:center;gap:8px;min-height:44px;padding:8px 12px;border-radius:10px;cursor:pointer;
+  font-family:"Bangers",var(--mal-display);font-size:1.05rem;letter-spacing:.05em;text-transform:uppercase;text-align:left;color:#fff;
+  background:linear-gradient(180deg, #4C9BE8, #1F5FB8);border:2px solid rgba(255,255,255,.75);box-shadow:0 3px 0 #0E3770;transform:skewX(-8deg)}
+.coches-baldosa:hover{filter:brightness(1.1)}
+.coches-baldosa:active{transform:skewX(-8deg) translateY(2px);box-shadow:0 1px 0 #0E3770}
+.coches-baldosa:focus-visible{outline:3px solid #FFE27A;outline-offset:2px}
+.coches-baldosa:disabled,.coches-baldosa[aria-disabled="true"]{filter:grayscale(.7);opacity:.6;cursor:default}
+.coches-baldosa .coches-candado{display:none}
+.coches-baldosa.is-cerrada .coches-candado{display:inline-block}
+.coches-correr{position:fixed;right:calc(env(safe-area-inset-right, 0px) + 4vw);bottom:calc(env(safe-area-inset-bottom, 0px) + 5vh);z-index:2;
+  width:clamp(118px, 21vw, 190px);aspect-ratio:1;border-radius:50%;display:grid;place-content:center;gap:2px;cursor:pointer;color:#fff;
+  background:radial-gradient(circle at 35% 30%, #FF8F7E, #E3261C 55%, #9E1209);border:6px solid #fff;outline:4px solid #16233F;box-shadow:0 8px 0 rgba(0,0,0,.35)}
+.coches-correr__a{font-family:"Bangers",var(--mal-display);font-size:clamp(1.4rem, 3.4vw, 2.3rem);letter-spacing:.04em;text-shadow:0 3px 0 #6E0B05;line-height:1}
+.coches-correr__b{font-family:"Bungee",var(--mal-texto);font-size:clamp(.5rem, .9vw, .7rem);letter-spacing:.04em;opacity:.95}
+.coches-correr:active{transform:translateY(3px);box-shadow:0 5px 0 rgba(0,0,0,.35)}
+.coches-correr:focus-visible{outline-color:#FFE27A}
+.coches-correr:disabled{filter:grayscale(.7);opacity:.6;cursor:default}
+
+/* La presentación de la pista: la copa a la izquierda en azul, el trazado
+   grande a la derecha sobre la pista desenfocada. */
+.coches-capa--presenta{grid-template-columns:minmax(220px, 36%) 1fr;place-items:stretch;padding:0;background:rgba(255,255,255,.1);
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.coches-capa--presenta[hidden]{display:none}
+.coches-presenta__lado{display:grid;align-content:start;gap:2.5vh;color:#fff;text-align:center;
+  padding:calc(env(safe-area-inset-top, 0px) + 8vh) 9% 0 calc(env(safe-area-inset-left, 0px) + 4vw);
+  background:linear-gradient(160deg, #3B8EE8, #1B4FA8);clip-path:polygon(0 0, 100% 0, 86% 100%, 0 100%)}
+.coches-presenta__copa{margin:0;font-family:"Bangers",var(--mal-display);font-size:clamp(1.5rem, 3.8vw, 2.6rem);letter-spacing:.03em;text-shadow:0 3px 0 #0E2A5E}
+.coches-presenta__texto{margin:0;font-family:"Bangers",var(--mal-display);font-size:clamp(1rem, 2vw, 1.35rem);letter-spacing:.03em;line-height:1.25;text-shadow:0 2px 0 #0E2A5E}
+.coches-presenta__pista{display:grid;place-items:center;align-content:center;gap:2px;padding-right:calc(env(safe-area-inset-right, 0px) + 3vw)}
+.coches-presenta__mapa{width:min(50vw, 560px);height:auto;max-height:48vh}
+.coches-presenta__kicker,.coches-presenta__vueltas{margin:0;font-family:"Bangers",var(--mal-display);font-size:clamp(1rem, 2vw, 1.4rem);color:#FFE27A;
+  letter-spacing:.04em;text-shadow:0 2px 0 #16233F}
+.coches-presenta__nombre{margin:0;font-family:"Bangers",var(--mal-display);font-size:clamp(1.8rem, 4.6vw, 3.2rem);letter-spacing:.03em;color:#fff;
+  -webkit-text-stroke:2px #16233F;paint-order:stroke fill;text-shadow:0 4px 0 #16233F;text-align:center}
+
+@media (orientation:landscape) and (max-height:600px){
+  .coches-posiciones{top:calc(env(safe-area-inset-top, 0px) + 60px);gap:2px}
+  .coches-posiciones li{height:20px;font-size:.88rem}
+  .coches-posiciones li span{font-size:.72rem}
+  .coches-mando--freno{width:64px;height:64px;bottom:calc(env(safe-area-inset-bottom, 0px) + 90px)}
+  .coches-inicio{width:min(56vw, 500px)}
+  .coches-ficha{padding:6px 12px}
+  .coches-ficha__foto{width:44px;height:44px;font-size:1.4rem}
+  .coches-baldosas{gap:6px 8px}
+  .coches-baldosa{min-height:36px;padding:5px 10px;font-size:.95rem}
+  .coches-presenta__lado{padding-top:calc(env(safe-area-inset-top, 0px) + 5vh)}
+}
+@media (prefers-reduced-motion:reduce){
+  .coches-posiciones li.is-sube,.coches-mando--empuja.es-colada{animation:none}
+}
+@media (orientation:landscape) and (max-height:600px){
+  /* La ficha ya dice las medallas: la línea de progreso sobra de lado. */
+  #portada .coches-progreso{display:none}
+}
+/* El panel azul de la presentación, de arriba abajo; el texto no llega al corte diagonal. */
+.coches-capa--presenta{grid-template-rows:100%;align-items:stretch;justify-items:stretch}
+.coches-presenta__lado{height:100%;box-sizing:border-box;padding-right:17%}
+#presenta{padding:0;align-items:stretch;grid-template-rows:100%}
+/* Los tiempos de cada vuelta, en una sola línea bajo el tiempo: no suben hasta el freno. */
+.coches-parciales{display:flex;gap:10px;white-space:nowrap}
+/* El puesto, con la o volada; y el tiempo, a la derecha de la flecha de giro. */
+.coches-posiciones li b sup{font-size:.6em;vertical-align:.5em;margin-left:1px;text-decoration:underline}
+.coches.con-mandos .coches-crono{left:calc(env(safe-area-inset-left, 0px) + var(--mal-e5) + 56px)}

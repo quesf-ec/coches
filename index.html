@@ -23,9 +23,9 @@
 <!-- El sello ?v= se sube a mano en cada cambio del juego (CSS, JS y, con el
      JS, los modelos, que heredan su sello): así el navegador no se queda con
      la versión anterior. -->
-<link rel="stylesheet" href="coches.css?v=05ae8f9788">
+<link rel="stylesheet" href="coches.css?v=5d960d031c">
 <!-- La piel del juego: variante del tema juegos (ver tema/LEEME.md). Va al final para mandar. -->
-<link rel="stylesheet" href="tema/tema.css?v=05ae8f9788">
+<link rel="stylesheet" href="tema/tema.css?v=5d960d031c">
 <script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js", "three/addons/": "./vendor/addons/" } }</script>
 <script type="application/ld+json">
 {
@@ -82,26 +82,24 @@
       <button class="btn btn--icono" id="b-sonido" type="button" aria-label="Silenciar" aria-pressed="false">
         <svg class="icono" aria-hidden="true"><use href="#i-altavoz"/></svg></button>
     </div>
-    <div class="coches-ruta">
-      <p class="coches-ruta__titulo" id="h-pista">La bajada del Panecillo</p>
-      <div class="coches-ruta__carril" id="h-ruta" role="img" aria-label="Por dónde va cada coche"></div>
-    </div>
-    <div class="coches-puesto">
-      <p class="coches-puesto__n" aria-live="polite"><span id="h-puesto">5</span><span class="coches-de">/5</span></p>
-      <p class="coches-tiempo" id="h-tiempo">0:00.0</p>
-      <!-- La velocidad y el empujador van aquí también, debajo del puesto:
-           el centro de abajo queda libre para la calle y el freno. -->
-      <div class="coches-tablero">
-        <p class="coches-vel"><span id="h-vel">0</span><small>km/h</small></p>
-        <div class="coches-tablero__fila">
-          <span class="coches-turbo" id="h-turbo" hidden>
-            <svg class="icono icono--s" aria-hidden="true"><use href="#i-rayo"/></svg> <span id="h-coladas">Colada</span></span>
-          <span class="coches-empujador" id="h-empujador" data-estado="empujando">Empujando</span>
-        </div>
-      </div>
+    <!-- La banda de arriba: la pista y la vuelta; los avisos salen encima. -->
+    <p class="coches-banda" id="h-pista">La bajada del Panecillo</p>
+    <!-- A la derecha: la vuelta (o lo que falta), las coladas, la velocidad y el que empuja. -->
+    <div class="coches-derecha">
+      <p class="coches-pildora"><small id="h-vuelta-et">Vuelta</small> <b id="h-vuelta">1/3</b></p>
+      <p class="coches-pildora coches-pildora--colada coches-turbo" id="h-turbo">
+        <span class="coches-jarrito" aria-hidden="true"></span> <b id="h-coladas">×0</b></p>
+      <p class="coches-vel"><span id="h-vel">0</span><small>km/h</small></p>
+      <span class="coches-empujador" id="h-empujador" data-estado="empujando">Empujando</span>
     </div>
   </div>
-
+  <!-- Las posiciones, en columna a la izquierda: tu fila resalta. -->
+  <ol class="coches-posiciones" id="h-ruta" aria-label="Posiciones"></ol>
+  <!-- El tiempo abajo a la izquierda, con lo que tardó cada vuelta. -->
+  <div class="coches-crono">
+    <p class="coches-tiempo" id="h-tiempo">0:00.0</p>
+    <p class="coches-parciales" id="h-parciales"></p>
+  </div>
   <div class="hud-juego__abajo">
     <!-- Los pies del que empuja: el que toca se enciende; la racha, en medio. -->
     <p class="coches-pasos" id="h-pasos" hidden>
@@ -122,8 +120,10 @@
   <button class="coches-mando coches-zona coches-zona--der" data-tecla="der" type="button" aria-label="Girar a la derecha">
     <svg class="icono icono--l" aria-hidden="true"><use href="#i-chevron-der"/></svg></button>
   <button class="coches-mando coches-mando--freno" data-tecla="freno" type="button" aria-label="Frenar">Freno</button>
-  <!-- Bajarse a empujar (lento, a bordo) o saltar al carro (a pie). -->
-  <button class="coches-mando coches-mando--empuja" id="b-empuja" data-tecla="empuja" type="button" hidden>Bájate</button>
+  <!-- El botón de acción, abajo a la derecha: bajarse a empujar (lento, a
+       bordo), saltar al carro (a pie) o, con colada, el empujón fuerte. -->
+  <button class="coches-mando coches-mando--empuja" id="b-empuja" data-tecla="empuja" type="button" hidden>
+    <span class="coches-jarrito" aria-hidden="true"></span><span id="b-empuja-txt">Bájate</span></button>
 </div>
 
 <!-- Las rayas de velocidad, que salen de los bordes cuando va rápido. -->
@@ -151,30 +151,56 @@
 </div>
 
 <!-- El menú principal -->
-<div class="coches-capa" id="portada" hidden>
-  <div class="coches-panel coches-menu">
-    <p class="coches-banner">Menú principal</p>
-    <nav class="coches-opciones" aria-label="Menú">
-      <button class="btn btn--rojo boton-juego btn-block" id="b-copa" type="button" disabled>
-        <svg class="icono" aria-hidden="true"><use href="#i-trofeo"/></svg> <span>Copa de las Fiestas</span></button>
-      <button class="btn boton-juego btn-block" id="b-copa-noche" type="button" disabled>
+<div class="coches-capa coches-capa--inicio" id="portada" hidden>
+  <div class="coches-panel coches-menu coches-inicio">
+    <!-- La ficha del jugador, como en un juego de karts: su pareja, su rango, sus medallas y sus sucres. -->
+    <section class="coches-ficha" aria-label="Tu ficha">
+      <i class="coches-ficha__foto" id="ficha-foto" aria-hidden="true">1</i>
+      <div class="coches-ficha__texto">
+        <p class="coches-ficha__tu">¡Tú! <span id="ficha-pareja"></span></p>
+        <p class="coches-ficha__rango" id="ficha-rango">Aprendiz</p>
+        <p class="coches-ficha__datos">
+          <span><svg class="icono icono--s" aria-hidden="true"><use href="#i-estrella"/></svg> <b id="ficha-medallas">0/0</b></span>
+          <span>S/. <b id="ficha-sucres">0</b></span>
+        </p>
+      </div>
+    </section>
+    <nav class="coches-baldosas" aria-label="Menú">
+      <button class="coches-baldosa" id="b-copa-noche" type="button" disabled>
         <svg class="icono coches-candado" aria-hidden="true"><use href="#i-candado"/></svg><svg class="icono" aria-hidden="true"><use href="#i-luna"/></svg> Copa de la Noche</button>
-      <button class="btn boton-juego btn-block" id="b-suelta" type="button" disabled>
+      <button class="coches-baldosa" id="b-suelta" type="button" disabled>
         <svg class="icono" aria-hidden="true"><use href="#i-play"/></svg> Carrera suelta</button>
-      <button class="btn boton-juego btn-block" id="b-tiempo" type="button" disabled>
+      <button class="coches-baldosa" id="b-tiempo" type="button" disabled>
         <svg class="icono" aria-hidden="true"><use href="#i-reloj"/></svg> Contrarreloj</button>
-      <button class="btn boton-juego btn-block" id="b-medallas" type="button" disabled>
-        <svg class="icono" aria-hidden="true"><use href="#i-estrella"/></svg> Medallas y récords</button>
-      <button class="btn boton-juego btn-block" id="b-album" type="button" disabled>
-        <svg class="icono" aria-hidden="true"><use href="#i-etiqueta"/></svg> Álbum de estampitas</button>
-      <button class="btn boton-juego btn-block" id="b-ayuda" type="button">
+      <button class="coches-baldosa" id="b-medallas" type="button" disabled>
+        <svg class="icono" aria-hidden="true"><use href="#i-estrella"/></svg> Medallas</button>
+      <button class="coches-baldosa" id="b-album" type="button" disabled>
+        <svg class="icono" aria-hidden="true"><use href="#i-etiqueta"/></svg> Álbum</button>
+      <button class="coches-baldosa" id="b-ayuda" type="button">
         <svg class="icono" aria-hidden="true"><use href="#i-mando"/></svg> Cómo se juega</button>
-      <button class="btn boton-juego btn-block" id="b-opciones" type="button">
+      <button class="coches-baldosa" id="b-opciones" type="button">
         <svg class="icono" aria-hidden="true"><use href="#i-ajustes"/></svg> Opciones</button>
-      <button class="btn boton-juego btn-block" id="b-creditos" type="button">
+      <button class="coches-baldosa" id="b-creditos" type="button">
         <svg class="icono" aria-hidden="true"><use href="#i-usuario"/></svg> Créditos</button>
     </nav>
     <p class="micro coches-progreso" id="progreso"></p>
+  </div>
+  <!-- El botón grande: la Copa de las Fiestas, el modo principal. -->
+  <button class="coches-correr" id="b-copa" type="button" disabled>
+    <span class="coches-correr__a">¡A correr!</span><span class="coches-correr__b">Copa de las Fiestas</span></button>
+</div>
+
+<!-- Antes de cada carrera: la copa a un lado y el trazado grande al otro. -->
+<div class="coches-capa coches-capa--presenta" id="presenta" hidden>
+  <div class="coches-presenta__lado">
+    <p class="coches-presenta__copa" id="pr-copa">Carrera suelta</p>
+    <p class="coches-presenta__texto" id="pr-texto"></p>
+  </div>
+  <div class="coches-presenta__pista">
+    <canvas class="coches-presenta__mapa" id="pr-mapa" width="560" height="320" role="img" aria-label="El trazado de la pista"></canvas>
+    <p class="coches-presenta__kicker">Pista</p>
+    <p class="coches-presenta__nombre" id="pr-nombre"></p>
+    <p class="coches-presenta__vueltas" id="pr-vueltas"></p>
   </div>
 </div>
 
@@ -190,7 +216,7 @@
       <div><dt>← →</dt><dd>a pie: pie izquierdo, pie derecho</dd></div>
       <div><dt>← ←</dt><dd>un pie en la tabla: gira al otro lado</dd></div>
       <div><dt>← + →</dt><dd>con colada: empujón fuerte y se sube</dd></div>
-      <div><dt>↑</dt><dd>lento: bajarse a empujar · a pie: saltar al carro con impulso</dd></div>
+      <div><dt>↑</dt><dd>lento: bajarse a empujar · a pie: saltar al carro con impulso (con colada, el empujón fuerte)</dd></div>
 
       <div><dt>Esc</dt><dd>pausa</dd></div>
     </dl>
@@ -367,6 +393,6 @@
 </div>
 
 <script src="../ds/mal/mal.js?v=1.0.18" defer></script>
-<script type="module" src="coches.js?v=05ae8f9788"></script>
+<script type="module" src="coches.js?v=5d960d031c"></script>
 </body>
 </html>
