@@ -28,7 +28,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as clonaEsqueleto } from 'three/addons/utils/SkeletonUtils.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import * as perfil from '../perfil/perfil.js?v=2';
+import * as perfil from '../perfil/perfil.js?v=3';
 
 // Los modelos se piden con el mismo sello que trae este módulo: si la página
 // estrena versión, estrenan URL también ellos.
@@ -2255,6 +2255,10 @@ const tiemposVuelta = [];
 let reloj = 0, cuenta = 0, tLlegada = 0, zonaActual = '', sacudida = 0, tPeaton = 0, llegadaVista = false, vueltaActual = 1;
 const vueltaDe = (s) => LARGO_VUELTA ? limita(Math.floor((s - SALIDA) / LARGO_VUELTA) + 1, 1, pistaActual.vueltas) : 1;
 const teclas = { izq: false, der: false, empuja: false, freno: false };
+// Cada toque o tecla que baja, apuntado al momento: así un toque corto
+// cuenta como paso aunque empiece y acabe entre dos cuadros del juego.
+const pulsos = { izq: 0, der: 0, empuja: 0 };
+const pulsa = (t) => { if (t in pulsos) pulsos[t]++; };
 let cocheJ, carros = [], eqJ;
 // Lo que la pareja elegida cambia de la física: velocidad, empuje y giro.
 const ST = { tope: 1, empuje: 1, giro: 1 };
@@ -2283,6 +2287,7 @@ function reinicia() {
   for (const pe of peatones) pe.estado = 'libre';
   reloj = 0; zonaActual = ''; lugarSig = 0; tiemposVuelta.length = 0; sacudida = 0; tPeaton = 1; vueltaActual = 1;
   Object.assign(pasos, { ultimo: 0, combo: 0, burst: 0, tIzq: -9, tDer: -9, prevEmp: false, pulsos: [], unPie: 0, sesgo: 0 });
+  pulsos.izq = pulsos.der = pulsos.empuja = 0;
   demoPaso = 0;
   fantasma.trazo = [];
   // En la contrarreloj los rivales se esconden, y sale el fantasma si hay récord.
@@ -2497,9 +2502,10 @@ function ritmo() {
 }
 
 function pasaPasos(dt) {
-  const subeIzq = teclas.izq && !pasos.prevIzq, subeDer = teclas.der && !pasos.prevDer;
-  const subeEmp = teclas.empuja && !pasos.prevEmp;
+  const subeIzq = (teclas.izq && !pasos.prevIzq) || pulsos.izq > 0, subeDer = (teclas.der && !pasos.prevDer) || pulsos.der > 0;
+  const subeEmp = (teclas.empuja && !pasos.prevEmp) || pulsos.empuja > 0;
   pasos.prevIzq = teclas.izq; pasos.prevDer = teclas.der; pasos.prevEmp = teclas.empuja;
+  pulsos.izq = pulsos.der = pulsos.empuja = 0;
   pasos.burst = Math.max(0, pasos.burst - dt);
   pasos.sesgo = Math.sign(pasos.sesgo) * Math.max(0, Math.abs(pasos.sesgo) - dt * 1.4);
   if (subeIzq) pasos.tIzq = reloj;
@@ -2571,6 +2577,23 @@ function pisaUnPie(lado) {
   const obj = lado < 0 ? Math.PI / 2 : (3 * Math.PI) / 2;
   r.obj = obj + 2 * Math.PI * Math.round((r.fase - obj) / (2 * Math.PI));
   r.lleva = 0.3;
+}
+
+// Las primeras veces, el juego dice qué hacer cuando toca: pisar al salir,
+// girar al subirse, el botón morado con la primera colada y bajarse cuando
+// va lento. Cada aviso sale dos veces en la vida del jugador y ya.
+function enseña() {
+  if (estado !== 'carrera' || modo === 'demo') return;
+  const v = ajustes.vistos || (ajustes.vistos = {});
+  const di = (clave, texto) => {
+    if ((v[clave] || 0) >= 2 || reloj - (enseña.t || -9) < 3) return;
+    v[clave] = (v[clave] || 0) + 1; enseña.t = reloj; guardaAjustes();
+    avisa(texto, 2600);
+  };
+  if (reloj > 0.6 && reloj < 4 && e.estado === 'empujando') di('pisa', esTactil ? 'Toca ◀ ▶ alternando: así empuja el de atrás' : 'Pisa ← → alternando: así empuja el de atrás');
+  else if (reloj > 4 && e.estado === 'a_bordo' && j.v > 6) di('gira', esTactil ? 'Ya a bordo: toca los lados para girar' : 'Ya a bordo: ← → giran, ↓ frena');
+  else if (e.estado === 'empujando' && (j.coladas || 0) > 0) di('colada', esTactil ? '¡Tienes colada! El botón morado da el empujón fuerte' : '¡Tienes colada! ← + → a la vez: el empujón fuerte');
+  else if (e.estado === 'a_bordo' && j.v < BAJA_MANUAL && j.v > BAJA_EMPUJE && reloj > 8) di('bajate', esTactil ? 'Vas lento: «Bájate» y empuja a pie' : 'Vas lento: ↑ para bajarse a empujar');
 }
 
 function actualizaEmpujador(dt) {
@@ -2648,6 +2671,7 @@ function actualiza(dt) {
   }
 
   actualizaEmpujador(dt);
+  enseña();
 
   if (j.volcado > 0) {
     j.volcado -= dt;
@@ -3187,7 +3211,7 @@ function pintaHud() {
 // puesto en la Copa.
 // Los ajustes: sonido, música y el modo píxel. Se guardan aparte del progreso.
 const AJUSTES = 'coches3d-ajustes';
-const ajustes = { sonido: true, musica: true, pixel: false };
+const ajustes = { sonido: true, musica: true, pixel: false, vistos: {} };
 try { Object.assign(ajustes, JSON.parse(localStorage.getItem(AJUSTES) || '{}')); } catch (err) { /* sin almacenamiento */ }
 const guardaAjustes = () => { try { localStorage.setItem(AJUSTES, JSON.stringify(ajustes)); } catch (err) { /* sin almacenamiento */ } };
 function aplicaAjustes() {
@@ -3317,12 +3341,13 @@ function siguientePremio() {
 }
 
 // ─── después de cada carrera ───────────────────────────────────────
-const PUESTOS = ['Primer puesto', 'Segundo puesto', 'Tercer puesto', 'Cuarto puesto', 'Quinto puesto'];
+const PUESTOS = ['Primer puesto', 'Segundo puesto', 'Tercer puesto', 'Cuarto puesto', 'Quinto puesto', 'Sexto puesto'];
 const FRASES = [
   'Ni el Chulla los vio pasar.',
   'Segundos, por una tabla.',
   'Al podio, que con coche de madera ya es hazaña.',
   'Cuartos. La próxima, más empuje en la subida.',
+  'Quintos. Pisen más seguido, que el de atrás aguanta.',
   'Últimos, pero enteros los dos, que en coche de madera ya es bastante.',
 ];
 let modo = 'suelta', copa = null, pistaSuelta = 'panecillo';
@@ -3714,7 +3739,7 @@ function pintaElegir() {
     b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', String(q.id === pistaSuelta));
     b.innerHTML = (prog.medallas[q.id] ? SVG.medalla(prog.medallas[q.id], 18) + ' ' : '') + q.nombre;
     b.addEventListener('click', () => {
-      if (!ok) { $('#pista-lema').textContent = `${q.nombre}: ${comoSeGana('pista', q.id)}`; return; }
+      if (!ok) { $('#pista-lema').textContent = `${q.nombre}: ${comoSeGana('pista', q.id)}`; avisa(`${q.nombre}: ${comoSeGana('pista', q.id)}`, 2600); return; }
       pistaSuelta = q.id;
       cargaPista(q.id);
       eligePareja(eqJ.id);
@@ -3820,6 +3845,7 @@ function eligePareja(id) {
       if (!abierta('pareja', q.id)) {
         $('#pareja-nombre').textContent = q.nombre;
         $('#pareja-lema').textContent = comoSeGana('pareja', q.id);
+        avisa(`${q.nombre}: ${comoSeGana('pareja', q.id)}`, 2600);
         $('#pareja-stats').textContent = '';
         return;
       }
@@ -3974,6 +4000,7 @@ addEventListener('keydown', (ev) => {
   const t = MAPA[ev.code];
   if (!t || (estado !== 'carrera' && estado !== 'cuenta')) return;
   ev.preventDefault();
+  if (!ev.repeat && !teclas[t]) pulsa(t);
   teclas[t] = true;
 });
 addEventListener('keyup', (ev) => { if (modo === 'demo') return; const t = MAPA[ev.code]; if (t) teclas[t] = false; });
@@ -4007,7 +4034,7 @@ addEventListener('touchstart', () => {
 }, { passive: true });
 for (const b of document.querySelectorAll('.coches-mando')) {
   const t = b.dataset.tecla;
-  const on = (ev) => { ev.preventDefault(); b.setPointerCapture?.(ev.pointerId); teclas[t] = true; b.classList.add('is-on'); };
+  const on = (ev) => { ev.preventDefault(); b.setPointerCapture?.(ev.pointerId); teclas[t] = true; pulsa(t); b.classList.add('is-on'); };
   const off = () => { teclas[t] = false; b.classList.remove('is-on'); };
   b.addEventListener('pointerdown', on);
   b.addEventListener('pointerup', off);

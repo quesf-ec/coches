@@ -504,3 +504,19 @@ body.pixel #pista{image-rendering:pixelated;image-rendering:crisp-edges}
 /* El puesto, con la o volada; y el tiempo, a la derecha de la flecha de giro. */
 .coches-posiciones li b sup{font-size:.6em;vertical-align:.5em;margin-left:1px;text-decoration:underline}
 .coches.con-mandos .coches-crono{left:calc(env(safe-area-inset-left, 0px) + var(--mal-e5) + 56px)}
+
+/* El premio de lado en el teléfono: la medalla a la izquierda, más chica,
+   y el texto a la derecha; «Toca para seguir» siempre a la vista. */
+@media (orientation:landscape) and (max-height:600px){
+  .coches-premio{padding:calc(env(safe-area-inset-top, 0px) + 6px) calc(env(safe-area-inset-right, 0px) + 4vw)
+    calc(env(safe-area-inset-bottom, 0px) + 4px) calc(env(safe-area-inset-left, 0px) + 4vw);box-sizing:border-box;min-height:0;height:100dvh}
+  .coches-premio .premio__escena{flex-direction:row;justify-content:center;align-items:center;gap:clamp(16px, 4vw, 40px);min-height:0}
+  .coches-premio .premio__disco{width:clamp(130px, 34vh, 170px);height:clamp(130px, 34vh, 170px)}
+  .coches-premio .premio__disco svg{width:60%;height:60%}
+  .coches-premio .premio__texto{width:auto;max-width:min(52vw, 440px);align-items:flex-start;text-align:left;gap:2px}
+  .coches-premio .premio__nombre{font-size:clamp(1.5rem, 5vh, 2.3rem)}
+  .coches-premio .premio__desc{font-size:.9rem;line-height:1.3;max-width:none}
+  .coches-premio .coches-podio{margin-top:6px;font-size:.72rem;min-width:0;width:100%}
+  .coches-premio .premio__pie{margin:0;font-size:1rem}
+  .coches-premio .coches-creditos{display:none}
+}
