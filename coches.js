@@ -28,7 +28,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as clonaEsqueleto } from 'three/addons/utils/SkeletonUtils.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import * as perfil from '../perfil/perfil.js?v=3';
+import * as perfil from '../Perfil/perfil.js?v=3';
 
 // Los modelos se piden con el mismo sello que trae este módulo: si la página
 // estrena versión, estrenan URL también ellos.
