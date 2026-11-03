@@ -2,14 +2,14 @@
 
 Pide a OpenStreetMap (por Overpass) las calles de cada receta, las cose en
 un solo trazado siguiendo los puntos de paso, les pone altura con un modelo
-de terreno (Open Topo Data, SRTM de 30 m) y escribe coches/pistas/<id>.json:
+de terreno (Open Topo Data, SRTM de 30 m) y escribe pistas/<id>.json:
 puntos en metros, cada ~5 m, con la altura relativa al primero, más dónde
 empieza cada calle, para que el juego ponga sus zonas y diga su nombre.
 
 Trae también los edificios a los dos lados (su planta, su altura por
 `height` o por pisos, y si es iglesia) y los lugares con nombre por donde
 pasa (iglesias, plazas, parques, museos, miradores), que el juego levanta
-en 3D y anuncia al pasar. Y actualiza coches/pistas/indice.json, la lista
+en 3D y anuncia al pasar. Y actualiza pistas/indice.json, la lista
 de trazados que hay, que es lo único que el juego pide al cargar.
 
 Uso:
@@ -39,7 +39,7 @@ import urllib.parse
 import urllib.request
 
 RAIZ = pathlib.Path(__file__).resolve().parent.parent
-SALIDA = RAIZ / 'coches' / 'pistas'
+SALIDA = RAIZ / 'pistas'
 OVERPASS = 'https://overpass-api.de/api/interpreter'
 ALTURAS = 'https://api.opentopodata.org/v1/srtm30m'
 ALTURAS_REPUESTO = 'https://api.open-elevation.com/api/v1/lookup'
@@ -339,7 +339,7 @@ def receta_a_json(id_, receta, con_altura=True, con_edificios=True):
     SALIDA.mkdir(exist_ok=True)
     (SALIDA / f'{id_}.json').write_text(json.dumps(salida, ensure_ascii=False, separators=(',', ':')) + '\n', encoding='utf-8')
     escribe_indice()
-    print(f'  → coches/pistas/{id_}.json (baja {y0 - min(ys):.0f} m, sube {max(ys) - y0:.0f} m)', file=sys.stderr)
+    print(f'  → pistas/{id_}.json (baja {y0 - min(ys):.0f} m, sube {max(ys) - y0:.0f} m)', file=sys.stderr)
 
 
 def main():

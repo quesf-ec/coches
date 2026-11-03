@@ -1,13 +1,13 @@
-"""Sella el CSS, el tema, el JS y los modelos de coches/ con un sello de su contenido.
+"""Sella el CSS, el tema, el JS y los modelos del juego con un sello de su contenido.
 
-El sello es un hash de todo lo que hay en coches/ salvo index.html. Así cambia
+El sello es un hash de todo lo que hay en el repo salvo index.html, tools/, .githooks/ y .github/. Así cambia
 solo cuando cambia el juego, y cada versión nueva pide sus archivos con URL
 nueva: los navegadores no se quedan con la versión anterior.
 
 Lo corre el hook de commit (.githooks/pre-commit). Para activarlo, una vez por
 clon:  git config core.hooksPath .githooks
 
-Uso: python3 tools/sella-coches.py   (reescribe coches/index.html si hace falta)
+Uso: python3 tools/sella-coches.py   (reescribe index.html si hace falta)
 """
 import hashlib
 import pathlib
@@ -15,14 +15,15 @@ import re
 import sys
 
 RAIZ = pathlib.Path(__file__).resolve().parent.parent
-JUEGO = RAIZ / 'coches'
+JUEGO = RAIZ
 PAGINA = JUEGO / 'index.html'
+IGNORADOS = {'.git', '.github', '.githooks', 'tools'}
 PATRON = re.compile(r'(coches\.(?:css|js)|tema/tema\.css)\?v=[^"\']*')
 
 
 def sello():
     h = hashlib.sha256()
-    for f in sorted(p for p in JUEGO.rglob('*') if p.is_file() and p != PAGINA):
+    for f in sorted(p for p in JUEGO.rglob('*') if p.is_file() and p != PAGINA and p.relative_to(JUEGO).parts[0] not in IGNORADOS):
         h.update(str(f.relative_to(JUEGO)).encode())
         h.update(f.read_bytes())
     return h.hexdigest()[:10]
@@ -33,12 +34,12 @@ def main():
     texto = PAGINA.read_text(encoding='utf-8')
     nuevo, n = PATRON.subn(lambda m: f'{m.group(1)}?v={s}', texto)
     if n != 3:
-        sys.exit(f'coches/index.html: se esperaban 3 referencias (coches.css, coches.js, tema/tema.css) y hay {n}')
+        sys.exit(f'index.html: se esperaban 3 referencias (coches.css, coches.js, tema/tema.css) y hay {n}')
     if nuevo != texto:
         PAGINA.write_text(nuevo, encoding='utf-8')
-        print(f'sello de coches/: {s} (actualizado)')
+        print(f'sello del juego: {s} (actualizado)')
         return
-    print(f'sello de coches/: {s} (sin cambios)')
+    print(f'sello del juego: {s} (sin cambios)')
 
 
 if __name__ == '__main__':
