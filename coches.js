@@ -1063,6 +1063,8 @@ function construyeCalle() {
 // juntos. Los faroles ya son de material sin luz, así que de noche brillan.
 let noche = false;
 const panoramas = {};
+// El fondo ya viene desenfocado: ni mipmaps ni anisotropía, que cuestan.
+const texturaFondo = (cv) => { const t = textura(cv); t.generateMipmaps = false; t.minFilter = THREE.LinearFilter; t.anisotropy = 1; return t; };
 function ambienta(esNoche) {
   noche = esNoche;
   escena.background.set(esNoche ? 0x0E1230 : 0xB4D5EC);
@@ -1073,7 +1075,7 @@ function ambienta(esNoche) {
   escena.environmentIntensity = esNoche ? 0.14 : 0.55;
   render.toneMappingExposure = esNoche ? 0.92 : 1.12;
   if (panorama) {
-    if (!panoramas[esNoche ? 'noche' : 'dia']) panoramas[esNoche ? 'noche' : 'dia'] = textura(pintaPanorama(esNoche));
+    if (!panoramas[esNoche ? 'noche' : 'dia']) panoramas[esNoche ? 'noche' : 'dia'] = texturaFondo(pintaPanorama(esNoche));
     panorama.material.map = panoramas[esNoche ? 'noche' : 'dia'];
     panorama.material.needsUpdate = true;
   }
@@ -1145,7 +1147,7 @@ function pintaPanorama(esNoche) {
   return c;
 }
 function construyePanorama() {
-  panoramas.dia = textura(pintaPanorama(false));
+  panoramas.dia = texturaFondo(pintaPanorama(false));
   const g = new THREE.CylinderGeometry(780, 780, 520, 48, 1, true);
   const m = new THREE.MeshBasicMaterial({ map: panoramas.dia, side: THREE.BackSide, fog: false, depthWrite: false });
   panorama = new THREE.Mesh(g, m);
@@ -1814,12 +1816,18 @@ function construyePublico(lugares, r) {
       letrero = new THREE.Mesh(geoCartel, elige(r, cartel));
       mundo.add(letrero);
     }
-    return { s: l.s, base, conSombrero, fase: r() * 7, ritmo: 6 + r() * 4, letrero };
+    return { s: l.s, base, conSombrero, fase: r() * 7, ritmo: 6 + r() * 4, letrero, enAire: true };
   });
   const _m = new THREE.Matrix4(), _t = new THREE.Matrix4(), cero = new THREE.Matrix4().makeScale(0, 0, 0);
+  // Solo se recolocan los que saltan cerca del jugador y los que acaban de
+  // dejar de saltar (para dejarlos en el suelo): cientos de muñecos quietos
+  // no se vuelven a subir a la GPU cada cuadro.
   const coloca = (t, sJ) => {
+    let tocado = false;
     datos.forEach((d, k) => {
       const cerca = Math.abs(d.s - sJ) < 45;
+      if (!cerca && !d.enAire) return;
+      d.enAire = cerca; tocado = true;
       const y = cerca ? Math.abs(Math.sin(t * d.ritmo + d.fase)) * 0.22 : 0;
       _m.copy(d.base).multiply(_t.makeTranslation(0, y, 0));
       for (let i = 0; i < 3; i++) mallas[i].setMatrixAt(k, _m);
@@ -1830,7 +1838,7 @@ function construyePublico(lugares, r) {
         d.letrero.matrixWorldNeedsUpdate = true;
       }
     });
-    for (const m of mallas) m.instanceMatrix.needsUpdate = true;
+    if (tocado) for (const m of mallas) m.instanceMatrix.needsUpdate = true;
   };
   coloca(0, -999);
   for (const m of mallas) if (m.instanceColor) m.instanceColor.needsUpdate = true;
@@ -2306,6 +2314,7 @@ function reinicia() {
     if (fantasma.datos && fantasma.datos.length > 2) {
       if (!fantasma.coche) fantasma.coche = construyeFantasma(eqJ);
       fantasma.coche.g.visible = true; fantasma.coche.conductor.obj.visible = true; fantasma.coche.empujador.obj.visible = true;
+      fantasma.aPie = undefined;   // que el clip del empujador se ponga al primer dato
     } else fantasma.datos = null;
   }
   for (const k in stats) stats[k] = 0;
@@ -2605,6 +2614,7 @@ function enseña() {
   };
   if (estado === 'cuenta' && cuenta < 2.6 && e.estado === 'empujando') di('pisa', esTactil ? 'Toca ◀ ▶ alternando ya: a buen ritmo, arranque extra' : 'Pisa ← → alternando ya: a buen ritmo, arranque extra');
   else if (e.estado === 'empujando' && pasos.unPie && !enseña.unPieAntes) di('unpie', 'Dos veces el mismo pie: el coche se va al otro lado');
+  else if (Math.abs(j.x) > muestra(j.s).hw && !j.aire && j.volcado <= 0 && j.v > 2) di('vereda', 'En la vereda se frena: vuelve a la calle');
   else if (reloj > 4 && e.estado === 'a_bordo' && j.v > 6) di('gira', esTactil ? 'Ya a bordo: toca los lados para girar' : 'Ya a bordo: ← → giran, ↓ frena');
   else if (e.estado === 'empujando' && (j.coladas || 0) > 0) di('colada', esTactil ? '¡Tienes colada! El botón morado da el empujón fuerte' : '¡Tienes colada! ← + → a la vez: el empujón fuerte');
   else if (e.estado === 'a_bordo' && j.v < BAJA_MANUAL && j.v > BAJA_EMPUJE && reloj > 8) di('bajate', esTactil ? 'Vas lento: «Bájate» y empuja a pie' : 'Vas lento: ↑ para bajarse a empujar');
@@ -2649,7 +2659,7 @@ function actualiza(dt) {
       actualiza.n = n;
       const el = $('#cuenta');
       el.classList.remove('is-sale'); void el.offsetWidth;
-      el.textContent = n > 0 ? String(n) : pistaActual.premio ? '¡A subir!' : LARGO_VUELTA ? '¡A correr!' : '¡A bajar!';
+      el.textContent = reanudando ? (n > 0 ? String(n) : '¡Sigue!') : n > 0 ? String(n) : pistaActual.premio ? '¡A subir!' : LARGO_VUELTA ? '¡A correr!' : '¡A bajar!';
       el.dataset.n = Math.max(0, n);
       el.classList.add('is-sale');
       tono(n > 0 ? 440 : 880, n > 0 ? 0.18 : 0.45, 'square', 0.12);
@@ -2657,14 +2667,17 @@ function actualiza(dt) {
     // Pisar durante la cuenta: el ritmo que se trae al «¡A bajar!» es el
     // arranque. Alternando a buen ritmo, el de atrás ya sale corriendo y
     // salta al carro; a medias, un empujón; sin pisar, se sale desde cero.
+    if (reanudando) { if (cuenta <= 0) { estado = 'carrera'; reanudando = false; } return; }
     pasaPasos(dt); if (modo !== 'demo') enseña();
     if (cuenta <= 0) {
       estado = 'carrera';
       const r = ritmo();
-      if (r >= 0.7) { j.v = 6 * ST.empuje; pasos.burst = 0.5; sacudida = 0.4; avisa('¡Arranque perfecto!', 1200); tono(880, 0.1, 'square', 0.12); setTimeout(() => tono(1320, 0.14, 'square', 0.12), 90); }
-      else if (r >= 0.35) { j.v = 3 * ST.empuje; pasos.burst = 0.35; avisa('¡Buen arranque!', 1000); tono(700, 0.1, 'square', 0.1); }
-      // Los rivales también arrancan pisando, cada uno según su maña.
-      for (const rv of rivales) rv.v = (Math.random() < rv.cruce.eq.hab - 0.3 ? 4 : 1.5) * rv.cruce.eq.hab;
+      j.v = r * 6 * ST.empuje;
+      if (r >= 0.85) { pasos.burst = 0.5; sacudida = 0.4; avisa('¡Arranque perfecto!', 1200); tono(880, 0.1, 'square', 0.12); setTimeout(() => tono(1320, 0.14, 'square', 0.12), 90); }
+      else if (r >= 0.35) { pasos.burst = 0.35; avisa('¡Buen arranque!', 1000); tono(700, 0.1, 'square', 0.1); }
+      // Los rivales también arrancan pisando, cada uno según su ficha de
+      // empuje, y de vez en cuando a uno le sale perfecto.
+      for (const rv of rivales) { const p = Math.random(), emp = rv.st ? rv.st.empuje : 1; rv.v = (p < 0.1 ? 6 : p < 0.55 ? 3.5 : 1.5) * emp; }
     }
     return;
   }
@@ -2672,9 +2685,12 @@ function actualiza(dt) {
   if (estado === 'carrera') {
     reloj += dt;
     // El trazo de esta carrera, por si sale récord.
-    if (fantasma.trazo.length < Math.floor(reloj * 10) + 1) fantasma.trazo.push([+j.s.toFixed(2), +j.x.toFixed(2), +j.h.toFixed(2)]);
+    if (fantasma.trazo.length < Math.floor(reloj * 10) + 1) fantasma.trazo.push([+j.s.toFixed(2), +j.x.toFixed(2), +j.h.toFixed(2), e.estado === 'empujando' ? 1 : 0]);
   }
 
+  // Los pasos se leen siempre, también volcado o en el aire: así los toques
+  // de entonces se vacían y no estallan al enderezar.
+  if (estado === 'carrera') pasaPasos(dt);
   const m = muestra(j.s);
   const hw = m.hw, pend = m.pend, k = m.k, zona = m.zona;
   // Con calles de verdad se anuncia la calle por su nombre; si no, la zona.
@@ -2688,8 +2704,8 @@ function actualiza(dt) {
     if (reloj > 1 && LUGARES[lugarSig].i > j.s - 15) avisa(LUGARES[lugarSig].nombre, 1300);
     lugarSig++;
   }
-  if (LARGO_VUELTA && estado === 'carrera' && vueltaDe(j.s) !== vueltaActual) {
-    if (vueltaDe(j.s) > vueltaActual) tiemposVuelta.push(reloj);
+  if (LARGO_VUELTA && estado === 'carrera' && vueltaDe(j.s) > vueltaActual) {
+    tiemposVuelta.push(reloj);
     vueltaActual = vueltaDe(j.s);
     avisa(vueltaActual === pistaActual.vueltas ? '¡Última vuelta!' : `Vuelta ${vueltaActual}`, 1300);
     tono(880, 0.15, 'square', 0.12, 1320);
@@ -2708,7 +2724,6 @@ function actualiza(dt) {
     c.s += c.v * dt;
     if (j.volcado <= 0) endereza();
   } else {
-    if (estado === 'carrera') pasaPasos(dt);
     // Mientras se empuja, un toque es un paso y no gira: el volante entra
     // solo cuando el lado se sostiene más de una décima, y sube en un cuarto.
     const sost = (k, t0) => !teclas[k] ? 0 : e.estado === 'empujando' ? limita((pasos.t - t0 - 0.12) / 0.25, 0, 1) : 1;
@@ -2745,10 +2760,14 @@ function actualiza(dt) {
         if ((Math.abs(j.giro) > 0.5 && impacto < -3.2) || impacto < -7.5) volcar('¡No se gira en el aire!');
         else {
           sacudida = Math.max(sacudida, 0.8);
-          if (e.estado === 'a_bordo' && impacto < -3 && Math.random() < 0.55) {
+          // Una escalera según el giro al caer: recto, premio; torcido, se cae
+          // el de atrás y el coche pierde; muy torcido (arriba), vuelco.
+          if (impacto < -3 && Math.abs(j.giro) < 0.3) { j.turbo = Math.max(j.turbo, 0.7); avisa('¡Salto limpio!', 800); tono(990, 0.1, 'triangle', 0.14); }
+          else if (e.estado === 'a_bordo' && impacto < -3 && Math.abs(j.giro) >= 0.3) {
+            j.v *= 0.85;
             Object.assign(e, { estado: 'piso', s: j.s - 0.8, x: j.x, t: 1.3, v: j.v * 0.4 });
             cocheJ.empujador.pon('rol', { fundido: 0.08 });
-            avisa('¡Se cayó el empujador!', 1300);
+            avisa('¡Se cayó el empujador! Cae recto', 1300);
           }
         }
       }
@@ -2775,6 +2794,8 @@ function actualiza(dt) {
         avisa(`¡Estampita: ${cr.nombre}!`, 1400);
         jingle([784, 988, 1175, 1568], 0.07, 'triangle');
       } else if (o.tipo === 'colada' && dx < 0.8 && !j.aire && o.obj.visible) {
+        // Con tres ya no cabe otra: el jarro se queda y se avisa (una vez por jarro).
+        if ((j.coladas || 0) >= COLADAS_MAX) { if (reloj - (o.golpe ?? -9) > 1) { o.golpe = reloj; tono(140, 0.08, 'triangle', 0.08); avisa('Ya llevas 3 coladas: gástalas a pie', 1200); } continue; }
         // La colada se guarda: es el empujón fuerte, para cuando se empuja a pie.
         tomaColada(o);
         j.coladas = Math.min(COLADAS_MAX, (j.coladas || 0) + 1);
@@ -2808,11 +2829,11 @@ function actualiza(dt) {
         choque(rv, j.v >= rv.v);
       } else if (ds > 0 && j.v > rv.v) {
         const dv = j.v - rv.v;
-        rv.v += dv * 0.6; j.v = rv.v * 0.93; j.s = rv.s - 1.9; sacudida = 0.7;
+        rv.v += dv * 0.5; j.v = rv.v; j.s = rv.s - 1.9; sacudida = 0.7;
         choque(rv, true);
       } else if (ds < 0 && rv.v > j.v) {
         const dv = rv.v - j.v;
-        j.v += dv * 0.6; rv.v = j.v * 0.95; rv.s = j.s - 1.9; sacudida = Math.max(sacudida, 0.6);
+        j.v += dv * 0.5; rv.v = j.v; rv.s = j.s - 1.9; sacudida = Math.max(sacudida, 0.6);
         choque(rv, false);
       }
       rv.x += lado * dt * 1.5;
@@ -3039,11 +3060,16 @@ function dibujaMundo(dt) {
     const s = mezcla(a[0], b[0], f), x = mezcla(a[1], b[1], f), h = mezcla(a[2], b[2], f);
     colocaCoche(fantasma.coche, s, x, h, 0, 0, (b[0] - a[0]) * 10, dt);
     enCoche(fantasma.coche.conductor, fantasma.coche.g, 0.32, 'montado');
-    enCoche(fantasma.coche.empujador, fantasma.coche.g, -0.5, 'montado');
+    // Donde el récord iba a pie, el fantasma empuja a pie (los trazos viejos, sin ese dato, van a bordo).
+    const aPie = a[3] === 1;
+    if (aPie !== fantasma.aPie) { fantasma.aPie = aPie; fantasma.coche.empujador.pon(aPie ? 'correr' : 'montado'); }
+    if (aPie) enCoche(fantasma.coche.empujador, fantasma.coche.g, -1.3, 'correr', pasoCarrera(fantasma.coche, (b[0] - a[0]) * 10, dt));
+    else enCoche(fantasma.coche.empujador, fantasma.coche.g, -0.5, 'montado');
     fantasma.coche.conductor.mixer.update(dt); fantasma.coche.empujador.mixer.update(dt);
   }
   // Los rivales.
   for (const rv of rivales) {
+    if (!rv.cruce.g.visible) continue;
     colocaCoche(rv.cruce, rv.s, rv.x, 0, 0, 0, rv.v, dt);
     enCoche(rv.cruce.conductor, rv.cruce.g, 0.32, 'montado');
     if (rv.empuja) { enCoche(rv.cruce.empujador, rv.cruce.g, -1.3, 'correr', pasoCarrera(rv.cruce, rv.v, dt)); rv.cruce.empujador.acciones.correr.timeScale = 1.1 + Math.min(1, rv.v / CORRE) * 1.1; }
@@ -3057,7 +3083,7 @@ function dibujaMundo(dt) {
   }
 
   // Las animaciones.
-  for (const cc of [cocheJ, ...rivales.map((rv) => rv.cruce)]) for (const p of [cc.conductor, cc.empujador]) p.mixer.update(dt);
+  for (const cc of [cocheJ, ...rivales.filter((rv) => rv.cruce.g.visible).map((rv) => rv.cruce)]) for (const p of [cc.conductor, cc.empujador]) p.mixer.update(dt);
   for (const pe of peatones) if (pe.estado !== 'libre') pe.p.mixer.update(dt);
 }
 
@@ -3890,7 +3916,7 @@ function eligePareja(id) {
 let esTactil = tactilMQ.matches;
 // Antes de la carrera: la copa a un lado y el trazado grande al otro, unos
 // segundos (o hasta que se toque), con la pista de fondo.
-let presentaT = 0;
+let presentaT = 0, presentaPintado = false;
 function presenta() {
   if (estado === 'cargando' || !pistaActual) return;
   arrancaSonido();
@@ -3901,7 +3927,7 @@ function presenta() {
   $('#pr-vueltas').textContent = LARGO_VUELTA ? `Vueltas: ${def.vueltas}` : `${def.premio ? 'Subida' : 'Bajada'}: ${Math.round(META - SALIDA)} m`;
   dibujaMapa($('#pr-mapa'), 2);
   pantalla('presenta');
-  estado = 'presenta'; presentaT = 2.8;
+  estado = 'presenta'; presentaT = 2.8; presentaPintado = false;
 }
 function empieza() {
   if (estado === 'cargando') return;
@@ -3925,15 +3951,23 @@ function empieza() {
 function pausa() {
   if (modo === 'demo') { terminaDemo(); return; }
   if (estado !== 'carrera' && estado !== 'cuenta') return;
-  antes = estado; estado = 'pausa';
+  antes = reanudando ? 'carrera' : estado; reanudando = false; estado = 'pausa';
+  // En la Copa, salir o repetir cuesta la Copa entera: que lo diga el botón.
+  $('#b-salir span').textContent = modo === 'copa' ? 'Salir al menú (se pierde la Copa)' : 'Salir al menú';
+  $('#b-reintentar span').textContent = modo === 'copa' ? 'Otra vez desde la salida (se pierde la Copa)' : 'Otra vez desde la salida';
   $('#pausa').hidden = false;
   $('#b-seguir').focus({ preventScroll: true });
   if (son.ctx) son.ctx.suspend();
 }
+// Al seguir desde la pausa en plena carrera, un segundo de cuenta («¡Sigue!»)
+// para poner los pulgares, sin arranque extra ni avisos.
+let reanudando = false;
 function sigue() {
   if (estado !== 'pausa') return;
-  estado = antes; $('#pausa').hidden = true;
+  $('#pausa').hidden = true;
   if (son.ctx) son.ctx.resume();
+  if (antes === 'carrera') { estado = 'cuenta'; cuenta = 1; reanudando = true; actualiza.n = null; }
+  else estado = antes;
 }
 
 function empiezaCopa(id) {
@@ -4048,7 +4082,7 @@ document.addEventListener('wheel', (ev) => { if (ev.ctrlKey) ev.preventDefault()
 let ultimoToque = 0;
 document.addEventListener('touchend', (ev) => {
   const ahora = performance.now();
-  if (ahora - ultimoToque < 350) ev.preventDefault();
+  if (ahora - ultimoToque < 350 && !ev.target.closest('button, [role="button"]')) ev.preventDefault();
   ultimoToque = ahora;
 }, { passive: false });
 document.addEventListener('pointerdown', () => { const sel = getSelection(); if (sel && sel.rangeCount) sel.removeAllRanges(); });
@@ -4121,6 +4155,8 @@ function bucle(ahora) {
   if (estado === 'presenta') { presentaT -= dt; if (presentaT <= 0) empieza(); }
   if (estado === 'menu' || estado === 'cargando' || estado === 'titulo' || estado === 'elegir' || estado === 'podio' || estado === 'presenta') {
     if (!N) { requestAnimationFrame(bucle); return; }
+    // Bajo el desenfoque de la presentación, un cuadro quieto basta.
+    if (estado === 'presenta') { if (presentaPintado) { requestAnimationFrame(bucle); return; } presentaPintado = true; }
     if (cocheJ) dibujaMundo(dt);
     if (estado === 'elegir') dibujaPortada(ahora / 1000);
     else if (estado === 'podio') dibujaPodio(ahora / 1000);
@@ -4152,10 +4188,11 @@ async function carga() {
   const pide = (n) => cargador.loadAsync(modeloUrl(n)).then((g) => { avanza(); return g; });
   // Las calles de verdad que hay (coches/pistas/indice.json, lo escribe
   // tools/calles.py); las que no, se generan en código o la pista usa sus tramos.
+  const modelos = nombres.map(pide);   // salen ya, sin esperar al índice
   const hay = await fetch(new URL(`pistas/indice.json${SELLO}`, import.meta.url)).then((r) => (r.ok ? r.json() : [])).catch(() => []);
   const pideCalle = (n) => (hay.includes(n) ? fetch(new URL(`pistas/${n}.json${SELLO}`, import.meta.url)).then((r) => (r.ok ? r.json() : null)).catch(() => null) : Promise.resolve(null))
     .then((d) => { d = d || (GENERADAS[n] ? { ...GENERADAS[n](), generada: true } : null); if (d) DATOS_REALES[n] = d; avanza(); });
-  const [chico, chica, generico, policia, ministro, anim, quito] = await Promise.all([...nombres.map(pide), ...reales.map(pideCalle)]);
+  const [chico, chica, generico, policia, ministro, anim, quito] = await Promise.all([...modelos, ...reales.map(pideCalle)]);
   Object.assign(MODELOS, { 'base-chico': chico, 'base-chica': chica, generico, policia, ministro });
   for (const n of ['montado', 'correr', 'rol', 'golpe', 'salto', 'arrancar']) {
     const clip = anim.animations.find((a) => a.name === n);
