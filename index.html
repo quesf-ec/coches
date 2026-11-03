@@ -23,9 +23,10 @@
 <!-- El sello ?v= se sube a mano en cada cambio del juego (CSS, JS y, con el
      JS, los modelos, que heredan su sello): así el navegador no se queda con
      la versión anterior. -->
-<link rel="stylesheet" href="coches.css?v=18e7f84053">
+<link rel="stylesheet" href="coches.css?v=e26def2cf4">
 <!-- La piel del juego: variante del tema juegos (ver tema/LEEME.md). Va al final para mandar. -->
-<link rel="stylesheet" href="tema/tema.css?v=18e7f84053">
+<link rel="stylesheet" href="tema/tema.css?v=e26def2cf4">
+<link rel="modulepreload" href="vendor/three.module.min.js">
 <script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js", "three/addons/": "./vendor/addons/" } }</script>
 <script type="application/ld+json">
 {
@@ -362,9 +363,9 @@
     <button class="btn btn--rojo boton-juego btn-block" id="b-seguir" type="button">
       <svg class="icono" aria-hidden="true"><use href="#i-play"/></svg> Seguir</button>
     <button class="btn boton-juego btn-block" id="b-reintentar" type="button">
-      <svg class="icono" aria-hidden="true"><use href="#i-reiniciar"/></svg> Otra vez desde la salida</button>
+      <svg class="icono" aria-hidden="true"><use href="#i-reiniciar"/></svg> <span>Otra vez desde la salida</span></button>
     <button class="btn btn-ghost btn-block" id="b-salir" type="button">
-      <svg class="icono" aria-hidden="true"><use href="#i-salir"/></svg> Salir al menú</button>
+      <svg class="icono" aria-hidden="true"><use href="#i-salir"/></svg> <span>Salir al menú</span></button>
   </div>
 </div>
 
@@ -401,6 +402,6 @@
 </div>
 
 <script src="../ds/mal/mal.js?v=1.0.18" defer></script>
-<script type="module" src="coches.js?v=18e7f84053"></script>
+<script type="module" src="coches.js?v=e26def2cf4"></script>
 </body>
 </html>

@@ -23,7 +23,7 @@ body.coches{
   font-family:var(--mal-display);font-weight:800;color:#fff;margin:0;line-height:1;
   -webkit-text-stroke:var(--hud-borde) var(--tinta);paint-order:stroke fill;
   text-shadow:0 3px 0 var(--tinta)}
-.coches-botones{gap:var(--mal-e2)}
+.coches-botones{gap:var(--mal-e3);position:relative;z-index:26}
 .coches-botones .btn{background:var(--mal-surface)}
 
 /* El puesto, grande; el tiempo debajo. */
@@ -92,7 +92,7 @@ body.coches{
 /* Dirección: cada mitad de la pantalla es un mando. El dibujo es solo la
    pista de dónde tocar; todo el costado responde. */
 .coches-zona{
-  position:fixed;top:24%;bottom:0;width:50%;border-radius:0;border:0;box-shadow:none;background:transparent;
+  position:fixed;top:calc(env(safe-area-inset-top, 0px) + 72px);bottom:0;width:50%;border-radius:0;border:0;box-shadow:none;background:transparent;
   align-content:end;padding-bottom:calc(env(safe-area-inset-bottom, 0px) + var(--mal-e4));
   color:rgba(255,255,255,.75);transition:background .08s;
 }
@@ -328,7 +328,7 @@ body.pixel #pista{image-rendering:pixelated;image-rendering:crisp-edges}
   /* La carrera, más apretada: el HUD a ras de los bordes. */
   .coches-hud{padding:calc(env(safe-area-inset-top, 0px) + 10px) calc(env(safe-area-inset-right, 0px) + 14px)
     calc(env(safe-area-inset-bottom, 0px) + 10px) calc(env(safe-area-inset-left, 0px) + 14px)}
-  .coches-botones .btn{width:40px;height:40px;min-height:40px;padding:0}
+  .coches-botones .btn{width:48px;height:48px;min-height:48px;padding:0}
   .coches-puesto__n{font-size:2.6rem}
   .coches-vel{font-size:1.4rem}
   .coches-tablero{gap:2px;margin-top:0}
