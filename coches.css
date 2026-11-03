@@ -101,7 +101,7 @@ body.coches{
 .coches-zona .icono{width:56px;height:56px;filter:drop-shadow(0 2px 0 rgba(0,0,0,.5));opacity:.8}
 .coches-zona.is-on{transform:none;box-shadow:none;background:linear-gradient(to top, rgba(255,255,255,.2), transparent 70%)}
 .coches-zona.is-on .icono{opacity:1}
-/* Freno: un botón en el centro de abajo, por encima de las zonas. */
+/* Freno: a la izquierda, arriba de la flecha de girar, por encima de las zonas. */
 .coches-mando--freno{
   position:fixed;left:calc(env(safe-area-inset-left, 0px) + var(--mal-e5));bottom:calc(env(safe-area-inset-bottom, 0px) + clamp(120px, 34vw, 170px));
   width:clamp(64px, 17vw, 80px);height:clamp(64px, 17vw, 80px);z-index:2;
@@ -252,6 +252,7 @@ body.pixel #pista{image-rendering:pixelated;image-rendering:crisp-edges}
 .coches.tactil .coches-teclas{display:none}
 .coches-solo-tactil{display:none}
 .coches.tactil .coches-solo-tactil{display:block}
+.coches.tactil dl.coches-solo-tactil{display:grid}
 .coches-subtitulo{margin:0;font-size:clamp(1.3rem, 1rem + 1.5vw, 1.7rem);line-height:1.1}
 .coches-progreso:empty{display:none}
 .coches-fila{gap:var(--mal-e2);flex-wrap:wrap}
@@ -417,14 +418,16 @@ body.pixel #pista{image-rendering:pixelated;image-rendering:crisp-edges}
 .coches-crono .coches-tiempo{margin:0}
 .coches-parciales{margin:3px 0 0;display:grid;gap:1px;font-family:"Bungee",var(--mal-mono);font-size:.68rem;color:#fff;text-shadow:0 1px 0 #16233F, 0 0 3px #16233F}
 .coches-parciales:empty{display:none}
-/* El botón de acción: redondo, abajo a la derecha. */
-.coches-mando--empuja{top:auto;bottom:calc(env(safe-area-inset-bottom, 0px) + var(--mal-e4));width:clamp(76px, 20vw, 96px);height:clamp(76px, 20vw, 96px);
+/* El botón de acción: redondo, a la derecha y a la altura del freno. Abajo
+   del todo tapaba la flecha donde el pulgar derecho pisa. */
+.coches-mando--empuja{top:auto;width:clamp(76px, 20vw, 96px);height:clamp(76px, 20vw, 96px);
   border-radius:50%;display:grid;place-items:center;align-content:center;gap:0;font-family:"Bangers",var(--mal-display);font-size:1.05rem;letter-spacing:.04em}
 .coches-mando--empuja .coches-jarrito{display:none}
 .coches-mando--empuja.es-colada .coches-jarrito{display:block;width:30px;height:30px}
 .coches-mando--empuja.es-colada{animation:coches-toca .45s ease-in-out infinite alternate}
-/* El freno, un poco más abajo: deja sitio a las posiciones. */
-.coches-mando--freno{bottom:calc(env(safe-area-inset-bottom, 0px) + clamp(84px, 24vh, 116px))}
+/* El freno y el botón de acción, a la misma altura: dejan sitio a las
+   posiciones arriba y a las flechas de pisar abajo. */
+.coches-mando--freno,.coches-mando--empuja{bottom:calc(env(safe-area-inset-bottom, 0px) + clamp(84px, 24vh, 116px))}
 
 /* El menú principal: la ficha y las baldosas a la izquierda, el botón grande
    para correr abajo a la derecha. */
@@ -480,7 +483,8 @@ body.pixel #pista{image-rendering:pixelated;image-rendering:crisp-edges}
   .coches-posiciones{top:calc(env(safe-area-inset-top, 0px) + 60px);gap:2px}
   .coches-posiciones li{height:20px;font-size:.88rem}
   .coches-posiciones li span{font-size:.72rem}
-  .coches-mando--freno{width:64px;height:64px;bottom:calc(env(safe-area-inset-bottom, 0px) + 90px)}
+  .coches-mando--freno{width:64px;height:64px}
+  .coches-mando--freno,.coches-mando--empuja{bottom:calc(env(safe-area-inset-bottom, 0px) + 90px)}
   .coches-inicio{width:min(56vw, 500px)}
   .coches-ficha{padding:6px 12px}
   .coches-ficha__foto{width:44px;height:44px;font-size:1.4rem}
@@ -519,4 +523,29 @@ body.pixel #pista{image-rendering:pixelated;image-rendering:crisp-edges}
   .coches-premio .coches-podio{margin-top:6px;font-size:.72rem;min-width:0;width:100%}
   .coches-premio .premio__pie{margin:0;font-size:1rem}
   .coches-premio .coches-creditos{display:none}
+}
+/* La ayuda de lado: el texto a la izquierda y la tabla de mandos a la
+   derecha, para que entre sin bajar; si aun así no cabe, baja el panel y
+   no la pantalla entera. */
+@media (orientation:landscape) and (max-height:600px){
+  #ayuda .coches-panel{width:min(94vw, 780px);max-height:calc(100dvh - 12px);overflow:auto;display:grid;grid-template-columns:1.1fr 1fr;
+    gap:var(--mal-e1) var(--mal-e4);align-content:start;padding:var(--mal-e2) var(--mal-e4)}
+  #ayuda .coches-banner,#ayuda .btn{grid-column:1 / -1}
+  #ayuda .coches-teclas{grid-column:2;grid-row:2 / span 2;font-size:.74rem;gap:3px;align-self:start}
+  #ayuda .coches-teclas div{grid-template-columns:6.5em 1fr;gap:var(--mal-e1)}
+  #ayuda .caption{grid-column:1;font-size:.8rem;line-height:1.3;margin:0}
+  #ayuda .btn{min-height:36px;padding-block:5px}
+  #ayuda{padding:calc(env(safe-area-inset-top, 0px) + 4px) calc(env(safe-area-inset-right, 0px) + var(--mal-e4)) calc(env(safe-area-inset-bottom, 0px) + 4px) calc(env(safe-area-inset-left, 0px) + var(--mal-e4))}
+  /* Las demás pantallas de menú: si no caben, baja el panel, no la pantalla. */
+  #opciones .coches-panel,#creditos .coches-panel,#medallas .coches-panel,#album .coches-panel{max-height:calc(100dvh - 12px);overflow:auto}
+}
+@media (orientation:landscape) and (max-height:600px){
+  #opciones,#creditos,#medallas,#album{padding:calc(env(safe-area-inset-top, 0px) + 4px) calc(env(safe-area-inset-right, 0px) + var(--mal-e4)) calc(env(safe-area-inset-bottom, 0px) + 4px) calc(env(safe-area-inset-left, 0px) + var(--mal-e4))}
+  #opciones .coches-panel,#creditos .coches-panel{padding:var(--mal-e2) var(--mal-e4);gap:var(--mal-e2)}
+  /* Las medallas y el álbum, a lo ancho: dos columnas de pistas y parejas, y más estampitas por fila. */
+  #medallas .coches-panel,#album .coches-panel{width:min(94vw, 820px);padding:var(--mal-e2) var(--mal-e4);gap:var(--mal-e2)}
+  #medallas .coches-lista{grid-template-columns:1fr 1fr;gap:var(--mal-e1) var(--mal-e4)}
+  #medallas .coches-lista li{gap:var(--mal-e2)}
+  #album .coches-album{grid-template-columns:repeat(auto-fill, minmax(96px, 1fr));gap:var(--mal-e2)}
+  #creditos .caption,#creditos .coches-creditos{font-size:.82rem;line-height:1.3}
 }

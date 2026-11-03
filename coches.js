@@ -941,7 +941,8 @@ render.outputColorSpace = THREE.SRGBColorSpace;
 render.toneMapping = THREE.NeutralToneMapping;
 render.toneMappingExposure = 1.12;
 render.shadowMap.enabled = true;
-render.shadowMap.type = THREE.PCFSoftShadowMap;
+// En el teléfono, la sombra barata: PCFSoft es la más cara de todas.
+render.shadowMap.type = tactilMQ.matches ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap;
 const escena = new THREE.Scene();
 const NIEBLA = 0xD6E6EE;
 escena.background = new THREE.Color(0xB4D5EC);
@@ -954,7 +955,7 @@ escena.add(hemi);
 const sol = new THREE.DirectionalLight(0xFFF0D6, 2.6);
 const SOL = new THREE.Vector3(-26, 52, 20);
 sol.castShadow = true;
-sol.shadow.mapSize.set(1024, 1024);
+sol.shadow.mapSize.set(tactilMQ.matches ? 768 : 1024, tactilMQ.matches ? 768 : 1024);
 Object.assign(sol.shadow.camera, { left: -16, right: 16, top: 16, bottom: -16, near: 1, far: 140 });
 sol.shadow.bias = -0.0006;
 sol.shadow.normalBias = 0.03;
@@ -2262,6 +2263,10 @@ const pulsa = (t) => { if (t in pulsos) pulsos[t]++; };
 let cocheJ, carros = [], eqJ;
 // Lo que la pareja elegida cambia de la física: velocidad, empuje y giro.
 const ST = { tope: 1, empuje: 1, giro: 1 };
+const ST_BASE = { tope: 1, empuje: 1, giro: 1 };
+// Los factores de un rival por su ficha (velocidad, empuje, giro de 1 a 5),
+// más suaves que los del jugador para que el pelotón se estire sin escaparse.
+const factoresDe = (eq) => ({ tope: 0.97 + 0.015 * eq.stats[0], empuje: 0.92 + 0.04 * eq.stats[1], giro: 0.94 + 0.03 * eq.stats[2] });
 
 function reinicia() {
   for (const o of obstaculos) { o.tomada = false; o.golpe = -9; if (o.sp) o.sp.visible = true; if (o.mesh) { o.mesh.visible = true; o.mesh.material.opacity = prog.album.includes(o.id) ? 0.35 : 1; } }
@@ -2286,7 +2291,8 @@ function reinicia() {
   Object.assign(c, { suelto: false, s: 0, x: 0, v: 0 });
   for (const pe of peatones) pe.estado = 'libre';
   reloj = 0; zonaActual = ''; lugarSig = 0; tiemposVuelta.length = 0; sacudida = 0; tPeaton = 1; vueltaActual = 1;
-  Object.assign(pasos, { ultimo: 0, combo: 0, burst: 0, tIzq: -9, tDer: -9, prevEmp: false, pulsos: [], unPie: 0, sesgo: 0 });
+  Object.assign(pasos, { ultimo: 0, combo: 0, burst: 0, tIzq: -9, tDer: -9, prevEmp: false, pulsos: [], unPie: 0, sesgo: 0, t: 0 });
+  enseña.t = -9; enseña.unPieAntes = false;
   pulsos.izq = pulsos.der = pulsos.empuja = 0;
   demoPaso = 0;
   fantasma.trazo = [];
@@ -2328,6 +2334,8 @@ function arrancaSonido() {
   fuente.connect(son.filtro); son.filtro.connect(son.traqueteo); son.traqueteo.connect(son.rodar); son.rodar.connect(son.salida);
   fuente.start(); son.lfo.start();
 }
+// Un toque de vibración, donde el teléfono lo tenga y el sonido esté activo.
+const vibra = (ms) => { try { if (ajustes.sonido && navigator.vibrate) navigator.vibrate(ms); } catch (err) { /* sin vibración */ } };
 function tono(f, dur, tipo, vol, f2) {
   if (!son.ctx) return;
   const a = son.ctx, t = a.currentTime, o = a.createOscillator(), g = a.createGain();
@@ -2452,8 +2460,8 @@ const PERDONES = ['¡Perdón, vecino!', '¡Cuidado, mijo!', '¡Ay, mi espalda!',
 const stats = { vuelcos: 0, atropellos: 0, saltos: 0, choques: 0 };
 function volcar(motivo) {
   if (j.volcado > 0) return;
-  stats.vuelcos++;
-  j.volcado = 1.8; j.giroVuelco = 0; j.aire = false; j.h = 0;
+  stats.vuelcos++; vibra([40, 40, 60]);
+  j.volcado = 1.4; j.giroVuelco = 0; j.aire = false; j.h = 0;
   Object.assign(c, { suelto: true, s: j.s, x: j.x, v: j.v * 0.75 });
   cocheJ.conductor.pon('rol', { fundido: 0.08 });
   if (e.estado === 'a_bordo' || e.estado === 'empujando') {
@@ -2470,7 +2478,8 @@ function endereza() {
   const hw = muestra(j.s).hw;
   j.s = Math.max(j.s, c.s - 0.5);
   j.x = limita(c.x, -(hw - 0.7), hw - 0.7);
-  j.v = 0; j.volcado = 0;
+  // Se monta al coche rodando, con el mismo empujón del «buen arranque».
+  j.v = Math.max(c.v, 3 * ST.empuje); pasos.burst = 0.35; j.volcado = 0;
   c.suelto = false;
   cocheJ.conductor.pon('montado', { fundido: 0.2 });
 }
@@ -2483,18 +2492,20 @@ function endereza() {
 // hacia el lado contrario. Los dos lados a la vez, o la tecla de arriba, son
 // el empujón fuerte, pero solo a pie y gastando una colada morada guardada:
 // sale disparado y se sube al carro. Cuando el coche ya va rápido, se trepa solo.
+// `t` es el reloj de los pasos: corre también en la cuenta atrás, donde el
+// reloj de la carrera está parado.
 const pasos = { ultimo: 0, combo: 0, mejor: 0, prevIzq: false, prevDer: false, prevEmp: false,
-  tIzq: -9, tDer: -9, pulsos: [], burst: 0, unPie: 0, sesgo: 0 };
+  tIzq: -9, tDer: -9, pulsos: [], burst: 0, unPie: 0, sesgo: 0, t: 0 };
 const COLADAS_MAX = 3;       // coladas que se pueden guardar para el empujón
 const PASOS_VENTANA = 1;     // segundos que cuentan para el ritmo
-const PASOS_TOPE = 4;        // pasos en ese segundo para el empuje entero
+const PASOS_TOPE = 3;        // pasos en ese segundo para el empuje entero
 const DOBLE_VENTANA = 0.1;   // los dos lados en una décima son a la vez
 const BAJA_EMPUJE = 4;       // por debajo de esta velocidad se baja solo a empujar (m/s)
 const BAJA_MANUAL = 8.5;     // y por debajo de esta, se puede bajar con la tecla de empujar
 
 // Cuánto empuja lo que pisa, de 0 a 1: los pasos del último segundo.
 function ritmo() {
-  const corte = reloj - PASOS_VENTANA;
+  const corte = pasos.t - PASOS_VENTANA;
   while (pasos.pulsos.length && pasos.pulsos[0].t < corte) pasos.pulsos.shift();
   let n = 0;
   for (const q of pasos.pulsos) n += q.peso;
@@ -2502,14 +2513,16 @@ function ritmo() {
 }
 
 function pasaPasos(dt) {
+  pasos.t += dt;
   const subeIzq = (teclas.izq && !pasos.prevIzq) || pulsos.izq > 0, subeDer = (teclas.der && !pasos.prevDer) || pulsos.der > 0;
-  const subeEmp = (teclas.empuja && !pasos.prevEmp) || pulsos.empuja > 0;
+  // En la cuenta atrás solo se pisa: ni subirse ni el empujón antes del «¡A bajar!».
+  const subeEmp = estado !== 'cuenta' && ((teclas.empuja && !pasos.prevEmp) || pulsos.empuja > 0);
   pasos.prevIzq = teclas.izq; pasos.prevDer = teclas.der; pasos.prevEmp = teclas.empuja;
   pulsos.izq = pulsos.der = pulsos.empuja = 0;
   pasos.burst = Math.max(0, pasos.burst - dt);
   pasos.sesgo = Math.sign(pasos.sesgo) * Math.max(0, Math.abs(pasos.sesgo) - dt * 1.4);
-  if (subeIzq) pasos.tIzq = reloj;
-  if (subeDer) pasos.tDer = reloj;
+  if (subeIzq) pasos.tIzq = pasos.t;
+  if (subeDer) pasos.tDer = pasos.t;
   if (!subeIzq && !subeDer && !subeEmp) return;
   if (j.aire || j.volcado > 0) return;
   // La tecla de empujar: lento y a bordo, se baja a empujar; a pie, salta
@@ -2529,8 +2542,8 @@ function pasaPasos(dt) {
     }
     if (!subeIzq && !subeDer) return;
   }
-  const doble = (subeIzq && teclas.der && reloj - pasos.tDer < DOBLE_VENTANA)
-    || (subeDer && teclas.izq && reloj - pasos.tIzq < DOBLE_VENTANA);
+  const doble = (subeIzq && teclas.der && pasos.t - pasos.tDer < DOBLE_VENTANA)
+    || (subeDer && teclas.izq && pasos.t - pasos.tIzq < DOBLE_VENTANA);
   if (doble) {
     pasos.tIzq = pasos.tDer = -9;
     // Sin colada guardada, o ya a bordo, no hay empujón: solo un golpe sordo.
@@ -2551,18 +2564,18 @@ function empujonColada() {
     sacudida = Math.max(sacudida, 0.6);
     e.estado = 'a_bordo'; e.tSube = reloj; cocheJ.empujador.pon('montado');
     tono(520, 0.12, 'triangle', 0.18); setTimeout(() => tono(880, 0.14, 'triangle', 0.16), 80);
-    avisa('¡Empujón de colada!', 800);
+    avisa('¡Empujón de colada!', 800); vibra(30);
   }
 }
 function pisaUnPie(lado) {
   const alterna = lado !== pasos.ultimo;
-  pasos.pulsos.push({ t: reloj, peso: alterna ? 1 : 0.8 });
+  pasos.pulsos.push({ t: pasos.t, peso: alterna ? 1 : 0.8 });
   if (alterna) {
     pasos.unPie = 0;
     pasos.combo++;
     pasos.mejor = Math.max(pasos.mejor, pasos.combo);
     pasos.burst = 0.35;
-    tono(440 + Math.min(pasos.combo, 12) * 30, 0.05, 'square', 0.07);
+    tono(440 + Math.min(pasos.combo, 12) * 30, 0.05, 'square', 0.07); vibra(8);
   } else {
     // El mismo pie otra vez: el otro sube a la tabla y empuja de un lado,
     // así que el coche se va hacia el lado contrario.
@@ -2583,17 +2596,19 @@ function pisaUnPie(lado) {
 // girar al subirse, el botón morado con la primera colada y bajarse cuando
 // va lento. Cada aviso sale dos veces en la vida del jugador y ya.
 function enseña() {
-  if (estado !== 'carrera' || modo === 'demo') return;
+  if ((estado !== 'carrera' && estado !== 'cuenta') || modo === 'demo') return;
   const v = ajustes.vistos || (ajustes.vistos = {});
   const di = (clave, texto) => {
-    if ((v[clave] || 0) >= 2 || reloj - (enseña.t || -9) < 3) return;
+    if ((v[clave] || 0) >= 2 || reloj - (enseña.t ?? -9) < 3) return;
     v[clave] = (v[clave] || 0) + 1; enseña.t = reloj; guardaAjustes();
     avisa(texto, 2600);
   };
-  if (reloj > 0.6 && reloj < 4 && e.estado === 'empujando') di('pisa', esTactil ? 'Toca ◀ ▶ alternando: así empuja el de atrás' : 'Pisa ← → alternando: así empuja el de atrás');
+  if (estado === 'cuenta' && cuenta < 2.6 && e.estado === 'empujando') di('pisa', esTactil ? 'Toca ◀ ▶ alternando ya: a buen ritmo, arranque extra' : 'Pisa ← → alternando ya: a buen ritmo, arranque extra');
+  else if (e.estado === 'empujando' && pasos.unPie && !enseña.unPieAntes) di('unpie', 'Dos veces el mismo pie: el coche se va al otro lado');
   else if (reloj > 4 && e.estado === 'a_bordo' && j.v > 6) di('gira', esTactil ? 'Ya a bordo: toca los lados para girar' : 'Ya a bordo: ← → giran, ↓ frena');
   else if (e.estado === 'empujando' && (j.coladas || 0) > 0) di('colada', esTactil ? '¡Tienes colada! El botón morado da el empujón fuerte' : '¡Tienes colada! ← + → a la vez: el empujón fuerte');
   else if (e.estado === 'a_bordo' && j.v < BAJA_MANUAL && j.v > BAJA_EMPUJE && reloj > 8) di('bajate', esTactil ? 'Vas lento: «Bájate» y empuja a pie' : 'Vas lento: ↑ para bajarse a empujar');
+  enseña.unPieAntes = !!pasos.unPie;
 }
 
 function actualizaEmpujador(dt) {
@@ -2609,7 +2624,7 @@ function actualizaEmpujador(dt) {
       if (j.aire || j.volcado > 0) break;
       if (j.v >= ENGANCHE) {
         e.estado = 'a_bordo'; e.tSube = reloj; cocheJ.empujador.pon('montado');
-        pasos.unPie = 0;
+        pasos.unPie = 0; pasos.sesgo = 0;
         tono(520, 0.1, 'triangle', 0.15);
       }
       break;
@@ -2639,7 +2654,18 @@ function actualiza(dt) {
       el.classList.add('is-sale');
       tono(n > 0 ? 440 : 880, n > 0 ? 0.18 : 0.45, 'square', 0.12);
     }
-    if (cuenta <= 0) estado = 'carrera';
+    // Pisar durante la cuenta: el ritmo que se trae al «¡A bajar!» es el
+    // arranque. Alternando a buen ritmo, el de atrás ya sale corriendo y
+    // salta al carro; a medias, un empujón; sin pisar, se sale desde cero.
+    pasaPasos(dt); if (modo !== 'demo') enseña();
+    if (cuenta <= 0) {
+      estado = 'carrera';
+      const r = ritmo();
+      if (r >= 0.7) { j.v = 6 * ST.empuje; pasos.burst = 0.5; sacudida = 0.4; avisa('¡Arranque perfecto!', 1200); tono(880, 0.1, 'square', 0.12); setTimeout(() => tono(1320, 0.14, 'square', 0.12), 90); }
+      else if (r >= 0.35) { j.v = 3 * ST.empuje; pasos.burst = 0.35; avisa('¡Buen arranque!', 1000); tono(700, 0.1, 'square', 0.1); }
+      // Los rivales también arrancan pisando, cada uno según su maña.
+      for (const rv of rivales) rv.v = (Math.random() < rv.cruce.eq.hab - 0.3 ? 4 : 1.5) * rv.cruce.eq.hab;
+    }
     return;
   }
   if (estado !== 'carrera' && estado !== 'llegada') return;
@@ -2685,7 +2711,7 @@ function actualiza(dt) {
     if (estado === 'carrera') pasaPasos(dt);
     // Mientras se empuja, un toque es un paso y no gira: el volante entra
     // solo cuando el lado se sostiene más de una décima, y sube en un cuarto.
-    const sost = (k, t0) => !teclas[k] ? 0 : e.estado === 'empujando' ? limita((reloj - t0 - 0.12) / 0.25, 0, 1) : 1;
+    const sost = (k, t0) => !teclas[k] ? 0 : e.estado === 'empujando' ? limita((pasos.t - t0 - 0.12) / 0.25, 0, 1) : 1;
     const mando = estado === 'llegada' ? 0 : limita(sost('der', pasos.tDer) - sost('izq', pasos.tIzq) + pasos.sesgo * 0.8, -1, 1);
     j.giro = mezcla(j.giro, mando, Math.min(1, dt * 10));
     const piedra = ZONAS[zona].calle === 'adoquin';
@@ -2805,6 +2831,7 @@ function actualiza(dt) {
 
   if (estado === 'carrera' && j.s >= META) {
     j.llegada = reloj; estado = 'llegada'; tLlegada = 0;
+    if (LARGO_VUELTA) tiemposVuelta.push(reloj);
     j.puesto = 1 + rivales.filter((rv) => rv.llegada).length;
     tono(523, 0.15, 'triangle', 0.2); setTimeout(() => tono(659, 0.15, 'triangle', 0.2), 140); setTimeout(() => tono(784, 0.4, 'triangle', 0.22), 280);
   }
@@ -2819,7 +2846,7 @@ function actualiza(dt) {
 function choque(rv, ganas) {
   if (reloj - (rv.tChoque ?? -9) < 1.2) return;
   rv.tChoque = reloj;
-  golpe(0.5, 800);
+  golpe(0.5, 800); vibra(25);
   const de = ganas ? rv : j, a = ganas ? j : rv;
   if ((de.coladas || 0) > 0 && (a.coladas || 0) < COLADAS_MAX) {
     de.coladas--; a.coladas = (a.coladas || 0) + 1;
@@ -2831,7 +2858,7 @@ function choque(rv, ganas) {
 
 function actualizaRival(rv, dt) {
   const m = muestra(rv.s);
-  const hab = rv.cruce.eq.hab * 0.97;
+  const hab = rv.cruce.eq.hab * 0.97, st = rv.st || ST_BASE;
   let a = -G * CUESTA * m.pend - (ZONAS[m.zona].calle === 'adoquin' ? ROCE_PIEDRA : ROCE) - AIRE * rv.v * rv.v / hab;
   // Su empujador se baja en las subidas y cuando hay que arrancar.
   const debe = rv.v < CORRE - 1.2 && (m.pend > 0.01 || rv.v < 3);
@@ -2840,7 +2867,7 @@ function actualizaRival(rv, dt) {
     rv.cruce.empujador.pon(debe ? 'correr' : 'montado');
   }
   // Cuesta arriba empujan con todo: si no, en la subida no hay carrera.
-  if (rv.empuja) a += EMPUJE * (m.pend > 0.01 ? 1 : 0.85) * hab * Math.max(0, 1 - rv.v / CORRE) + (rv.v < 1 ? 1 : 0);
+  if (rv.empuja) a += EMPUJE * st.empuje * (m.pend > 0.01 ? 0.9 : 0.85) * hab * Math.max(0, 1 - rv.v / CORRE) + (rv.v < 1 ? 1 : 0);
   // Sus coladas: las toman al pasar y las gastan al arrancar o en la subida.
   for (const o of listaColadas) {
     if (Math.abs(o.s - rv.s) < 0.7 && Math.abs(o.x - rv.x) < 0.8 && o.obj.visible && (rv.coladas || 0) < COLADAS_MAX) { tomaColada(o); rv.coladas = (rv.coladas || 0) + 1; }
@@ -2854,10 +2881,11 @@ function actualizaRival(rv, dt) {
   }
   let peor = 0;
   for (let d = 0; d < 30; d += 3) peor = Math.max(peor, Math.abs(P.k[limita(Math.floor(rv.s + d), 0, N - 1)]));
-  const tope = peor > 0.005 ? Math.min(TOPE, GIRO / (CENTRIFUGA * peor) * (0.86 + 0.08 * hab)) : TOPE;
+  const topeAbs = TOPE * st.tope;
+  const tope = peor > 0.005 ? Math.min(topeAbs, GIRO * st.giro / (CENTRIFUGA * peor) * (0.86 + 0.08 * hab)) : topeAbs;
   rv.v += a * dt;
   if (rv.v > tope) rv.v = Math.max(tope, rv.v - FRENO * 0.7 * dt);
-  rv.v = limita(rv.v, 0, TOPE);
+  rv.v = limita(rv.v, 0, topeAbs);
   // El carril: lejos de los puestos y de quien va delante más lento.
   let esquiva = 0;
   for (const o of [j, ...rivales]) {
@@ -3186,12 +3214,12 @@ function pintaHud() {
   datos.coladas = coladas;
   // Los pies: se enciende el que toca (los dos, antes del primer paso), la
   // racha en medio, y la píldora se ilumina con cada buen paso.
-  const pisa = e.estado === 'empujando' && estado === 'carrera';
+  const pisa = e.estado === 'empujando' && (estado === 'carrera' || estado === 'cuenta');
   if (pisa !== ultimoHud.pisa) { hud.pasos.hidden = !pisa; ultimoHud.pisa = pisa; }
   if (pisa) {
     const toca = -pasos.ultimo;
     if (toca !== ultimoHud.toca) { hud.pieIzq.classList.toggle('is-toca', toca <= 0); hud.pieDer.classList.toggle('is-toca', toca >= 0); ultimoHud.toca = toca; }
-    const racha = pasos.unPie ? 'Un pie' : pasos.combo > 1 ? `×${pasos.combo}` : '¡Pisa!';
+    const racha = pasos.unPie ? (pasos.unPie < 0 ? 'Un pie ▶' : '◀ Un pie') : pasos.combo > 1 ? `×${pasos.combo}` : '¡Pisa!';
     if (racha !== ultimoHud.racha) { hud.racha.textContent = racha; ultimoHud.racha = racha; }
     const bien = pasos.burst > 0;
     if (bien !== ultimoHud.bien) { hud.pasos.classList.toggle('is-bien', bien); ultimoHud.bien = bien; }
@@ -3611,7 +3639,7 @@ function pilotoDemo() {
   const hw = muestra(j.s).hw; objetivo = limita(objetivo, -(hw - 0.9), hw - 0.9);
   teclas.izq = j.x > objetivo + 0.15 && !j.aire; teclas.der = j.x < objetivo - 0.15 && !j.aire;
   teclas.freno = j.v > GIRO / (CENTRIFUGA * Math.max(peor, 1e-4)) * 0.95;
-  if (e.estado === 'empujando' && !teclas.freno && reloj >= demoPaso) { demoPaso = reloj + 0.3; pasos.pulsos.push({ t: reloj, peso: 1 }); }
+  if (e.estado === 'empujando' && !teclas.freno && pasos.t >= demoPaso) { demoPaso = pasos.t + 0.3; pasos.pulsos.push({ t: pasos.t, peso: 1 }); }
 }
 function desdeTitulo() {
   if (estado !== 'titulo' || $('#b-copa').disabled) return;
@@ -3816,6 +3844,9 @@ function eligePareja(id) {
   eqJ = EQUIPOS.find((q) => q.id === id);
   cocheJ = carros.find((c2) => c2.cruce.eq === eqJ).cruce;
   rivales = carros.filter((c2) => c2.cruce !== cocheJ);
+  // Cada rival corre según su ficha, como el jugador: el Gallo se escapa en
+  // la recta, Cantuña en la trepada.
+  for (const rv of rivales) rv.st = factoresDe(rv.cruce.eq);
   ST.tope = 0.94 + 0.03 * eqJ.stats[0];
   ST.empuje = 0.85 + 0.075 * eqJ.stats[1];
   ST.giro = 0.9 + 0.05 * eqJ.stats[2];
@@ -4046,7 +4077,7 @@ for (const b of document.querySelectorAll('.coches-mando')) {
 function mide() {
   // En modo píxel se dibuja a un cuarto de resolución y se escala sin
   // suavizar: los dientes de sierra de la consola.
-  render.setPixelRatio(ajustes.pixel ? 0.5 : Math.min(window.devicePixelRatio || 1, tactilMQ.matches ? 1.5 : 2));
+  render.setPixelRatio(ajustes.pixel ? 0.5 : Math.min(window.devicePixelRatio || 1, tactilMQ.matches ? 1.25 : 2));
   render.setSize(innerWidth, innerHeight, false);
   camara.aspect = innerWidth / innerHeight;
   // En vertical se abre el ángulo para que quepa la calzada entera.
@@ -4185,7 +4216,7 @@ window.coches = {
   ritmo: () => ritmo(),
   coladas: (n) => { if (n != null) j.coladas = n; return j.coladas || 0; },
   unPie: () => pasos.unPie,
-  pisa: () => pasos.pulsos.push({ t: reloj, peso: 1 }),
+  pisa: () => pasos.pulsos.push({ t: pasos.t, peso: 1 }),
   paso: (lado, espera) => { const k = lado < 0 ? 'izq' : 'der'; teclas[k] = true; window.coches.simula(0.03); teclas[k] = false; window.coches.simula(espera || 0); },
   combo: () => pasos.combo,
   rivales: () => rivales.map((rv) => ({ s: rv.s, x: rv.x, v: rv.v, coladas: rv.coladas || 0, id: rv.cruce.eq.id })),

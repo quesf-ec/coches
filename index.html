@@ -23,9 +23,9 @@
 <!-- El sello ?v= se sube a mano en cada cambio del juego (CSS, JS y, con el
      JS, los modelos, que heredan su sello): así el navegador no se queda con
      la versión anterior. -->
-<link rel="stylesheet" href="coches.css?v=cdaac1f5bc">
+<link rel="stylesheet" href="coches.css?v=b36999766a">
 <!-- La piel del juego: variante del tema juegos (ver tema/LEEME.md). Va al final para mandar. -->
-<link rel="stylesheet" href="tema/tema.css?v=cdaac1f5bc">
+<link rel="stylesheet" href="tema/tema.css?v=b36999766a">
 <script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js", "three/addons/": "./vendor/addons/" } }</script>
 <script type="application/ld+json">
 {
@@ -120,8 +120,9 @@
   <button class="coches-mando coches-zona coches-zona--der" data-tecla="der" type="button" aria-label="Girar a la derecha">
     <svg class="icono icono--l" aria-hidden="true"><use href="#i-chevron-der"/></svg></button>
   <button class="coches-mando coches-mando--freno" data-tecla="freno" type="button" aria-label="Frenar">Freno</button>
-  <!-- El botón de acción, abajo a la derecha: bajarse a empujar (lento, a
-       bordo), saltar al carro (a pie) o, con colada, el empujón fuerte. -->
+  <!-- El botón de acción, a la derecha a la altura del freno: bajarse a
+       empujar (lento, a bordo), saltar al carro (a pie) o, con colada, el
+       empujón fuerte. -->
   <button class="coches-mando coches-mando--empuja" id="b-empuja" data-tecla="empuja" type="button" hidden>
     <span class="coches-jarrito" aria-hidden="true"></span><span id="b-empuja-txt">Bájate</span></button>
 </div>
@@ -209,7 +210,7 @@
   <div class="coches-panel coches-menu">
     <p class="coches-banner">Cómo se juega</p>
     <p class="caption">Cero motores y dos en cada coche: uno maneja y el otro
-    empuja a pie. La flecha izquierda mueve su pie izquierdo y la derecha el derecho: cuantos más pasos por segundo, más empuja. Alternando va recto; dos veces el mismo pie sube el otro a la tabla y el coche se va hacia el lado contrario. Cuando el coche ya va rápido, se trepa solo.</p>
+    empuja a pie. El lado izquierdo mueve su pie izquierdo y el derecho el derecho: cuantos más pasos por segundo, más empuja. Alternando va recto; dos veces el mismo pie sube el otro a la tabla y el coche se va hacia el lado contrario. Cuando el coche ya va rápido, se trepa solo.</p>
     <dl class="coches-teclas">
       <div><dt>← →</dt><dd>girar</dd></div>
       <div><dt>↓</dt><dd>frenar con la suela</dd></div>
@@ -217,11 +218,18 @@
       <div><dt>← ←</dt><dd>un pie en la tabla: gira al otro lado</dd></div>
       <div><dt>← + →</dt><dd>con colada: empujón fuerte y se sube</dd></div>
       <div><dt>↑</dt><dd>lento: bajarse a empujar · a pie: saltar al carro con impulso (con colada, el empujón fuerte)</dd></div>
+      <div><dt>3, 2, 1…</dt><dd>pisar ya durante la cuenta: a buen ritmo, arranque extra</dd></div>
 
       <div><dt>Esc</dt><dd>pausa</dd></div>
     </dl>
-    <p class="caption coches-solo-tactil">Toca la mitad izquierda de la pantalla para girar a la izquierda
-    y la derecha para girar a la derecha. «Freno», en el centro, para las curvas cerradas.</p>
+    <dl class="coches-teclas coches-solo-tactil">
+      <div><dt>◀ ▶</dt><dd>a bordo: tocar un lado gira</dd></div>
+      <div><dt>◀ ▶ a pie</dt><dd>cada toque es un paso: pie izquierdo, pie derecho</dd></div>
+      <div><dt>◀ ◀</dt><dd>dos del mismo lado: un pie en la tabla, gira al otro lado</dd></div>
+      <div><dt>Freno</dt><dd>a la izquierda, arriba de la flecha: para las curvas cerradas</dd></div>
+      <div><dt>Botón redondo</dt><dd>«Bájate» (lento) · «¡Sube!» (a pie) · «¡Colada!» (a pie con colada: empujón fuerte)</dd></div>
+      <div><dt>3, 2, 1…</dt><dd>tocar alternando ya en la cuenta: a buen ritmo, arranque extra</dd></div>
+    </dl>
     <p class="caption">En las rampas no se gira en el aire. Las coladas moradas se guardan (hasta tres) para el empujón fuerte, que solo sirve a pie. En un choque, el que embiste le quita una colada al otro.
     Las medallas abren parejas nuevas y ganar la Copa abre la subida del Panecillo.</p>
     <button class="btn btn-ghost btn-block" id="b-volver-ayuda" type="button">
@@ -393,6 +401,6 @@
 </div>
 
 <script src="../ds/mal/mal.js?v=1.0.18" defer></script>
-<script type="module" src="coches.js?v=cdaac1f5bc"></script>
+<script type="module" src="coches.js?v=b36999766a"></script>
 </body>
 </html>
