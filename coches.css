@@ -580,3 +580,26 @@ body.pixel #pista{image-rendering:pixelated;image-rendering:crisp-edges}
 
 /* La baldosa que ocupa la fila entera (probar los mandos, todo junto). */
 .coches-baldosa--ancha{grid-column:1 / -1;justify-content:center}
+
+/* ─── el taller ─────────────────────────────────────────────────
+   Una fila por pieza, con su nivel y el botón de mejorar; el coche se ve
+   de cerca al lado (arriba en el teléfono), como al elegir pareja. */
+.coches-taller{width:min(94vw, 600px)}
+.coches-piezas{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.coches-pieza{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.coches-pieza__texto{display:flex;flex-direction:column;gap:2px;min-width:0}
+.coches-pieza__texto small{opacity:.85;line-height:1.25}
+.coches-pieza__nivel{color:#FFE27A;letter-spacing:.15em;font-size:.9em}
+.coches-pieza__boton{flex:0 0 auto;justify-content:center;white-space:nowrap;min-width:9em}
+@media (min-width:900px){
+  #taller{justify-items:start;padding-left:clamp(24px, 5vw, 72px);background:linear-gradient(to right, rgba(20,16,24,.35), transparent 55%)}
+}
+@media (max-width:899px){
+  #taller{align-items:end}
+  #taller .coches-panel{max-height:68dvh;overflow:auto}
+}
+@media (orientation:landscape) and (max-height:600px){
+  #taller{align-items:center;justify-items:start;padding:calc(env(safe-area-inset-top, 0px) + 4px) var(--mal-e4) 4px calc(env(safe-area-inset-left, 0px) + var(--mal-e4))}
+  #taller .coches-menu{max-height:calc(100dvh - 8px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));overflow:auto}
+  .coches-pieza__texto small.coches-pieza__sig{display:none}
+}

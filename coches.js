@@ -3070,6 +3070,7 @@ function construyeCoche(eq) {
   for (const l of [-1, 1]) {
     const soga = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.62, 5), sogaMat);
     soga.position.set(l * 0.28, 0.28, 0.5); soga.rotation.x = -1.05; soga.rotation.z = l * 0.35;
+    soga.userData.soga = true;   // el taller la cambia por manubrio o volante
     g.add(soga);
   }
   // La palanca del freno, a la derecha, con su pomo rojo.
@@ -3103,7 +3104,7 @@ function construyeCoche(eq) {
   const conductor = persona(eq.piloto);
   const empujador = persona(eq.empuja);
   conductor.pon('montado'); empujador.pon('montado');
-  return { g, ruedas, delante, sombra, conductor, empujador, eq, tabla };
+  return { g, ruedas, delante, atras, sombra, conductor, empujador, eq, tabla };
 }
 // El fantasma: un coche traslúcido con la misma pareja, que repite el récord.
 function construyeFantasma(eq) {
@@ -3120,6 +3121,232 @@ function construyeFantasma(eq) {
   cc.sombra.visible = false;
   cc.conductor.pon('montado', { fundido: 0 }); cc.empujador.pon('montado', { fundido: 0 });
   return cc;
+}
+
+// ─── el taller ─────────────────────────────────────────────────────
+// Con los sucres del perfil (los mismos de los otros juegos) el coche se
+// arregla, como los de la carrera de verdad: ruedas forradas de caucho o
+// llantas de kart, rulimanes nuevos, una trompa o una cubierta que corta el
+// aire, manubrio o volante, freno y la barra de empujar. Cada pieza sube de
+// nivel y se queda; solo cambia tu coche, no los de los rivales.
+const TALLER = [
+  { id: 'ruedas', nombre: 'Las ruedas', niveles: [
+    { nombre: 'Rulimanes de camión', desc: 'Las de siempre: de acero, chillan en el empedrado.' },
+    { nombre: 'Forradas de caucho', precio: 6, desc: 'El empedrado traquetea menos y agarran mejor en la curva.' },
+    { nombre: 'Ruedas de coche de bebé', precio: 14, desc: 'Más grandes y de caucho: la piedra y los topes casi no frenan.' },
+    { nombre: 'Llantas de kart', precio: 28, desc: 'Grandes, anchas y de goma blanda: el agarre de los de verdad.' }] },
+  { id: 'rulimanes', nombre: 'Los rulimanes', niveles: [
+    { nombre: 'Rulimanes oxidados', desc: 'Ruedan, pero a regañadientes.' },
+    { nombre: 'Nuevos y engrasados', precio: 5, desc: 'El coche rueda solo en el llano: menos roce.' },
+    { nombre: 'Sellados, de moto', precio: 12, desc: 'Casi nada de roce: se pierde poco en las rectas.' },
+    { nombre: 'De competencia', precio: 24, desc: 'Los que no se consiguen en el mercado.' }] },
+  { id: 'carroceria', nombre: 'La carrocería', niveles: [
+    { nombre: 'Tabla pelada', desc: 'Tres tablones y el aire de frente.' },
+    { nombre: 'Trompa de madera', precio: 6, desc: 'Una punta delante: corta el aire en la bajada.' },
+    { nombre: 'Cubierta de lata', precio: 14, desc: 'Lata pintada con tu número: aún menos aire, más velocidad arriba.' },
+    { nombre: 'Cubierta de fibra', precio: 28, desc: 'Liviana y lisa, como la de los coches de la Copa de verdad.' }] },
+  { id: 'volante', nombre: 'El volante', niveles: [
+    { nombre: 'La soga', desc: 'Atada al eje de adelante, y a tirar.' },
+    { nombre: 'Manubrio de bicicleta', precio: 6, desc: 'Se gira más fino.' },
+    { nombre: 'Volante de carro', precio: 15, desc: 'De un carro viejo: el mejor giro.' }] },
+  { id: 'freno', nombre: 'El freno', niveles: [
+    { nombre: 'La suela del zapato', desc: 'Frena lo que aguante el zapato.' },
+    { nombre: 'Palanca con caucho', precio: 5, desc: 'Frena más sin quemar zapatos.' },
+    { nombre: 'Freno de bicicleta', precio: 12, desc: 'Zapatas en las ruedas de atrás: frena de verdad antes de la curva.' }] },
+  { id: 'barra', nombre: 'La barra de empujar', niveles: [
+    { nombre: 'Sin barra', desc: 'El de atrás empuja de la espalda del que maneja.' },
+    { nombre: 'Barra de tubo', precio: 8, desc: 'Con los brazos estirados se empuja con más fuerza.' },
+    { nombre: 'Barra con agarraderas', precio: 18, desc: 'Como la de los coches de la Copa: más empuje y la subida al carro rinde más.' }] },
+];
+// Lo que las mejoras cambian de la física del jugador (multiplicadores).
+const MEJ = { roce: 1, piedra: 1, aire: 1, giro: 1, freno: 1, empuje: 1, tope: 1, salto: 0 };
+const nivelPieza = (id, niv = prog.taller) => {
+  const pz = TALLER.find((q) => q.id === id);
+  return Math.max(0, Math.min((niv && niv[id]) || 0, pz.niveles.length - 1));
+};
+function calculaMejoras() {
+  const ru = nivelPieza('ruedas'), rl = nivelPieza('rulimanes'), ca = nivelPieza('carroceria'), vo = nivelPieza('volante'), fr = nivelPieza('freno'), ba = nivelPieza('barra');
+  Object.assign(MEJ, {
+    piedra: [1, 0.75, 0.6, 0.5][ru], tope: [1, 0.8, 0.55, 0.4][ru],
+    roce: [1, 0.96, 0.92, 0.88][ru] * [1, 0.8, 0.66, 0.52][rl],
+    giro: [1, 1.03, 1.05, 1.08][ru] * [1, 1.05, 1.1][vo],
+    aire: [1, 0.9, 0.8, 0.7][ca], freno: [1, 1.25, 1.5][fr],
+    empuje: [1, 1.06, 1.12][ba], salto: [0, 0.4, 0.8][ba],
+  });
+}
+// La ficha del jugador: la de su pareja, con las mejoras del taller.
+function fichaJugador() {
+  ST.tope = 0.94 + 0.03 * eqJ.stats[0];
+  ST.empuje = (0.85 + 0.075 * eqJ.stats[1]) * MEJ.empuje;
+  ST.giro = (0.9 + 0.05 * eqJ.stats[2]) * MEJ.giro;
+}
+
+// Lo que el taller le pone al coche, a la vista: las ruedas, la trompa o la
+// cubierta, el manubrio o el volante, la barra de empujar y los frenos. Con
+// `niv` null, el coche de siempre.
+let matTaller = null;
+function aplicaTaller(cc, niv) {
+  if (!matTaller) {
+    matTaller = {
+      acero: mate({ color: 0x8C9096, metalness: 0.5, roughness: 0.4 }), caucho: mate({ color: 0x232325, roughness: 0.95 }),
+      blanco: mate({ color: 0xE8E6E1, roughness: 0.6 }), tubo: mate({ color: 0x9AA0A6, metalness: 0.5, roughness: 0.4 }),
+      negro: mate({ color: 0x1C1C1E, roughness: 0.8 }), rojo: mate({ color: 0xD6382B, roughness: 0.6 }),
+      madera: mate({ map: TEX.madera, color: 0xB98250 }), fibra: mate({ color: 0xF1F1EE, roughness: 0.35, metalness: 0.1 }),
+    };
+    for (const m of Object.values(matTaller)) m.userData.compartido = true;
+  }
+  const M = matTaller;
+  const n = (id) => (niv ? nivelPieza(id, niv) : 0);
+  // Fuera lo que se puso antes.
+  for (const o of cc.extras || []) { o.parent && o.parent.remove(o); o.traverse((q) => { if (q.geometry) q.geometry.dispose(); }); }
+  cc.extras = [];
+  const pon = (o, padre = cc.g) => { o.traverse((q) => { if (q.isMesh) q.castShadow = true; }); padre.add(o); cc.extras.push(o); return o; };
+  const malla = (geo, mat, x, y, z) => { const o = new THREE.Mesh(geo, mat); o.position.set(x, y, z); return o; };
+
+  // Las ruedas: de acero chicas, forradas, de coche de bebé o de kart.
+  const ru = n('ruedas');
+  const [R, tubo, ancho] = [[0.085, 0.032, 1], [0.09, 0.044, 1.1], [0.13, 0.055, 1.4], [0.165, 0.07, 2.1]][ru];
+  const llanta = new THREE.TorusGeometry(R, tubo, 8, 18).rotateY(Math.PI / 2).scale(ancho, 1, 1);
+  const cubo = new THREE.CylinderGeometry(R * 0.72, R * 0.72, 0.07 * ancho, 12).rotateZ(Math.PI / 2);
+  const matLlanta = ru ? M.caucho : M.acero, matCubo = ru >= 2 ? M.blanco : M.acero;
+  const xRueda = Math.max(0.41, 0.36 + tubo * ancho + 0.02);
+  cc.ruedas = [];
+  for (const grupo of [cc.delante, cc.atras]) {
+    if (!grupo) continue;
+    for (const w of grupo.children.filter((q) => q.userData.rueda || q.isGroup)) grupo.remove(w);
+    grupo.position.y = R + tubo;
+    const eje = grupo.children[0];
+    if (eje) eje.scale.x = (xRueda * 2) / 0.84;
+    for (const l of [-1, 1]) {
+      const w = new THREE.Group(); w.position.x = l * xRueda; w.userData.rueda = true;
+      w.add(new THREE.Mesh(llanta, matLlanta), new THREE.Mesh(cubo, matCubo));
+      if (ru === 3) w.add(new THREE.Mesh(new THREE.CylinderGeometry(R * 0.45, R * 0.45, 0.075 * ancho, 10).rotateZ(Math.PI / 2), mate({ color: cc.eq.placa })));
+      w.traverse((q) => { if (q.isMesh) q.castShadow = true; });
+      grupo.add(w); cc.ruedas.push(w);
+    }
+  }
+  cc.radio = R + tubo;
+
+  // La carrocería: una trompa de madera, una cubierta de lata pintada con
+  // el número, o una de fibra blanca con la franja de la pareja.
+  const ca = n('carroceria');
+  if (ca) {
+    const perfil = [null,
+      [[0.35, 0.03], [1.0, 0.03], [1.0, 0.09], [0.35, 0.3]],
+      [[0.25, 0.03], [1.02, 0.03], [1.05, 0.12], [0.7, 0.32], [0.3, 0.36], [0.25, 0.36]],
+      [[0.2, 0.02], [1.15, 0.02], [1.18, 0.08], [0.8, 0.3], [0.35, 0.4], [0.2, 0.4]]][ca];
+    const ancho2 = [0, 0.58, 0.66, 0.72][ca];
+    const forma = new THREE.Shape(perfil.map(([z, y]) => new THREE.Vector2(z, TABLA + y)));
+    const geo = new THREE.ExtrudeGeometry(forma, { depth: ancho2, bevelEnabled: false }).rotateY(-Math.PI / 2).translate(ancho2 / 2, 0, 0);
+    const mat = ca === 1 ? M.madera : ca === 2 ? mate({ color: cc.eq.placa, metalness: 0.35, roughness: 0.5 }) : M.fibra;
+    pon(new THREE.Mesh(geo, mat));
+    if (ca === 3) {
+      const franja = new THREE.ExtrudeGeometry(new THREE.Shape(perfil.map(([z, y]) => new THREE.Vector2(z, TABLA + y + 0.006))), { depth: 0.14, bevelEnabled: false })
+        .rotateY(-Math.PI / 2).translate(0.07, 0, 0);
+      pon(new THREE.Mesh(franja, mate({ color: cc.eq.placa })));
+      // Y atrás, el respaldo de fibra.
+      pon(malla(new THREE.BoxGeometry(0.66, 0.16, 0.5), M.fibra, 0, TABLA + 0.1, -0.68));
+    }
+    if (ca >= 2) {
+      // El número, en la trompa.
+      const num = lienzo(128, 128, (c, w, h) => {
+        c.fillStyle = '#F3F1EC'; c.beginPath(); c.arc(w / 2, h / 2, 58, 0, 7); c.fill();
+        c.fillStyle = '#1C1619'; c.font = '800 70px system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(String(cc.eq.num), w / 2, h / 2 + 4);
+      });
+      const placa = malla(new THREE.PlaneGeometry(0.26, 0.26), new THREE.MeshBasicMaterial({ map: textura(num), transparent: true }), 0, TABLA + (ca === 2 ? 0.25 : 0.27), 0.86);
+      placa.rotation.x = -Math.PI / 2 + 0.5;
+      pon(placa);
+    }
+  }
+
+  // El volante: la soga, un manubrio de bicicleta o un volante de carro.
+  const vo = n('volante');
+  cc.g.traverse((q) => { if (q.userData.soga) q.visible = vo === 0; });
+  if (vo === 1) {
+    const g = new THREE.Group();
+    g.add(malla(new THREE.CylinderGeometry(0.018, 0.018, 0.5, 6).rotateX(-0.6), M.tubo, 0, TABLA + 0.22, 0.72));
+    g.add(malla(new THREE.CylinderGeometry(0.016, 0.016, 0.62, 6).rotateZ(Math.PI / 2), M.tubo, 0, TABLA + 0.42, 0.6));
+    for (const l of [-1, 1]) g.add(malla(new THREE.CylinderGeometry(0.026, 0.026, 0.12, 8).rotateZ(Math.PI / 2), M.negro, l * 0.28, TABLA + 0.42, 0.6));
+    pon(g);
+  } else if (vo === 2) {
+    const g = new THREE.Group();
+    g.add(malla(new THREE.CylinderGeometry(0.02, 0.02, 0.55, 6).rotateX(-0.75), M.negro, 0, TABLA + 0.22, 0.74));
+    const aro = malla(new THREE.TorusGeometry(0.15, 0.02, 6, 20), M.negro, 0, TABLA + 0.43, 0.56);
+    aro.rotation.x = -0.75;
+    g.add(aro);
+    pon(g);
+  }
+
+  // El freno: la palanca de siempre; luego con caucho; luego zapatas rojas atrás.
+  const fr = n('freno');
+  if (fr === 2 && cc.atras) for (const l of [-1, 1]) pon(malla(new THREE.BoxGeometry(0.05, 0.08, 0.1), M.rojo, l * (xRueda - 0.06), 0, 0.08), cc.atras);
+
+  // La barra de empujar, atrás: dos tubos y el travesaño; con agarraderas.
+  const ba = n('barra');
+  if (ba) {
+    const g = new THREE.Group();
+    for (const l of [-1, 1]) {
+      const palo = malla(new THREE.CylinderGeometry(0.018, 0.018, 0.85, 6), M.tubo, l * 0.26, TABLA + 0.42, -1.02);
+      palo.rotation.x = -0.28;
+      g.add(palo);
+      if (ba === 2) g.add(malla(new THREE.CylinderGeometry(0.03, 0.03, 0.14, 8).rotateZ(Math.PI / 2), M.negro, l * 0.2, TABLA + 0.82, -1.14));
+    }
+    g.add(malla(new THREE.CylinderGeometry(0.018, 0.018, 0.54, 6).rotateZ(Math.PI / 2), M.tubo, 0, TABLA + 0.82, -1.14));
+    pon(g);
+  }
+}
+
+// La pantalla del taller: cada pieza con su nivel, lo que tienes, lo que
+// sigue y su precio. Se ve el coche de cerca, con lo que se le pone.
+function pintaTaller() {
+  let saldo = 0;
+  try { saldo = perfil.saldo(); } catch (err) { /* sin perfil */ }
+  $('#taller-sucres').textContent = String(saldo);
+  const ul = $('#taller-piezas');
+  ul.textContent = '';
+  for (const pz of TALLER) {
+    const nivel = nivelPieza(pz.id), sig = pz.niveles[nivel + 1];
+    const li = document.createElement('li'); li.className = 'coches-pieza';
+    const texto = document.createElement('div'); texto.className = 'coches-pieza__texto';
+    const titulo = document.createElement('b'); titulo.textContent = pz.nombre;
+    const puntos = document.createElement('span'); puntos.className = 'coches-pieza__nivel';
+    puntos.setAttribute('aria-label', `nivel ${nivel} de ${pz.niveles.length - 1}`);
+    puntos.textContent = '●'.repeat(nivel) + '○'.repeat(pz.niveles.length - 1 - nivel);
+    titulo.append(' ', puntos);
+    const ahora = document.createElement('small'); ahora.textContent = `Ahora: ${pz.niveles[nivel].nombre}`;
+    texto.append(titulo, ahora);
+    if (sig) { const s = document.createElement('small'); s.className = 'coches-pieza__sig'; s.textContent = `${sig.nombre}: ${sig.desc}`; texto.append(s); }
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'coches-baldosa coches-pieza__boton'; b.dataset.pieza = pz.id;
+    if (!sig) { b.textContent = 'Al máximo'; b.disabled = true; }
+    else if (saldo < sig.precio) { b.textContent = `S/. ${sig.precio} · faltan ${sig.precio - saldo}`; b.disabled = true; }
+    else b.textContent = `Mejorar · S/. ${sig.precio}`;
+    b.addEventListener('click', () => compraPieza(pz.id));
+    li.append(texto, b); ul.append(li);
+  }
+}
+function compraPieza(id) {
+  const pz = TALLER.find((q) => q.id === id), nivel = nivelPieza(id), sig = pz.niveles[nivel + 1];
+  if (!sig) return;
+  let pagado = false;
+  try { pagado = perfil.gastar(sig.precio); } catch (err) { pagado = false; }
+  if (!pagado) { tono(160, 0.1, 'triangle', 0.1); return; }
+  prog.taller[id] = nivel + 1; guarda();
+  calculaMejoras(); fichaJugador(); aplicaTaller(cocheJ, prog.taller);
+  jingle([523, 659, 784, 1047], 0.07, 'triangle');
+  pintaTaller();
+  const b = $(`#taller-piezas [data-pieza="${id}"]`);
+  (b && !b.disabled ? b : $('#b-volver-taller')).focus({ preventScroll: true });
+}
+function abreTaller() {
+  if (!cocheJ) return;
+  tocaMusica('menu');
+  eligePareja(eqJ.id);    // el coche en su sitio, con sus mejoras
+  // Solo tu coche en el taller (al empezar una carrera vuelven los rivales).
+  for (const rv of rivales) for (const o of [rv.cruce.g, rv.cruce.conductor.obj, rv.cruce.empujador.obj]) o.visible = false;
+  pintaTaller();
+  estado = 'elegir';      // la cámara, de cerca y alrededor del coche
+  pantalla('taller');
+  ($('#taller-piezas button:not(:disabled)') || $('#b-volver-taller')).focus({ preventScroll: true });
 }
 
 // ─── el estado ─────────────────────────────────────────────────────
@@ -3465,7 +3692,7 @@ function subirse() {
   const f = ritmo();
   let extra = 0;
   if (j.v >= SUBE_PERFECTA && f > 0.6) {
-    extra = 2.4;
+    extra = 2.4 + MEJ.salto;
     e.aliento = Math.min(1, e.aliento + 0.1);
     avisa('¡Subida perfecta!', 900); sacudida = Math.max(sacudida, 0.4); vibra(20);
     tono(660, 0.08, 'square', 0.12); setTimeout(() => tono(990, 0.12, 'square', 0.12), 70);
@@ -3711,14 +3938,14 @@ function actualiza(dt) {
     const mando = estado === 'llegada' ? 0 : limita(sost('der', pasos.tDer) - sost('izq', pasos.tIzq) + pasos.sesgo * 0.8, -1, 1);
     j.giro = mezcla(j.giro, mando, Math.min(1, dt * 10));
     const piedra = ZONAS[zona].calle === 'adoquin';
-    let a = -AIRE * j.v * j.v;
+    let a = -AIRE * MEJ.aire * j.v * j.v;
     if (!j.aire) {
-      a += -G * CUESTA * pend - (piedra ? ROCE_PIEDRA : ROCE);
+      a += -G * CUESTA * pend - (piedra ? ROCE_PIEDRA * MEJ.piedra : ROCE) * MEJ.roce;
       // Empuja lo que pisa: cuantos pasos por segundo, tanto empuje.
       if (e.estado === 'empujando') a += EMPUJE * ST.empuje * ritmo() * (pasos.combo >= RACHA ? 1.12 : 1) * alientoF(e.aliento) * Math.max(0, 1 - j.v / CORRE);
       // A bordo, el rebufo de quien va delante.
       else if (rebufoDe(j, dt, rivales) > 0) a += 1.1 * j.rebufo + AIRE * j.v * j.v * 0.5 * j.rebufo;
-      if (teclas.freno || estado === 'llegada') a -= j.v > 0.2 ? FRENO * (estado === 'llegada' ? 0.4 : 1) : 0;
+      if (teclas.freno || estado === 'llegada') a -= j.v > 0.2 ? FRENO * MEJ.freno * (estado === 'llegada' ? 0.4 : 1) : 0;
       // En la vereda se frena; si se queda casi parado ahí, el de atrás lo
       // arrastra de vuelta a la calle.
       // A pie, el de atrás lo devuelve a la calle a cualquier velocidad.
@@ -3800,9 +4027,9 @@ function actualiza(dt) {
         // El rompevelocidades: rápido, frena en seco y da un saltito.
         o.golpe = reloj;
         if (j.v > 6) {
-          j.v *= 1 - 0.16 * Math.min(1, (j.v - 6) / 12);
-          sacudida = Math.max(sacudida, 0.7); golpe(0.45, 500); vibra(15);
-          if (j.v > 15) { j.aire = true; j.h = 0.12; j.vh = muestra(j.s).pend * j.v + 1.5; }
+          j.v *= 1 - 0.16 * MEJ.tope * Math.min(1, (j.v - 6) / 12);
+          sacudida = Math.max(sacudida, 0.7 * MEJ.tope); golpe(0.45, 500); vibra(15);
+          if (j.v > 15 && MEJ.tope > 0.5) { j.aire = true; j.h = 0.12; j.vh = muestra(j.s).pend * j.v + 1.5; }
         } else golpe(0.2, 700);
       } else if ((o.tipo === 'farol' || o.tipo === 'puesto' || o.tipo === 'cajon') && dx < o.r + 0.35 && j.h < 0.5 && reloj - o.golpe > 1) {
         o.golpe = reloj;
@@ -4040,7 +4267,7 @@ function colocaCoche(cc, s, x, h, giro, vuelco, v, dt) {
   colocaEnCalle(cc.g, s, x, h, -giro * 0.18, vuelco);
   cc.g.updateMatrixWorld(true);
   cc.delante.rotation.y = -giro * 0.35;
-  for (const w of cc.ruedas) w.rotation.x += (v * dt) / 0.11;
+  for (const w of cc.ruedas) w.rotation.x += (v * dt) / (cc.radio || 0.11);
   cc.sombra.visible = Math.abs(vuelco) < 0.3;
 }
 
@@ -4345,7 +4572,7 @@ function aplicaAjustes() {
   for (const el of document.querySelectorAll('#opciones [data-ajuste]')) el.setAttribute('aria-pressed', String(!!ajustes[el.dataset.ajuste]));
 }
 const GUARDA = 'coches3d-progreso';
-const progresoBase = () => ({ medallas: {}, records: {}, parejas: ['cucuruchos', 'guarichas'], pistas: ['tobogan', 'panecillo'], copa: 0, copas: {}, album: [], pinturas: ['madera'], pintura: 'madera' });
+const progresoBase = () => ({ medallas: {}, records: {}, parejas: ['cucuruchos', 'guarichas'], pistas: ['tobogan', 'panecillo'], copa: 0, copas: {}, album: [], pinturas: ['madera'], pintura: 'madera', taller: {} });
 let prog = progresoBase();
 try { const p = JSON.parse(localStorage.getItem(GUARDA) || 'null'); if (p) prog = Object.assign(progresoBase(), p); } catch (err) { /* sin almacenamiento */ }
 // Guardados de antes de que hubiera varias copas.
@@ -4666,7 +4893,7 @@ function sigueCopa() {
 }
 
 // ─── las pantallas ─────────────────────────────────────────────────
-const CAPAS = ['titulo', 'portada', 'presenta', 'practica', 'ayuda', 'elegir', 'medallas', 'album', 'opciones', 'creditos', 'copa', 'pausa', 'podio'];
+const CAPAS = ['titulo', 'portada', 'presenta', 'practica', 'taller', 'ayuda', 'elegir', 'medallas', 'album', 'opciones', 'creditos', 'copa', 'pausa', 'podio'];
 function pantalla(id, sinCortina) {
   for (const p of CAPAS) $('#' + p).hidden = p !== id;
   $('#premio').hidden = true;
@@ -4939,10 +5166,10 @@ function eligePareja(id) {
   // Cada rival corre según su ficha, como el jugador: el Gallo se escapa en
   // la recta, Cantuña en la trepada.
   for (const rv of rivales) rv.st = factoresDe(rv.cruce.eq);
-  ST.tope = 0.94 + 0.03 * eqJ.stats[0];
-  ST.empuje = 0.85 + 0.075 * eqJ.stats[1];
-  ST.giro = 0.9 + 0.05 * eqJ.stats[2];
+  calculaMejoras(); fichaJugador();
   aplicaPintura();
+  // Las mejoras del taller, a la vista, solo en tu coche.
+  for (const c2 of carros) aplicaTaller(c2.cruce, c2.cruce === cocheJ ? prog.taller : null);
   if (fantasma.coche) { for (const r of [fantasma.coche.g, fantasma.coche.conductor.obj, fantasma.coche.empujador.obj]) escena.remove(r); fantasma.coche = null; }
   reinicia();
   // En la parrilla, los de atrás están listos para empujar.
@@ -5101,6 +5328,8 @@ $('#b-volver-album').addEventListener('click', aMenu);
 $('#b-ayuda').addEventListener('click', () => { pantalla('ayuda'); $('#b-volver-ayuda').focus({ preventScroll: true }); });
 $('#b-practica').addEventListener('click', () => { pantalla('practica'); $('#practica [data-practica]').focus({ preventScroll: true }); });
 $('#b-volver-practica').addEventListener('click', aMenu);
+$('#b-taller').addEventListener('click', abreTaller);
+$('#b-volver-taller').addEventListener('click', aMenu);
 for (const b of document.querySelectorAll('[data-practica]')) b.addEventListener('click', () => empiezaPractica(b.dataset.practica));
 $('#b-volver-ayuda').addEventListener('click', aMenu);
 $('#titulo').addEventListener('click', desdeTitulo);
@@ -5328,7 +5557,7 @@ async function carga() {
   eqJ = EQUIPOS.find((q) => q.id === (abierta('pareja', guardada) ? guardada : prog.parejas[0]));
   cargaPista('panecillo');
   eligePareja(eqJ.id);
-  for (const id of ['b-copa', 'b-copa-noche', 'b-suelta', 'b-tiempo', 'b-practica', 'b-medallas', 'b-album']) $('#' + id).disabled = false;
+  for (const id of ['b-copa', 'b-copa-noche', 'b-suelta', 'b-tiempo', 'b-practica', 'b-taller', 'b-medallas', 'b-album']) $('#' + id).disabled = false;
   aplicaAjustes();
   texto.textContent = tactilMQ.matches ? 'Toca para empezar' : 'Pulsa una tecla';
   $('#start').classList.add('is-lista');
