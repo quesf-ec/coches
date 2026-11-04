@@ -115,10 +115,12 @@ RECETAS = {
         'cerrada': True,
     },
     'sanjuan': {
-        # De la Basílica por la Venezuela en picada hasta Santo Domingo, y por
-        # la Rocafuerte a la Plaza de San Francisco.
-        'calles': r'^(Venezuela|Vicente Rocafuerte)$',
-        'pasos': [[-0.21359, -78.50626], [-0.21809, -78.50992], [-0.22255, -78.51355], [-0.22323, -78.51411], [-0.22208, -78.51560]],
+        # De la Basílica por la Venezuela, que pasa por la Plaza Grande, hasta
+        # Santo Domingo; la Rocafuerte y, a lo largo de la Plaza de San
+        # Francisco, la Benalcázar.
+        'calles': r'^(Venezuela|Vicente Rocafuerte|Sebastián de Benalcázar)$',
+        'pasos': [[-0.21359, -78.50626], [-0.21809, -78.50992], [-0.22255, -78.51355], [-0.22323, -78.51411], [-0.22208, -78.51560],
+                  [-0.22059, -78.51432]],
     },
     'tobogan': {
         # La bajada grande: la Olmedo recta hasta La Marín, la Guayaquil en el
