@@ -23,9 +23,9 @@
 <!-- El sello ?v= se sube a mano en cada cambio del juego (CSS, JS y, con el
      JS, los modelos, que heredan su sello): así el navegador no se queda con
      la versión anterior. -->
-<link rel="stylesheet" href="coches.css?v=4b309cb322">
+<link rel="stylesheet" href="coches.css?v=f9308db773">
 <!-- La piel del juego: variante del tema juegos (ver tema/LEEME.md). Va al final para mandar. -->
-<link rel="stylesheet" href="tema/tema.css?v=4b309cb322">
+<link rel="stylesheet" href="tema/tema.css?v=f9308db773">
 <link rel="modulepreload" href="vendor/three.module.min.js">
 <script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js", "three/addons/": "./vendor/addons/" } }</script>
 <script type="application/ld+json">
@@ -184,6 +184,8 @@
         <svg class="icono" aria-hidden="true"><use href="#i-play"/></svg> Carrera suelta</button>
       <button class="coches-baldosa" id="b-tiempo" type="button" disabled>
         <svg class="icono" aria-hidden="true"><use href="#i-reloj"/></svg> Contrarreloj</button>
+      <button class="coches-baldosa coches-baldosa--ancha" id="b-practica" type="button" disabled>
+        <svg class="icono" aria-hidden="true"><use href="#i-mando"/></svg> Probar los mandos: calle sin fin</button>
       <button class="coches-baldosa" id="b-medallas" type="button" disabled>
         <svg class="icono" aria-hidden="true"><use href="#i-estrella"/></svg> Medallas</button>
       <button class="coches-baldosa" id="b-album" type="button" disabled>
@@ -217,6 +219,23 @@
 </div>
 
 <!-- Cómo se juega -->
+<!-- Probar los mandos: una calle sin fin, sin rivales, a elegir. -->
+<div class="coches-capa" id="practica" hidden>
+  <div class="coches-panel coches-menu">
+    <p class="coches-banner">Probar los mandos</p>
+    <p class="caption">Una calle sin fin, sin rivales ni meta: para probar el compás, el empujón de los dos lados, subirse a tiempo, frenar y girar. Al final de la calle se vuelve al principio. ¿Cómo la quieres?</p>
+    <div class="coches-baldosas">
+      <button class="coches-baldosa" type="button" data-practica="llano">Llano</button>
+      <button class="coches-baldosa" type="button" data-practica="bajada">Bajada</button>
+      <button class="coches-baldosa" type="button" data-practica="subida">Subida</button>
+      <button class="coches-baldosa" type="button" data-practica="curvas">Curvas</button>
+      <button class="coches-baldosa coches-baldosa--ancha" type="button" data-practica="todo">Todo junto</button>
+    </div>
+    <button class="btn btn-ghost btn-block" id="b-volver-practica" type="button">
+      <svg class="icono" aria-hidden="true"><use href="#i-flecha-izq"/></svg> Volver</button>
+  </div>
+</div>
+
 <div class="coches-capa" id="ayuda" hidden>
   <div class="coches-panel coches-menu">
     <p class="coches-banner">Cómo se juega</p>
@@ -242,7 +261,7 @@
       <div><dt>Botón redondo</dt><dd>«Bájate» (lento) · «¡Sube ya!» (a pie y corriendo: subida perfecta) · «¡Colada!» (empujón fuerte)</dd></div>
       <div><dt>3, 2, 1…</dt><dd>tocar alternando al compás en la cuenta: arranque extra</dd></div>
     </dl>
-    <p class="caption">Las calles son las de verdad: cuando sale «¡Frena!», la esquina viene cerrada. Detrás de otro coche, en su carril, vas con rebufo. En las rampas no se gira en el aire. Las coladas moradas se guardan (hasta tres) para el empujón fuerte, que solo sirve a pie y devuelve el aliento. En un choque, el que embiste le quita una colada al otro.
+    <p class="caption">Las calles son las de verdad: cuando sale «¡Frena!», la esquina viene cerrada. Las bocacalles están cerradas con heno o llantas, como en las carreras de verdad, y los rompevelocidades frenan (rápido, dan un saltito). Detrás de otro coche, en su carril, vas con rebufo. En las rampas no se gira en el aire. Las coladas moradas se guardan (hasta tres) para el empujón fuerte, que solo sirve a pie y devuelve el aliento. En un choque, el que embiste le quita una colada al otro.
     Las medallas abren parejas nuevas y ganar la Copa abre la subida del Panecillo.</p>
     <button class="btn btn-ghost btn-block" id="b-volver-ayuda" type="button">
       <svg class="icono" aria-hidden="true"><use href="#i-flecha-izq"/></svg> Volver</button>
@@ -413,6 +432,6 @@
 </div>
 
 <script src="https://franciscombp.github.io/ds/mal/mal.js?v=1.0.22" defer></script>
-<script type="module" src="coches.js?v=4b309cb322"></script>
+<script type="module" src="coches.js?v=f9308db773"></script>
 </body>
 </html>
