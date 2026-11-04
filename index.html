@@ -23,9 +23,9 @@
 <!-- El sello ?v= se sube a mano en cada cambio del juego (CSS, JS y, con el
      JS, los modelos, que heredan su sello): así el navegador no se queda con
      la versión anterior. -->
-<link rel="stylesheet" href="coches.css?v=0991c385f4">
+<link rel="stylesheet" href="coches.css?v=15c0aa4693">
 <!-- La piel del juego: variante del tema juegos (ver tema/LEEME.md). Va al final para mandar. -->
-<link rel="stylesheet" href="tema/tema.css?v=0991c385f4">
+<link rel="stylesheet" href="tema/tema.css?v=15c0aa4693">
 <link rel="modulepreload" href="vendor/three.module.min.js">
 <script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js", "three/addons/": "./vendor/addons/" } }</script>
 <script type="application/ld+json">
@@ -92,6 +92,9 @@
         <span class="coches-jarrito" aria-hidden="true"></span> <b id="h-coladas">×0</b></p>
       <p class="coches-vel"><span id="h-vel">0</span><small>km/h</small></p>
       <span class="coches-empujador" id="h-empujador" data-estado="empujando">Empujando</span>
+      <!-- El aliento del que empuja: se gasta a pie y vuelve a bordo. -->
+      <span class="coches-aliento" id="h-aliento" role="meter" aria-label="Aliento del que empuja" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><i></i></span>
+      <p class="coches-pildora coches-rebufo" id="h-rebufo" hidden>Rebufo</p>
     </div>
   </div>
   <!-- Las posiciones, en columna a la izquierda: tu fila resalta. -->
@@ -101,13 +104,20 @@
     <p class="coches-tiempo" id="h-tiempo">0:00.0</p>
     <p class="coches-parciales" id="h-parciales"></p>
   </div>
+  <!-- La curva que viene: cuando hay que frenar ya, y para qué lado. -->
+  <p class="coches-curva" id="h-curva" hidden><span class="coches-curva__flecha" id="h-curva-flecha" aria-hidden="true">›››</span> <b id="h-curva-txt">¡Frena!</b></p>
   <div class="hud-juego__abajo">
-    <!-- Los pies del que empuja: el que toca se enciende; la racha, en medio. -->
-    <p class="coches-pasos" id="h-pasos" hidden>
+    <!-- Los pies del que empuja: el que toca se enciende; la racha, en medio;
+         debajo, el compás: la aguja corre desde el último paso y el
+         siguiente va cuando entra en lo verde. -->
+    <div class="coches-pasos" id="h-pasos" hidden>
       <span class="coches-pie" id="h-pie-izq" aria-hidden="true">◀</span>
-      <span class="coches-pasos__racha" id="h-racha">¡Pisa!</span>
+      <span class="coches-pasos__centro">
+        <span class="coches-pasos__racha" id="h-racha">¡Pisa!</span>
+        <span class="coches-compas" aria-hidden="true"><b class="coches-compas__ventana"></b><i class="coches-compas__aguja" id="h-compas"></i></span>
+      </span>
       <span class="coches-pie" id="h-pie-der" aria-hidden="true">▶</span>
-    </p>
+    </div>
   </div>
 </div>
 
@@ -402,6 +412,6 @@
 </div>
 
 <script src="https://franciscombp.github.io/ds/mal/mal.js?v=1.0.22" defer></script>
-<script type="module" src="coches.js?v=0991c385f4"></script>
+<script type="module" src="coches.js?v=15c0aa4693"></script>
 </body>
 </html>

@@ -296,3 +296,17 @@
   background:var(--arc-tinta);border:2px solid var(--arc-blanco);box-shadow:0 3px 0 rgba(0,0,0,.4)}
 [data-variante="coches"] .coches-pasos.is-bien{background:var(--arc-amarillo);color:var(--arc-tinta);border-color:var(--arc-tinta)}
 [data-variante="coches"] .coches-pasos.is-un-pie{background:#E0672B;color:var(--arc-blanco);border-color:var(--arc-tinta)}
+
+/* El compás, el aliento, la curva y el rebufo, en la piel arcade. */
+[data-variante="coches"] .coches-compas{border-color:var(--arc-blanco)}
+[data-variante="coches"] .coches-compas__ventana{background:var(--arc-verde)}
+[data-variante="coches"] .coches-pasos.is-apurado{background:var(--arc-rojo);color:var(--arc-blanco);border-color:var(--arc-tinta)}
+[data-variante="coches"] .coches-aliento{border-color:var(--arc-tinta);transform:skewX(-8deg);box-shadow:0 2px 0 var(--arc-tinta)}
+[data-variante="coches"] .coches-aliento i{background:var(--arc-verde)}
+[data-variante="coches"] .coches-aliento.is-poco i{background:var(--arc-amarillo)}
+[data-variante="coches"] .coches-aliento.is-nada i{background:var(--arc-rojo)}
+[data-variante="coches"] :is(.coches-curva,.coches-rebufo){font-family:"Bangers",var(--mal-display);font-weight:400;letter-spacing:.06em;text-transform:uppercase;
+  border:2px solid var(--arc-tinta);box-shadow:0 3px 0 var(--arc-tinta);transform:translateX(-50%) skewX(-8deg)}
+[data-variante="coches"] .coches-rebufo{transform:skewX(-8deg);background:var(--arc-cian);color:var(--arc-tinta)}
+[data-variante="coches"] .coches-curva{background:var(--arc-amarillo);color:var(--arc-tinta)}
+[data-variante="coches"] .coches-curva.is-frena{background:var(--arc-rojo);color:var(--arc-blanco)}

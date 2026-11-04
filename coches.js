@@ -37,18 +37,18 @@ const modeloUrl = (n) => new URL(`modelos/${n}.glb${SELLO}`, import.meta.url).hr
 
 // ─── la física, en metros y segundos ───────────────────────────────
 const G = 9.8;
-const CUESTA = 1.8;           // la cuesta tira bastante más que en la vida: es un juego
+const CUESTA = 1.4;           // la cuesta tira más que en la vida (es un juego), pero las calles ya son de verdad
 const ROCE = 0.12;            // rulimanes contra el asfalto…
 const ROCE_PIEDRA = 0.22;     // …y contra el empedrado, que frena y traquetea
 const AIRE = 0.0018;
 const TOPE = 40;              // ~145 km/h, lo más que da la bajada grande
 const TOPE_TURBO = 46;
-const EMPUJE = 7.5;           // lo que empuja el que va atrás…
-const CORRE = 10;             // …y lo más rápido que corre
+const EMPUJE = 8;             // lo que empuja el que va atrás…
+const CORRE = 11;             // …y lo más rápido que corre
 const ENGANCHE = CORRE + 0.8; // a esta velocidad, el de atrás se sube solo
 const FRENO = 11;
 const FUERA = 4;              // la vereda frena
-const GIRO = 0.42;            // el volante: metros de lado por cada m/s
+const GIRO = 0.5;             // el volante: metros de lado por cada m/s
 const CENTRIFUGA = 0.62;      // la curva te saca a v² · curvatura
 const KAPPA = 0.008;          // de «curva 7» a curvatura en 1/m
 const ACERA = 1.6;
@@ -670,11 +670,11 @@ const PISTAS = [
     coladas: [['basilica', 70], ['venezuela', 100], ['venezuela', 420], ['venezuela', 760], ['rocafuerte', 40], ['sanfrancisco', 40]],
   },
   {
-    id: 'tobogan', nombre: 'La bajada grande', salida: 'LA CUENCA', meta: 'LA CUENCA', real: 'tobogan', vueltas: 2,
-    lema: 'Dos vueltas por el centro: la Olmedo recta y en picada hasta el Teatro Sucre, la curva de abajo y, con ese impulso, la trepada de la Manabí. Lo que falte lo empuja el de atrás.',
+    id: 'tobogan', nombre: 'La bajada grande', salida: 'LA OLMEDO', meta: 'LA OLMEDO', real: 'tobogan', vueltas: 1,
+    lema: 'Una vuelta entera al centro: la Olmedo recta y en picada hasta el Teatro Sucre, la curva de abajo y, con ese impulso, la trepada de la Manabí. Lo que falte lo empuja el de atrás.',
     // Sin datos, la generada en código, con sus zonas por metro.
     zonas: [['tobogan', 0], ['valle', 310], ['trepada', 460], ['cumbre', 780]],
-    callesZonas: [['Olmedo', 'olmedo'], ['Guayaquil', 'teatro'], ['Manab', 'manabi'], ['.', 'cuenca']],
+    callesZonas: [['Olmedo', 'olmedo'], ['Guayaquil', 'teatro'], ['Manab', 'manabi'], ['.', 'cuenca']], desfase: 60,
     hitos: [['cerro', null, 45, 180, 28, 20]],
     rampas: [['olmedo', 150, -2.4], ['olmedo', 270, 2.4], ['manabi', 200, 0]],
     coladas: [['olmedo', 60], ['teatro', 45], ['manabi', 120], ['manabi', 300], ['cuenca', 50]],
@@ -688,14 +688,14 @@ const PISTAS = [
     coladas: [['panecillo', 60], ['panecillo', 250], ['cumbre', 30], ['panecillo', 610]],
   },
   {
-    id: 'centro', nombre: 'La vuelta a la Plaza Grande', salida: 'PLAZA GRANDE', meta: 'PLAZA GRANDE', real: 'centro-vuelta', vueltas: 3, libre: true,
-    lema: 'Tres vueltas a dos manzanas con la Plaza Grande dentro: la Venezuela, la Espejo junto a la Catedral, la García Moreno por el Palacio y la Mejía.',
-    callesZonas: [['Venezuela', 'venezuela'], ['Espejo', 'plaza'], ['.', 'garcia']],
+    id: 'centro', nombre: 'La vuelta a la Plaza Grande', salida: 'PLAZA GRANDE', meta: 'PLAZA GRANDE', real: 'centro-vuelta', vueltas: 2, libre: true,
+    lema: 'Dos vueltas a dos manzanas con la Plaza Grande dentro: la Venezuela, la Espejo junto a la Catedral, la García Moreno por el Palacio y la Mejía.',
+    callesZonas: [['Venezuela', 'venezuela'], ['Espejo', 'plaza'], ['.', 'garcia']], desfase: 50,
     hitos: [], rampas: [['garcia', 90, 0]], coladas: [['venezuela', 90], ['plaza', 50], ['garcia', 140]],
   },
   {
-    id: 'subida', nombre: 'La subida del Panecillo', salida: 'EL LOMO', meta: 'LA VIRGEN', premio: true, real: 'subida',
-    lema: 'Al revés: la Melchor de Aymerich entera, del lomo del cerro a la Virgen, cuesta arriba todo el rato. Aquí el que empuja es el motor.',
+    id: 'subida', nombre: 'La subida del Panecillo', salida: 'LA MELCHOR', meta: 'LA VIRGEN', premio: true, real: 'subida', salidaM: 420,
+    lema: 'Al revés: la Melchor de Aymerich por el sur del cerro y su última horquilla hasta la Virgen, cuesta arriba todo el rato. Aquí el que empuja es el motor.',
     zonas: [['subida', 0], ['cumbre', 1000]],
     tramos: ['ambato', [0, 40, 0, 0, 0], ['salida', 34], [10, 20, 10, 0, 2],
       'subida', [12, 22, 12, -6, 7], [12, 22, 12, 6, 7], [12, 26, 12, 0, 6], [12, 22, 12, -5, 6], [10, 16, 10, 3, 3],
@@ -781,6 +781,10 @@ const GENERADAS = {
   },
 };
 
+// Los lugares que se anuncian al pasar: iglesias, plazas, museos,
+// miradores; no las tiendas ni los locales con nombre.
+const LUGAR_QUE_SE_ANUNCIA = /^(place_of_worship|museum|attraction|viewpoint|square|park|monument|memorial|townhall|theatre|marketplace|artwork|castle|church|ruins|yes)$/;
+const LUGAR_QUE_NO = /testigos|evang[eé]lic|cooperativa|almacenes|balc[oó]n de servicios|hotel|restaurante|sal[oó]n del reino/i;
 // Una pista sobre una calle de verdad: el trazado viene en metros, cada
 // pocos metros, y aquí se muestrea cada metro. Si es un circuito, la vuelta
 // se repite `vueltas` veces, con 40 m antes de la línea y 220 después.
@@ -807,6 +811,11 @@ function construyePistaReal(def) {
   // metros de radio, lo que un coche de madera dobla a paso de hombre) y
   // se vuelve a muestrear cada metro, que el redondeo acorta el camino.
   if (!d.generada) redondeaEsquinas(vuelta, cerrada);
+  // En un circuito, la línea puede ir `desfase` metros más allá del primer
+  // punto (para no salir en plena esquina): se gira la vuelta, y con ella
+  // los metros de las calles y de los lugares.
+  const desfase = cerrada && def.desfase ? Math.round(def.desfase) % vuelta.length : 0;
+  if (desfase) vuelta.push(...vuelta.splice(0, desfase));
   // Tras la meta, la calle sigue recta otros 110 m: para frenar sin
   // salirse del mundo.
   const largoReal = vuelta.length;
@@ -828,7 +837,13 @@ function construyePistaReal(def) {
   }
   // Las zonas: las de la pista o, con calles de verdad y `callesZonas`, una
   // por calle según su nombre. Y el nombre real de la calle en cada metro.
-  const calles = d.generada ? [] : (d.calles || []);
+  let calles = d.generada ? [] : (d.calles || []);
+  const largoV = vuelta.length;
+  const corre = (s0) => (desfase ? (((s0 - desfase) % largoV) + largoV) % largoV : s0);
+  if (desfase && calles.length) {
+    const deCalle = (m) => { let c = calles[0][1]; for (const [desde, n] of calles) if (m >= desde) c = n; return c; };
+    calles = [[0, deCalle(desfase)], ...calles.map(([s0, n]) => [corre(s0), n])].sort((a, b) => a[0] - b[0]);
+  }
   let zonas = def.zonas;
   if (calles.length && def.callesZonas) {
     zonas = [];
@@ -873,8 +888,11 @@ function construyePistaReal(def) {
     if (P.calle) P.calle.push(calleDe(m));
   }
   // Los lugares con nombre, en el metro de la primera vuelta donde se pasan.
-  LUGARES = (d.lugares || []).map(([s0, , , nombre]) => ({ i: Math.round(s0) - desde, nombre }))
-    .filter((l) => l.i >= 0 && l.i < P.x.length).sort((a, b) => a.i - b.i);
+  LUGARES = (d.lugares || []).map(([s0, , , nombre, tipo]) => ({ i: Math.round(corre(s0)) - desde, nombre, tipo }))
+    .filter((l) => l.i >= 0 && l.i < P.x.length && (!l.tipo || LUGAR_QUE_SE_ANUNCIA.test(l.tipo)) && !LUGAR_QUE_NO.test(l.nombre))
+    .sort((a, b) => a.i - b.i)
+    // De a uno cada 80 m, que no se pisen los avisos.
+    .filter((l, k, todos) => !k || l.i - todos[k - 1].i > 80);
   // Sin saltos de 2π en el rumbo, y la curva es lo que gira cada metro.
   for (let i = 1; i < P.th.length; i++) {
     while (P.th[i] - P.th[i - 1] > Math.PI) P.th[i] -= Math.PI * 2;
@@ -931,14 +949,14 @@ function construyePista(def) {
 }
 // Redondea las esquinas de un trazado de puntos a cada metro: se suavizan
 // las posiciones (caja de ±6 m, tres pasadas: una esquina de 90° queda con
-// unos 10 m de radio) y se vuelve a muestrear cada metro. En un circuito,
+// unos 13 m de radio) y se vuelve a muestrear cada metro. En un circuito,
 // en redondo. Las puntas de un trazado abierto se quedan donde estaban.
 function redondeaEsquinas(vuelta, cerrada) {
   const n = vuelta.length;
   if (n < 20) return;
   const xs = vuelta.map((p) => p[0]), zs = vuelta.map((p) => p[1]), ys = vuelta.map((p) => p[2]);
-  const sx = cerrada ? suavizaCiclico(xs, 6, 3) : suavizaArr(xs, 6, 3);
-  const sz = cerrada ? suavizaCiclico(zs, 6, 3) : suavizaArr(zs, 6, 3);
+  const sx = cerrada ? suavizaCiclico(xs, 8, 3) : suavizaArr(xs, 8, 3);
+  const sz = cerrada ? suavizaCiclico(zs, 8, 3) : suavizaArr(zs, 8, 3);
   if (!cerrada) { sx[0] = xs[0]; sz[0] = zs[0]; sx[n - 1] = xs[n - 1]; sz[n - 1] = zs[n - 1]; }
   // Otra vez cada metro: con la altura que tocaba en cada punto.
   const nuevo = [];
@@ -2109,7 +2127,7 @@ function construyeDecorado(def) {
       lugares.push({ s, lado, fondo: r() });
     }
   };
-  for (let s = LARGO_VUELTA ? SALIDA + 4 : 4; s < SALIDA + 10; s += 5) { fila(s, -1, 5); fila(s + 2.5, 1, 5); }
+  for (let s = LARGO_VUELTA ? SALIDA + 4 : Math.max(4, SALIDA - 26); s < SALIDA + 10; s += 5) { fila(s, -1, 5); fila(s + 2.5, 1, 5); }
   if (!LARGO_VUELTA) for (let s = META - 14; s < META + 16; s += 5) { fila(s, -1, 6); fila(s + 2.5, 1, 6); }
   corridas.forEach((cr, k) => {
     const [paso, n] = ZONAS[cr.zona].publico || [0, 0];
@@ -2793,18 +2811,18 @@ function reinicia() {
   const sitios = [...Array(n).keys()].filter((k) => k !== tuSitio);
   rivales.forEach((rv, k) => {
     const p = enFila(sitios[k]);
-    Object.assign(rv, { s: p.s, x: p.x, carril: p.x, v: 0, llegada: 0, empuja: true, coladas: 0, turbo: 0, tChoque: -9 });
+    Object.assign(rv, { s: p.s, x: p.x, carril: p.x, v: 0, llegada: 0, empuja: true, coladas: 0, turbo: 0, tChoque: -9, aliento: 1, rebufo: 0 });
   });
   for (const t of tazas) t.visible = true;
   for (const q of vuelos) mundo.remove(q.t);
   vuelos.length = 0;
   const p = enFila(tuSitio);
-  Object.assign(j, { s: p.s, x: p.x, v: 0, vx: 0, h: 0, vh: 0, aire: false, volcado: 0, turbo: 0, coladas: 0, giro: 0, puesto: rivales.length + 1, llegada: 0 });
-  Object.assign(e, { estado: 'empujando', s: j.s - 1.3, x: j.x, t: 0, tSube: -9 });
+  Object.assign(j, { s: p.s, x: p.x, v: 0, vx: 0, h: 0, vh: 0, aire: false, volcado: 0, turbo: 0, coladas: 0, giro: 0, puesto: rivales.length + 1, llegada: 0, rebufo: 0, enPared: false });
+  Object.assign(e, { estado: 'empujando', s: j.s - 1.3, x: j.x, t: 0, tSube: -9, aliento: 1 });
   Object.assign(c, { suelto: false, s: 0, x: 0, v: 0 });
   for (const pe of peatones) pe.estado = 'libre';
   reloj = 0; zonaActual = ''; lugarSig = 0; tiemposVuelta.length = 0; sacudida = 0; tPeaton = 1; vueltaActual = 1;
-  Object.assign(pasos, { ultimo: 0, combo: 0, burst: 0, tIzq: -9, tDer: -9, prevEmp: false, pulsos: [], unPie: 0, sesgo: 0, t: 0 });
+  Object.assign(pasos, { ultimo: 0, combo: 0, mejor: 0, burst: 0, tIzq: -9, tDer: -9, tPaso: -9, q: 0, nota: '', apurados: 0, prevEmp: false, unPie: 0, sesgo: 0, t: 0, tBaja: -9, tNo: -9 });
   enseña.t = -9; enseña.unPieAntes = false;
   pulsos.izq = pulsos.der = pulsos.empuja = 0;
   demoPaso = 0;
@@ -2999,32 +3017,46 @@ function endereza() {
 }
 
 // ─── el que empuja: a pie, pisando ──────────────────────────────
-// Cuando el coche va lento, el de atrás se baja y empuja a pie. La flecha
-// izquierda mueve su pie izquierdo y la derecha el derecho: cuantos más pasos
-// por segundo, más empuja. Alternando, empuja recto. Dos veces el mismo pie
-// sube el otro a la tabla y empuja solo con ese, de un lado: el coche se va
-// hacia el lado contrario. Los dos lados a la vez, o la tecla de arriba, son
-// el empujón fuerte, pero solo a pie y gastando una colada morada guardada:
-// sale disparado y se sube al carro. Cuando el coche ya va rápido, se trepa solo.
+// Cuando el coche va lento, el de atrás se baja y empuja a pie. Cada flecha
+// es un pie: alternando, empuja recto. No gana quien más aprieta sino quien
+// lleva el compás: cada paso tiene su momento, que se acorta cuando el coche
+// ya corre (hay que correr detrás). El paso a tiempo empuja entero; el
+// apurado se tropieza y empuja poco; el que tarda deja caer el empujón.
+// Seis pasos a tiempo seguidos son la racha: empuja un poco más. Dos veces
+// el mismo pie sube el otro a la tabla y empuja de un lado: el coche se va
+// al contrario.
+// Empujar cansa: el aliento baja a pie y se recupera a bordo (y con la
+// colada). Subirse a tiempo, corriendo ya casi a lo que da, es la subida
+// perfecta: un empujón de más. Con colada guardada, la tecla de arriba (o
+// los dos pies a la vez) es el empujón fuerte. Bajarse y subirse sin
+// empujar no da nada: el que salta al carro solo lleva el impulso que traía.
 // `t` es el reloj de los pasos: corre también en la cuenta atrás, donde el
 // reloj de la carrera está parado.
 const pasos = { ultimo: 0, combo: 0, mejor: 0, prevIzq: false, prevDer: false, prevEmp: false,
-  tIzq: -9, tDer: -9, pulsos: [], burst: 0, unPie: 0, sesgo: 0, t: 0 };
+  tIzq: -9, tDer: -9, tPaso: -9, q: 0, nota: '', apurados: 0, burst: 0, unPie: 0, sesgo: 0, t: 0, tBaja: -9, tNo: -9 };
 const COLADAS_MAX = 3;       // coladas que se pueden guardar para el empujón
-const PASOS_VENTANA = 1;     // segundos que cuentan para el ritmo
-const PASOS_TOPE = 3;        // pasos en ese segundo para el empuje entero
 const DOBLE_VENTANA = 0.1;   // los dos lados en una décima son a la vez
 const BAJA_EMPUJE = 4;       // por debajo de esta velocidad se baja solo a empujar (m/s)
 const BAJA_MANUAL = 8.5;     // y por debajo de esta, se puede bajar con la tecla de empujar
-
-// Cuánto empuja lo que pisa, de 0 a 1: los pasos del último segundo.
+const SUBE_MIN = 5;          // por debajo, el de atrás todavía no alcanza a saltar al carro
+const SUBE_PERFECTA = CORRE - 1.5;   // de aquí al enganche, la subida perfecta
+const RACHA = 6;             // pasos a tiempo seguidos para la racha
+// El compás: cuánto debería tardar cada paso a esta velocidad, en segundos.
+// Parado, pasos largos de empujar con el cuerpo; corriendo, cortos.
+const compas = (v) => limita(0.46 - 0.022 * v, 0.26, 0.46);
+// La ventana del paso a tiempo, en compases desde el anterior.
+const VENTANA = [0.78, 1.35];
+// Cuánto empuja lo que pisa, de 0 a 1: la nota del último paso, que dura
+// un compás entero y se cae del todo al segundo (si no llega el siguiente).
 function ritmo() {
-  const corte = pasos.t - PASOS_VENTANA;
-  while (pasos.pulsos.length && pasos.pulsos[0].t < corte) pasos.pulsos.shift();
-  let n = 0;
-  for (const q of pasos.pulsos) n += q.peso;
-  return Math.min(1, n / PASOS_TOPE);
+  const T = compas(j.v), dt0 = pasos.t - pasos.tPaso;
+  return pasos.q * limita((2 * T - dt0) / (0.9 * T), 0, 1);
 }
+// El aliento multiplica el empuje: entero hasta un tercio, y de ahí baja
+// hasta el 60 %. Y se gasta más cuanto más fuerte se empuja.
+const alientoF = (a) => 0.6 + 0.4 * Math.min(1, a / 0.33);
+const GASTO = (fuerza) => 0.01 + 0.018 * fuerza;
+const RESPIRO = 0.12;
 
 function pasaPasos(dt) {
   pasos.t += dt;
@@ -3035,25 +3067,18 @@ function pasaPasos(dt) {
   pulsos.izq = pulsos.der = pulsos.empuja = 0;
   pasos.burst = Math.max(0, pasos.burst - dt);
   pasos.sesgo = Math.sign(pasos.sesgo) * Math.max(0, Math.abs(pasos.sesgo) - dt * 1.4);
+  // La racha se corta si se deja de pisar.
+  if (pasos.combo && pasos.t - pasos.tPaso > compas(j.v) * 2.2) pasos.combo = 0;
   if (subeIzq) pasos.tIzq = pasos.t;
   if (subeDer) pasos.tDer = pasos.t;
   if (!subeIzq && !subeDer && !subeEmp) return;
   if (j.aire || j.volcado > 0) return;
-  // La tecla de empujar: lento y a bordo, se baja a empujar; a pie, salta
-  // al carro, y el salto lleva el impulso del ritmo que traía.
+  // La tecla de arriba: lento y a bordo, se baja a empujar; a pie, salta
+  // al carro (con colada, el empujón fuerte).
   if (subeEmp) {
-    if (e.estado === 'a_bordo' && j.v < BAJA_MANUAL) {
-      e.estado = 'empujando'; cocheJ.empujador.pon('correr');
-      Object.assign(pasos, { ultimo: 0, combo: 0, unPie: 0, sesgo: 0 });
-      tono(320, 0.08, 'triangle', 0.15);
-    } else if (e.estado === 'empujando' && j.coladas > 0) {
-      empujonColada();
-    } else if (e.estado === 'empujando') {
-      j.v = Math.min(j.v + (1 + 3 * ritmo()) * ST.empuje, TOPE_TURBO * ST.tope);
-      Object.assign(pasos, { burst: 0.4, unPie: 0, sesgo: 0 });
-      e.estado = 'a_bordo'; e.tSube = reloj; cocheJ.empujador.pon('montado');
-      tono(520, 0.1, 'triangle', 0.15); setTimeout(() => tono(700, 0.1, 'triangle', 0.12), 70);
-    }
+    if (e.estado === 'a_bordo' && j.v < BAJA_MANUAL && reloj - (e.tSube ?? -9) > 0.8) bajarse();
+    else if (e.estado === 'empujando' && j.coladas > 0) empujonColada();
+    else if (e.estado === 'empujando') subirse();
     if (!subeIzq && !subeDer) return;
   }
   const doble = (subeIzq && teclas.der && pasos.t - pasos.tDer < DOBLE_VENTANA)
@@ -3068,28 +3093,66 @@ function pasaPasos(dt) {
   if (e.estado !== 'empujando') return;   // a bordo, los pies no cuentan
   pisaUnPie(subeIzq ? -1 : 1);
 }
-// El empujón fuerte: gasta una colada, sale disparado y se sube al carro.
-function empujonColada() {
-  {
-    j.coladas--;
-    j.v = Math.min(j.v + 6 * ST.empuje, TOPE_TURBO * ST.tope);
-    j.turbo = Math.max(j.turbo, 1.2);
-    pasos.burst = 0.5; pasos.unPie = 0; pasos.sesgo = 0;
-    sacudida = Math.max(sacudida, 0.6);
-    e.estado = 'a_bordo'; e.tSube = reloj; cocheJ.empujador.pon('montado');
-    tono(520, 0.12, 'triangle', 0.18); setTimeout(() => tono(880, 0.14, 'triangle', 0.16), 80);
-    avisa('¡Empujón de colada!', 800); vibra(30);
-  }
+// Se baja a empujar: el salto le quita un poco al coche, y los pies empiezan de cero.
+function bajarse() {
+  e.estado = 'empujando'; cocheJ.empujador.pon('correr');
+  j.v *= 0.97;
+  Object.assign(pasos, { ultimo: 0, combo: 0, unPie: 0, sesgo: 0, q: 0, tPaso: -9, tBaja: pasos.t });
+  tono(320, 0.08, 'triangle', 0.15);
 }
+// Salta al carro. Lento todavía no alcanza; corriendo casi a lo que da y
+// empujando a tiempo, la subida perfecta; si no, solo lleva lo que traía.
+function subirse() {
+  if (j.v < SUBE_MIN) {
+    if (pasos.t - pasos.tNo > 1.2) { pasos.tNo = pasos.t; tono(160, 0.07, 'triangle', 0.08); avisa('Todavía no alcanza: ¡empuja!', 900); }
+    return;
+  }
+  const f = ritmo();
+  let extra = 0;
+  if (j.v >= SUBE_PERFECTA && f > 0.6) {
+    extra = 2.4;
+    e.aliento = Math.min(1, e.aliento + 0.1);
+    avisa('¡Subida perfecta!', 900); sacudida = Math.max(sacudida, 0.4); vibra(20);
+    tono(660, 0.08, 'square', 0.12); setTimeout(() => tono(990, 0.12, 'square', 0.12), 70);
+  } else if (pasos.t - pasos.tBaja > 0.8) extra = 0.8 * f;
+  j.v = Math.min(j.v + extra * ST.empuje, TOPE_TURBO * ST.tope);
+  Object.assign(pasos, { burst: extra ? 0.4 : 0, unPie: 0, sesgo: 0, combo: 0 });
+  e.estado = 'a_bordo'; e.tSube = reloj; cocheJ.empujador.pon('montado');
+  if (!extra) tono(520, 0.1, 'triangle', 0.15);
+}
+// El empujón fuerte: gasta una colada, da aliento, sale disparado y se sube al carro.
+function empujonColada() {
+  j.coladas--;
+  j.v = Math.min(j.v + 6 * ST.empuje, TOPE_TURBO * ST.tope);
+  j.turbo = Math.max(j.turbo, 1.2);
+  e.aliento = Math.min(1, e.aliento + 0.4);
+  pasos.burst = 0.5; pasos.unPie = 0; pasos.sesgo = 0;
+  sacudida = Math.max(sacudida, 0.6);
+  e.estado = 'a_bordo'; e.tSube = reloj; cocheJ.empujador.pon('montado');
+  tono(520, 0.12, 'triangle', 0.18); setTimeout(() => tono(880, 0.14, 'triangle', 0.16), 80);
+  avisa('¡Empujón de colada!', 800); vibra(30);
+}
+// Un paso: su nota según cuándo llega respecto al compás.
 function pisaUnPie(lado) {
+  const T = compas(j.v), dt0 = pasos.t - pasos.tPaso;
   const alterna = lado !== pasos.ultimo;
-  pasos.pulsos.push({ t: pasos.t, peso: alterna ? 1 : 0.8 });
+  let q, nota;
+  if (dt0 > T * 2.2) { q = 0.7; nota = 'arranca'; }           // el primero, o tras parar
+  else if (dt0 < T * 0.5) { q = 0.45; nota = 'apurado'; }     // a lo loco: se tropieza
+  else if (dt0 < T * VENTANA[0]) { q = 0.75; nota = 'pronto'; }
+  else if (dt0 <= T * VENTANA[1]) { q = 1; nota = 'justo'; }
+  else { q = 0.75; nota = 'tarde'; }
+  if (!alterna) q *= 0.7;
+  pasos.tPaso = pasos.t; pasos.q = q; pasos.nota = nota;
+  pasos.apurados = nota === 'apurado' ? pasos.apurados + 1 : 0;
   if (alterna) {
     pasos.unPie = 0;
-    pasos.combo++;
+    if (nota === 'justo') { pasos.combo++; pasos.burst = 0.35; }
+    else if (nota !== 'arranca') pasos.combo = 0;
     pasos.mejor = Math.max(pasos.mejor, pasos.combo);
-    pasos.burst = 0.35;
-    tono(440 + Math.min(pasos.combo, 12) * 30, 0.05, 'square', 0.07); vibra(8);
+    if (pasos.combo === RACHA) { avisa('¡En racha!', 700); tono(990, 0.08, 'square', 0.1); }
+    tono(nota === 'apurado' ? 200 : 440 + Math.min(pasos.combo, 12) * 30, 0.05, nota === 'apurado' ? 'triangle' : 'square', 0.07);
+    if (nota === 'justo') vibra(8);
   } else {
     // El mismo pie otra vez: el otro sube a la tabla y empuja de un lado,
     // así que el coche se va hacia el lado contrario.
@@ -3106,9 +3169,10 @@ function pisaUnPie(lado) {
   r.lleva = 0.3;
 }
 
-// Las primeras veces, el juego dice qué hacer cuando toca: pisar al salir,
-// girar al subirse, el botón morado con la primera colada y bajarse cuando
-// va lento. Cada aviso sale dos veces en la vida del jugador y ya.
+// Las primeras veces, el juego dice qué hacer cuando toca: pisar al compás
+// al salir, no apurarse, subirse a tiempo, girar a bordo, frenar antes de la
+// curva, la colada y el aliento. Cada aviso sale dos veces en la vida del
+// jugador y ya.
 function enseña() {
   if ((estado !== 'carrera' && estado !== 'cuenta') || modo === 'demo') return;
   const v = ajustes.vistos || (ajustes.vistos = {});
@@ -3117,21 +3181,45 @@ function enseña() {
     v[clave] = (v[clave] || 0) + 1; enseña.t = reloj; guardaAjustes();
     avisa(texto, 2600);
   };
-  if (estado === 'cuenta' && cuenta < 2.6 && e.estado === 'empujando') di('pisa', esTactil ? 'Toca ◀ ▶ alternando ya: a buen ritmo, arranque extra' : 'Pisa ← → alternando ya: a buen ritmo, arranque extra');
+  const pies = esTactil ? 'Toca izquierda y derecha' : 'Pisa ← →';
+  if (estado === 'cuenta' && cuenta < 2.6 && e.estado === 'empujando') di('compas', `${pies} al compás: cuando la aguja entra en lo verde`);
+  else if (e.estado === 'empujando' && pasos.apurados >= 3) di('apurado', 'Más despacio: el paso a tiempo empuja más que el apurado');
   else if (e.estado === 'empujando' && pasos.unPie && !enseña.unPieAntes) di('unpie', 'Dos veces el mismo pie: el coche se va al otro lado');
+  else if (e.estado === 'empujando' && j.v >= SUBE_PERFECTA && muestra(j.s).pend < 0.02 && !(j.coladas > 0)) di('subete', esTactil ? '¡Ya corre! «Sube» ahora: subida perfecta' : '¡Ya corre! ↑ ahora para subirte: subida perfecta');
+  else if (curvaQueViene().frena) di('curva', esTactil ? '¡Curva cerrada! Frena con el botón rojo' : '¡Curva cerrada! Frena con ↓');
   else if (Math.abs(j.x) > muestra(j.s).hw && !j.aire && j.volcado <= 0 && j.v > 2) di('vereda', 'En la vereda se frena: vuelve a la calle');
   else if (reloj > 4 && e.estado === 'a_bordo' && j.v > 6) di('gira', esTactil ? 'Ya a bordo: toca los lados para girar' : 'Ya a bordo: ← → giran, ↓ frena');
-  else if (e.estado === 'empujando' && (j.coladas || 0) > 0) di('colada', esTactil ? '¡Tienes colada! El botón morado da el empujón fuerte' : '¡Tienes colada! ← + → a la vez: el empujón fuerte');
+  else if (e.estado === 'empujando' && (j.coladas || 0) > 0) di('colada', esTactil ? '¡Tienes colada! El botón morado da el empujón fuerte' : '¡Tienes colada! ↑ (o ← + → a la vez): el empujón fuerte');
+  else if (e.estado === 'empujando' && e.aliento < 0.3) di('aliento', 'Sin aliento: súbete en la bajada y descansa');
   else if (e.estado === 'a_bordo' && j.v < BAJA_MANUAL && j.v > BAJA_EMPUJE && reloj > 8) di('bajate', esTactil ? 'Vas lento: «Bájate» y empuja a pie' : 'Vas lento: ↑ para bajarse a empujar');
   enseña.unPieAntes = !!pasos.unPie;
 }
 
+// La curva que viene: la más cerrada en lo que se recorre en 1,6 s (y al
+// menos 14 m), a qué velocidad se puede tomar y si hay que frenar ya.
+const _curva = { k: 0, lado: 0, vmax: Infinity, frena: false, cerca: false, d: 0 };
+function curvaQueViene() {
+  const mira = Math.max(14, j.v * 1.6 + 8);
+  let peor = 0, lado = 0, d0 = 0;
+  for (let d = 0; d < mira; d += 2) {
+    const k = P.k[limita(Math.floor(j.s + d), 0, N - 1)];
+    if (Math.abs(k) > peor) { peor = Math.abs(k); lado = Math.sign(k); d0 = d; }
+  }
+  const vmax = peor > 1e-4 ? (GIRO * ST.giro) / (CENTRIFUGA * peor) : Infinity;
+  Object.assign(_curva, { k: peor, lado, vmax, d: d0, frena: e.estado === 'a_bordo' && j.v > vmax * 1.08 + 1, cerca: vmax < 13 && d0 < 40 });
+  return _curva;
+}
+
 function actualizaEmpujador(dt) {
+  // El aliento: se gasta empujando (más cuanto más fuerte) y vuelve a bordo.
+  if (e.estado === 'empujando' && estado === 'carrera') e.aliento = Math.max(0, e.aliento - GASTO(ritmo()) * dt);
+  else if (e.estado !== 'empujando') e.aliento = Math.min(1, e.aliento + RESPIRO * dt);
   switch (e.estado) {
     case 'a_bordo':
       // Va lento: se baja a empujar. Un momento tras subirse no, para que el impulso no lo baje.
       if (!j.aire && j.volcado <= 0 && j.v < BAJA_EMPUJE && reloj - (e.tSube ?? -9) > 1.2) {
         e.estado = 'empujando'; cocheJ.empujador.pon('correr');
+        Object.assign(pasos, { ultimo: 0, combo: 0, q: 0, tPaso: -9, tBaja: pasos.t });
         tono(320, 0.08, 'triangle', 0.15);
       }
       break;
@@ -3149,10 +3237,26 @@ function actualizaEmpujador(dt) {
       e.s += e.v * dt;
       if (e.t <= 0) {
         Object.assign(e, { estado: 'empujando', s: j.s - 1.3, x: j.x });
+        Object.assign(pasos, { ultimo: 0, combo: 0, q: 0, tPaso: -9, tBaja: pasos.t });
         cocheJ.empujador.pon('correr');
       }
       break;
   }
+}
+
+// El rebufo: detrás de otro coche, cerca y en su carril, el aire empuja
+// menos. Sirve para el jugador y para los rivales por igual.
+function rebufoDe(q, dt, otros) {
+  let tras = false;
+  if (q.v > 12 && !q.aire) {
+    for (const o of otros) {
+      if (o === q) continue;
+      const ds = o.s - q.s;
+      if (ds > 2.2 && ds < 10 && Math.abs(o.x - q.x) < 1.2) { tras = true; break; }
+    }
+  }
+  q.rebufo = limita((q.rebufo || 0) + (tras ? dt * 1.4 : -dt * 2), 0, 1);
+  return q.rebufo;
 }
 
 function actualiza(dt) {
@@ -3178,7 +3282,7 @@ function actualiza(dt) {
       estado = 'carrera';
       const r = ritmo();
       j.v = r * 6 * ST.empuje;
-      if (r >= 0.85) { pasos.burst = 0.5; sacudida = 0.4; avisa('¡Arranque perfecto!', 1200); tono(880, 0.1, 'square', 0.12); setTimeout(() => tono(1320, 0.14, 'square', 0.12), 90); }
+      if (r >= 0.85 && pasos.combo >= 3) { pasos.burst = 0.5; sacudida = 0.4; avisa('¡Arranque perfecto!', 1200); tono(880, 0.1, 'square', 0.12); setTimeout(() => tono(1320, 0.14, 'square', 0.12), 90); }
       else if (r >= 0.35) { pasos.burst = 0.35; avisa('¡Buen arranque!', 1000); tono(700, 0.1, 'square', 0.1); }
       // Los rivales también arrancan pisando, cada uno según su ficha de
       // empuje, y de vez en cuando a uno le sale perfecto.
@@ -3239,15 +3343,18 @@ function actualiza(dt) {
     if (!j.aire) {
       a += -G * CUESTA * pend - (piedra ? ROCE_PIEDRA : ROCE);
       // Empuja lo que pisa: cuantos pasos por segundo, tanto empuje.
-      if (e.estado === 'empujando') a += EMPUJE * ST.empuje * ritmo() * Math.max(0, 1 - j.v / CORRE);
+      if (e.estado === 'empujando') a += EMPUJE * ST.empuje * ritmo() * (pasos.combo >= RACHA ? 1.12 : 1) * alientoF(e.aliento) * Math.max(0, 1 - j.v / CORRE);
+      // A bordo, el rebufo de quien va delante.
+      else if (rebufoDe(j, dt, rivales) > 0) a += 1.1 * j.rebufo + AIRE * j.v * j.v * 0.5 * j.rebufo;
       if (teclas.freno || estado === 'llegada') a -= j.v > 0.2 ? FRENO * (estado === 'llegada' ? 0.4 : 1) : 0;
       // En la vereda se frena; si se queda casi parado ahí, el de atrás lo
       // arrastra de vuelta a la calle.
-      if (Math.abs(j.x) > hw) { a -= FUERA * Math.min(1, 0.3 + j.v / 8); sacudida = Math.max(sacudida, 0.4); if (j.v < 4) j.x -= Math.sign(j.x) * dt * 1.6; }
+      // A pie, el de atrás lo devuelve a la calle a cualquier velocidad.
+      if (Math.abs(j.x) > hw) { a -= FUERA * Math.min(1, 0.3 + j.v / 8); sacudida = Math.max(sacudida, 0.4); if (j.v < 4 || e.estado === 'empujando') j.x -= Math.sign(j.x) * dt * 1.6; }
       // El volante responde desde parado, sube con la velocidad y no se va de
       // las manos en la bajada grande; la curva saca a v² · curvatura.
       const vg = Math.min(j.v, 30);
-      j.vx = j.giro * GIRO * ST.giro * limita(j.v, 4.5, 24) - CENTRIFUGA * vg * vg * k;
+      j.vx = j.giro * GIRO * ST.giro * limita(j.v, 4.5, 22) - CENTRIFUGA * vg * vg * k;
     }
     if (j.turbo > 0) { j.turbo -= dt; a += 4.5; }
     j.v = limita(j.v + a * dt, 0, (j.turbo > 0 ? TOPE_TURBO : TOPE) * ST.tope);
@@ -3278,12 +3385,20 @@ function actualiza(dt) {
       }
     }
 
-    // Contra las paredes de las casas o los muros del Panecillo.
+    // Contra las paredes de las casas o los muros del Panecillo: de frente y
+    // rápido, se vuelca; rozando, se raspa y frena, y la pared lo devuelve a
+    // la calle (no se queda pegado).
     const pared = hw + ACERA - 0.35;
     if (Math.abs(j.x) > pared) {
-      if (j.v > 8) volcar('¡Contra la pared!');
-      else { j.x = Math.sign(j.x) * pared; j.v *= 0.6; sacudida = 0.8; golpe(0.6, 400); }
-    }
+      const lado = Math.sign(j.x), contra = Math.max(0, j.vx * lado);
+      j.x = lado * pared;
+      if (!j.enPared) {
+        j.enPared = true;
+        if (contra > 4.5 && j.v > 13) volcar('¡Contra la pared!');
+        else { j.v *= contra > 2 ? 0.75 : 0.9; sacudida = Math.max(sacudida, 0.5 + contra * 0.1); golpe(0.5, 400); stats.choques++; }
+      } else { j.v = Math.max(0, j.v - 5 * dt); sacudida = Math.max(sacudida, 0.3); }
+      j.x -= lado * dt * 0.9;
+    } else if (Math.abs(j.x) < pared - 0.3) j.enPared = false;
 
     // Lo que hay en la calle.
     for (const o of obstaculos) {
@@ -3307,7 +3422,7 @@ function actualiza(dt) {
         tono(660, 0.12, 'triangle', 0.2); setTimeout(() => tono(990, 0.18, 'triangle', 0.2), 90);
         avisa(j.coladas > 1 ? `¡Colada morada! ×${j.coladas}` : '¡Colada morada!', 900);
       } else if (o.tipo === 'rampa' && dx < o.r && !j.aire && j.v > 3) {
-        j.aire = true; j.h = 0.45; j.vh = Math.min(6, j.v * 0.32);
+        j.aire = true; j.h = 0.45; j.vh = Math.min(6, j.v * 0.32) + muestra(j.s).pend * j.v;
         o.golpe = reloj; tono(200, 0.2, 'sine', 0.2, 400); stats.saltos++;
       } else if ((o.tipo === 'farol' || o.tipo === 'puesto' || o.tipo === 'cajon') && dx < o.r + 0.35 && j.h < 0.5 && reloj - o.golpe > 1) {
         o.golpe = reloj;
@@ -3386,14 +3501,22 @@ function actualizaRival(rv, dt) {
   const m = muestra(rv.s);
   const hab = rv.cruce.eq.hab * 0.97, st = rv.st || ST_BASE;
   let a = -G * CUESTA * m.pend - (ZONAS[m.zona].calle === 'adoquin' ? ROCE_PIEDRA : ROCE) - AIRE * rv.v * rv.v / hab;
-  // Su empujador se baja en las subidas y cuando hay que arrancar.
-  const debe = rv.v < CORRE - 1.2 && (m.pend > 0.01 || rv.v < 3);
+  // Su empujador juega con las mismas reglas: se baja en las subidas, al
+  // arrancar y al salir lento de una curva en llano; sin aliento, descansa
+  // a bordo si no es cuesta arriba; y se sube a tiempo (los mejores, con
+  // subida perfecta).
+  const cuesta = m.pend > 0.01;
+  rv.aliento = rv.aliento ?? 1;
+  const debe = rv.v < CORRE - 1.2 && (cuesta || rv.v < 3 || (rv.v < 6 && m.pend > -0.02 && rv.aliento > 0.4)) && (cuesta || rv.v < 2 || rv.aliento > 0.15);
   if (debe !== rv.empuja) {
     rv.empuja = debe;
     rv.cruce.empujador.pon(debe ? 'correr' : 'montado');
+    if (!debe && rv.v >= SUBE_PERFECTA - 0.3 && estado === 'carrera' && Math.random() < (hab - 0.88) * 9) { rv.v += 2.4 * st.empuje; rv.aliento = Math.min(1, rv.aliento + 0.1); }
   }
-  // Cuesta arriba empujan con todo: si no, en la subida no hay carrera.
-  if (rv.empuja) a += EMPUJE * st.empuje * (m.pend > 0.01 ? 0.9 : 0.85) * hab * Math.max(0, 1 - rv.v / CORRE) + (rv.v < 1 ? 1 : 0);
+  rv.aliento = limita(rv.aliento + dt * (rv.empuja && estado === 'carrera' ? -GASTO(0.9) : RESPIRO), 0, 1);
+  // Empujan al compás, con su ficha y su aliento; detrás de otro, el rebufo.
+  if (rv.empuja) a += EMPUJE * st.empuje * (cuesta ? 0.9 : 0.85) * hab * alientoF(rv.aliento) * Math.max(0, 1 - rv.v / CORRE) + (rv.v < 1 ? 1 : 0);
+  else if (rebufoDe(rv, dt, [j, ...rivales]) > 0) a += 1.1 * rv.rebufo + AIRE * rv.v * rv.v * 0.5 * rv.rebufo / hab;
   // Sus coladas: las toman al pasar y las gastan al arrancar o en la subida.
   for (const o of listaColadas) {
     if (Math.abs(o.s - rv.s) < 0.7 && Math.abs(o.x - rv.x) < 0.8 && o.obj.visible && (rv.coladas || 0) < COLADAS_MAX) { tomaColada(o); rv.coladas = (rv.coladas || 0) + 1; }
@@ -3657,6 +3780,7 @@ const hud = {
   tiempo: $('#h-tiempo'), vel: $('#h-vel'), vuelta: $('#h-vuelta'), vueltaEt: $('#h-vuelta-et'), parciales: $('#h-parciales'), accionTxt: $('#b-empuja-txt'),
   empujador: $('#h-empujador'), ruta: $('#h-ruta'), turbo: $('#h-turbo'), velo: $('#velo'),
   pasos: $('#h-pasos'), coladas: $('#h-coladas'), accion: $('#b-empuja'), pieIzq: $('#h-pie-izq'), pieDer: $('#h-pie-der'), racha: $('#h-racha'),
+  compas: $('#h-compas'), aliento: $('#h-aliento'), rebufo: $('#h-rebufo'), curva: $('#h-curva'), curvaFlecha: $('#h-curva-flecha'), curvaTxt: $('#h-curva-txt'),
   puntos: [], filas: [],
 };
 // Un punto por coche en la línea de la carrera, con su color y su número.
@@ -3729,10 +3853,12 @@ function pintaHud() {
   // El botón de acción dice qué hace ahora: bajarse, subirse o, a pie y con
   // colada, el empujón fuerte.
   const nc = j.coladas || 0;
-  const accion = estado !== 'carrera' || j.aire ? '' : e.estado === 'empujando' ? (nc > 0 ? '¡Colada!' : '¡Sube!') : e.estado === 'a_bordo' && j.v < BAJA_MANUAL ? 'Bájate' : '';
+  // En plena cuesta arriba no se sugiere subirse: el carro se pararía.
+  const subeYa = j.v >= SUBE_PERFECTA && muestra(j.s).pend < 0.02;
+  const accion = estado !== 'carrera' || j.aire ? '' : e.estado === 'empujando' ? (nc > 0 ? '¡Colada!' : subeYa ? '¡Sube ya!' : j.v >= SUBE_MIN ? 'Sube' : '') : e.estado === 'a_bordo' && j.v < BAJA_MANUAL ? 'Bájate' : '';
   if (accion !== ultimoHud.accion) {
     hud.accion.hidden = !accion; hud.accionTxt.textContent = accion;
-    hud.accion.classList.toggle('es-sube', accion === '¡Sube!');
+    hud.accion.classList.toggle('es-sube', accion === '¡Sube ya!');
     hud.accion.classList.toggle('es-colada', accion === '¡Colada!');
   }
   datos.accion = accion;
@@ -3750,12 +3876,42 @@ function pintaHud() {
   if (pisa) {
     const toca = -pasos.ultimo;
     if (toca !== ultimoHud.toca) { hud.pieIzq.classList.toggle('is-toca', toca <= 0); hud.pieDer.classList.toggle('is-toca', toca >= 0); ultimoHud.toca = toca; }
-    const racha = pasos.unPie ? (pasos.unPie < 0 ? 'Un pie ▶' : '◀ Un pie') : pasos.combo > 1 ? `×${pasos.combo}` : '¡Pisa!';
+    const reciente = pasos.t - pasos.tPaso < 0.5;
+    const racha = pasos.unPie ? (pasos.unPie < 0 ? 'Un pie ▶' : '◀ Un pie')
+      : reciente && pasos.nota === 'apurado' ? '¡Despacio!'
+        : pasos.combo >= RACHA ? `¡Racha! ×${pasos.combo}` : pasos.combo > 1 ? `×${pasos.combo}`
+          : reciente && pasos.nota === 'tarde' ? 'Más seguido' : '¡Pisa!';
     if (racha !== ultimoHud.racha) { hud.racha.textContent = racha; ultimoHud.racha = racha; }
     const bien = pasos.burst > 0;
     if (bien !== ultimoHud.bien) { hud.pasos.classList.toggle('is-bien', bien); ultimoHud.bien = bien; }
+    const apurado = reciente && pasos.nota === 'apurado';
+    if (apurado !== ultimoHud.apurado) { hud.pasos.classList.toggle('is-apurado', apurado); ultimoHud.apurado = apurado; }
+    // La aguja del compás: de 0 a 2 compases desde el último paso.
+    const aguja = pasos.tPaso < 0 ? 0 : limita((pasos.t - pasos.tPaso) / (2 * compas(j.v)), 0, 1);
+    hud.compas.style.left = `${(aguja * 100).toFixed(1)}%`;
     const unPie = !!pasos.unPie;
     if (unPie !== ultimoHud.unPie) { hud.pasos.classList.toggle('is-un-pie', unPie); ultimoHud.unPie = unPie; }
+  }
+  // El aliento, el rebufo y la curva que viene.
+  const al = Math.round(e.aliento * 100) / 100;
+  if (al !== ultimoHud.aliento) {
+    hud.aliento.style.setProperty('--a', al); hud.aliento.setAttribute('aria-valuenow', Math.round(al * 100));
+    hud.aliento.classList.toggle('is-poco', al < 0.4 && al >= 0.15); hud.aliento.classList.toggle('is-nada', al < 0.15);
+    ultimoHud.aliento = al;
+  }
+  const rebufo = e.estado === 'a_bordo' && (j.rebufo || 0) > 0.5;
+  if (rebufo !== ultimoHud.rebufo) { hud.rebufo.hidden = !rebufo; ultimoHud.rebufo = rebufo; }
+  const cv = curvaQueViene();
+  const curva = estado !== 'carrera' || e.estado !== 'a_bordo' || j.aire ? '' : cv.frena ? 'frena' : cv.cerca ? 'curva' : '';
+  const curvaTxt = curva ? `${curva}|${cv.lado}` : '';
+  if (curvaTxt !== ultimoHud.curva) {
+    hud.curva.hidden = !curva;
+    if (curva) {
+      hud.curva.classList.toggle('is-frena', curva === 'frena');
+      hud.curvaTxt.textContent = curva === 'frena' ? '¡Frena!' : 'Curva';
+      hud.curvaFlecha.textContent = cv.lado > 0 ? '›››' : '‹‹‹';
+    }
+    ultimoHud.curva = curvaTxt;
   }
   // Las rayas de velocidad, cuando de verdad va rápido.
   const velo = quieto.matches ? 0 : limita((j.v - 22) / 16, 0, 0.75) + (j.turbo > 0 ? 0.2 : 0);
@@ -3823,7 +3979,7 @@ function logrosDelProgreso() {
   if (CROMOS.every((c) => prog.album.includes(c.id))) perfil.desbloquear('coches-album');
 }
 const copaAbierta = (id) => id === 'fiestas' || prog.copa === 1;
-const PUNTOS = [10, 7, 5, 3, 1];
+const PUNTOS = [10, 7, 5, 3, 2, 1];
 const listaDe = (tipo) => (tipo === 'pareja' ? prog.parejas : tipo === 'pista' ? prog.pistas : prog.pinturas);
 const abierta = (tipo, id) => listaDe(tipo).includes(id) || (tipo === 'pista' && PISTAS.some((p) => p.id === id && p.libre));
 const comoSeGana = (tipo, id) => {
@@ -4000,9 +4156,10 @@ function muestraPodio(tabla, nombreCopa) {
   $('#podio-kicker').textContent = nombreCopa || 'Copa de las Fiestas';
   estado = 'podio';
   podioS = META - 7;
-  const sitio = [[0, 0], [-1.9, -2.6], [1.9, -3.4], [-1.2, -14], [1.4, -16]];
+  // Los tres del podio adelante; los otros tres, detrás (son seis coches).
+  const sitio = [[0, 0], [-1.9, -2.6], [1.9, -3.4], [-1.2, -14], [1.4, -16], [-0.2, -18.5]];
   tabla.forEach((f, k) => {
-    const [x, ds] = sitio[k];
+    const [x, ds] = sitio[k] || [0, -20 - k * 2.5];
     if (f.id === eqJ.id) { Object.assign(j, { s: podioS + ds, x, v: 0, volcado: 0, aire: false, h: 0, giro: 0 }); Object.assign(e, { estado: 'a_bordo' }); Object.assign(c, { suelto: false }); }
     else { const rv = rivales.find((r) => r.cruce.eq.id === f.id); Object.assign(rv, { s: podioS + ds, x, v: 0, empuja: false }); }
   });
@@ -4170,7 +4327,8 @@ function pilotoDemo() {
   const hw = muestra(j.s).hw; objetivo = limita(objetivo, -(hw - 0.9), hw - 0.9);
   teclas.izq = j.x > objetivo + 0.15 && !j.aire; teclas.der = j.x < objetivo - 0.15 && !j.aire;
   teclas.freno = j.v > GIRO / (CENTRIFUGA * Math.max(peor, 1e-4)) * 0.95;
-  if (e.estado === 'empujando' && !teclas.freno && pasos.t >= demoPaso) { demoPaso = pasos.t + 0.3; pasos.pulsos.push({ t: pasos.t, peso: 1 }); }
+  if (e.estado === 'empujando' && !teclas.freno && pasos.t >= demoPaso) { demoPaso = pasos.t + compas(j.v); pisaUnPie(pasos.ultimo < 0 ? 1 : -1); }
+  if (e.estado === 'empujando' && estado === 'carrera' && (j.coladas > 0 || (j.v >= SUBE_PERFECTA && muestra(j.s).pend < 0.02)) && !j.aire) { if (j.coladas > 0) empujonColada(); else subirse(); }
 }
 function desdeTitulo() {
   if (estado !== 'titulo' || $('#b-copa').disabled) return;
@@ -4782,7 +4940,11 @@ window.coches = {
   ritmo: () => ritmo(),
   coladas: (n) => { if (n != null) j.coladas = n; return j.coladas || 0; },
   unPie: () => pasos.unPie,
-  pisa: () => pasos.pulsos.push({ t: pasos.t, peso: 1 }),
+  pisa: (lado) => pisaUnPie(lado || (pasos.ultimo < 0 ? 1 : -1)),
+  compas: () => compas(j.v), nota: () => pasos.nota,
+  aliento: (n) => { if (n != null) e.aliento = n; return e.aliento; },
+  rebufo: () => j.rebufo || 0,
+  curvaQueViene: () => ({ ...curvaQueViene() }),
   paso: (lado, espera) => { const k = lado < 0 ? 'izq' : 'der'; teclas[k] = true; window.coches.simula(0.03); teclas[k] = false; window.coches.simula(espera || 0); },
   combo: () => pasos.combo,
   rivales: () => rivales.map((rv) => ({ s: rv.s, x: rv.x, v: rv.v, coladas: rv.coladas || 0, id: rv.cruce.eq.id })),

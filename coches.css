@@ -549,3 +549,31 @@ body.pixel #pista{image-rendering:pixelated;image-rendering:crisp-edges}
   #album .coches-album{grid-template-columns:repeat(auto-fill, minmax(96px, 1fr));gap:var(--mal-e2)}
   #creditos .caption,#creditos .coches-creditos{font-size:.82rem;line-height:1.3}
 }
+
+/* ─── el compás, el aliento, la curva y el rebufo ────────────────
+   El compás va dentro de la píldora de los pies: una regla de dos compases
+   con la ventana del paso a tiempo en verde (de 0,78 a 1,35 compases) y
+   una aguja que corre desde el último paso. */
+.coches-pasos__centro{display:flex;flex-direction:column;align-items:center;gap:3px}
+.coches-compas{position:relative;display:block;width:clamp(96px, 22vw, 140px);height:9px;border-radius:99px;
+  background:rgba(255,255,255,.18);border:2px solid currentColor;overflow:hidden}
+.coches-compas__ventana{position:absolute;top:0;bottom:0;left:39%;width:28.5%;background:#4CC46A}
+.coches-compas__aguja{position:absolute;top:-2px;bottom:-2px;left:0;width:4px;margin-left:-2px;background:#fff;
+  box-shadow:0 0 0 1px #1C1619}
+.coches-pasos.is-apurado{background:#B8322A;color:#fff}
+/* El aliento: una barra corta bajo el estado del que empuja. */
+.coches-aliento{display:block;width:86px;height:8px;border-radius:99px;background:rgba(20,16,24,.55);border:2px solid #2b2129;overflow:hidden}
+.coches-aliento i{display:block;height:100%;width:calc(var(--a, 1) * 100%);background:#4CC46A;transition:width .2s}
+.coches-aliento.is-poco i{background:#F2C14E}
+.coches-aliento.is-nada i{background:#D6382B;animation:coches-latir .35s ease-in-out infinite alternate}
+.coches-rebufo{background:#43D9FF;color:#16324A}
+.coches-rebufo[hidden]{display:none}
+/* La curva: chevrones y «¡Frena!» arriba al centro, bajo los avisos. */
+.coches-curva{position:fixed;left:50%;top:calc(env(safe-area-inset-top, 0px) + 96px);transform:translateX(-50%);z-index:34;margin:0;
+  display:flex;align-items:center;gap:.4em;padding:3px 16px;border-radius:99px;pointer-events:none;white-space:nowrap;
+  font-family:var(--mal-display);font-weight:800;font-size:clamp(1rem, .8rem + 1vw, 1.5rem);color:#2b2129;background:#F2C14E;border:2px solid #2b2129}
+.coches-curva[hidden]{display:none}
+.coches-curva.is-frena{background:#D6382B;color:#fff;animation:coches-alerta .3s ease-in-out infinite alternate}
+@keyframes coches-alerta{to{box-shadow:0 0 0 6px rgba(232,54,43,.45)}}
+.coches-curva__flecha{letter-spacing:-.12em}
+@media (prefers-reduced-motion: reduce){.coches-curva.is-frena,.coches-aliento.is-nada i{animation:none}}
