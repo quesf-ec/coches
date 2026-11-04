@@ -470,7 +470,7 @@ const ICONOS = {
 const CROMOS = [
   { id: 'virgen', nombre: 'La Virgen de Quito', desc: 'La única Virgen con alas: la del Panecillo, de aluminio y 41 metros.', pista: 'panecillo', zona: 'panecillo', d: 200, x: -2.2, fachada: 'virgen' },
   { id: 'chulla', nombre: 'El Chulla Quiteño', desc: 'Terno, sombrero y bastón: el personaje de la canción y de la ciudad.', pista: 'panecillo', zona: 'garcia', d: 40, x: 1.8, icono: 'chulla' },
-  { id: 'farol', nombre: 'Los faroles de La Ronda', desc: 'La calle de los artesanos, con sus faroles encendidos en las Fiestas.', pista: 'panecillo', zona: 'ronda', d: 25, x: -1.9, icono: 'farol' },
+  { id: 'farol', nombre: 'Los faroles de La Ronda', desc: 'La calle de los artesanos, con sus faroles encendidos en las Fiestas.', pista: 'panecillo', zona: 'garcia', d: 140, x: -1.9, icono: 'farol' },
   { id: 'santuario', nombre: 'El Santuario de Guápulo', desc: 'Del siglo XVII, al pie de la cuesta, mirando al valle.', pista: 'guapulo', zona: 'guapulo', d: 120, x: 2, fachada: 'santuario' },
   { id: 'canelazo', nombre: 'El canelazo', desc: 'Naranjilla, canela y un chorro de puntas: lo que calienta la noche.', pista: 'guapulo', zona: 'mirador', d: 70, x: -1.6, icono: 'canelazo' },
   { id: 'guagua', nombre: 'La guagua de pan', desc: 'El pan con forma de niño que se come en noviembre con la colada.', pista: 'guapulo', zona: 'guapulo', d: 280, x: -2.1, icono: 'guagua' },
@@ -479,13 +479,13 @@ const CROMOS = [
   { id: 'chiva', nombre: 'La chiva', desc: 'El bus abierto, con banda arriba, que recorre la ciudad en las Fiestas.', pista: 'sanjuan', zona: 'rocafuerte', d: 110, x: -1.8, icono: 'chiva' },
   { id: 'banderin', nombre: 'Los banderines', desc: 'Rojo y azul, los colores de Quito, cruzando las calles.', pista: 'vuelta', zona: 'panecillo', d: 100, x: 2.4, icono: 'banderin' },
   { id: 'cometa', nombre: 'La cometa', desc: 'En agosto el Panecillo se llena de cometas; alguna queda para noviembre.', pista: 'vuelta', zona: 'miradorpanecillo', d: 70, x: -2.4, icono: 'cometa' },
-  { id: 'hornado', nombre: 'El hornado', desc: 'Chancho entero al horno, con mote y agrio, en cualquier mercado.', pista: 'vuelta', zona: 'cumbre', d: 90, x: 2.2, icono: 'hornado' },
+  { id: 'hornado', nombre: 'El hornado', desc: 'Chancho entero al horno, con mote y agrio, en cualquier mercado.', pista: 'vuelta', zona: 'cumbre', d: 50, x: 2.2, icono: 'hornado' },
   { id: 'capirote', nombre: 'El cucurucho', desc: 'El penitente morado de la procesión de Viernes Santo.', pista: 'subida', zona: 'subida', d: 60, x: 2.3, icono: 'capirote' },
   { id: 'gallo', nombre: 'El Gallo de la Catedral', desc: 'La veleta de la Catedral que, según la leyenda, bajó a picotear a un borracho.', pista: 'subida', zona: 'subida', d: 160, x: -2.3, icono: 'gallo' },
   { id: 'corona', nombre: 'La Reina de Quito', desc: 'Cada año, antes de las Fiestas, se elige una; la corona es lo de menos.', pista: 'subida', zona: 'cumbre', d: 25, x: 1.9, icono: 'corona' },
-  { id: 'tabla', nombre: 'La tabla', desc: 'Tres tablones, dos ejes y rulimanes: el coche entero, hecho en casa.', pista: 'tobogan', zona: 'cumbre', d: 40, x: -2.6, icono: 'tabla' },
-  { id: 'rulimanes', nombre: 'Los rulimanes', desc: 'Las ruedas de verdad: rodamientos de camión, que chillan en el empedrado.', pista: 'tobogan', zona: 'valle', d: 100, x: 2.6, icono: 'rulimanes' },
-  { id: 'soga', nombre: 'La soga', desc: 'El volante: una soga atada al eje de adelante y, con suerte, un freno de madera.', pista: 'tobogan', zona: 'trepada', d: 250, x: -2.4, icono: 'soga' },
+  { id: 'tabla', nombre: 'La tabla', desc: 'Tres tablones, dos ejes y rulimanes: el coche entero, hecho en casa.', pista: 'tobogan', zona: 'cuenca', d: 40, x: -2.6, icono: 'tabla' },
+  { id: 'rulimanes', nombre: 'Los rulimanes', desc: 'Las ruedas de verdad: rodamientos de camión, que chillan en el empedrado.', pista: 'tobogan', zona: 'teatro', d: 20, x: 2.6, icono: 'rulimanes' },
+  { id: 'soga', nombre: 'La soga', desc: 'El volante: una soga atada al eje de adelante y, con suerte, un freno de madera.', pista: 'tobogan', zona: 'manabi', d: 250, x: -2.4, icono: 'soga' },
   { id: 'cohete', nombre: 'Los fuegos artificiales', desc: 'La noche del 5 de diciembre el cielo de Quito se llena de luces.', pista: 'noche-vuelta', zona: 'panecillo', d: 60, x: -2.3, icono: 'cohete' },
   { id: 'vaca', nombre: 'La vaca loca', desc: 'Un armazón de vaca cargado de cohetes que alguien se pone y sale a corretear a la gente.', pista: 'noche-sanjuan', zona: 'rocafuerte', d: 60, x: 1.9, icono: 'vaca' },
   { id: 'castillo', nombre: 'El castillo', desc: 'La torre de carrizo con ruedas de fuegos que se enciende de abajo arriba.', pista: 'noche-guapulo', zona: 'guapulo', d: 200, x: -2, icono: 'castillo' },
@@ -557,6 +557,8 @@ function texturasSuelo() {
       for (let k = 0; k <= 4; k++) { c.beginPath(); c.moveTo(0, k * 64); c.lineTo(w, k * 64); c.moveTo(k * 64, 0); c.lineTo(k * 64, h); c.stroke(); }
     }), true),
     pasto: textura(lienzo(256, 256, (c, w, h) => ruido(c, w, h, '#76A04B', 2500, ['#6C9644', '#82AC55', '#668E40', '#8DB45E'])), true),
+    // El terreno: un ruido gris que cada vértice tiñe de pasto o de tierra.
+    tierra: textura(lienzo(256, 256, (c, w, h) => ruido(c, w, h, '#BDBDBD', 2600, ['#B0B0B0', '#C8C8C8', '#A8A8A8', '#D2D2D2'])), true),
     plaza: textura(lienzo(256, 256, (c, w, h) => {
       ruido(c, w, h, '#DCD4C4', 800, ['#D2CAB9', '#E3DCCE']);
       c.strokeStyle = 'rgba(90,80,65,.35)'; c.lineWidth = 3;
@@ -605,6 +607,11 @@ const ZONAS = {
   valle: { nombre: 'El valle', calle: 'asfalto', lado: 'pasto', hw: 5.6, arboles: true, publico: [10, 6] },
   trepada: { nombre: 'La trepada', calle: 'asfalto', lado: 'pasto', hw: 5.4, arboles: true, publico: [12, 5] },
   cumbre: { nombre: 'La cumbre', calle: 'asfalto', lado: 'pasto', hw: 5.2, arboles: true, publico: [6, 6] },
+  // La bajada grande de verdad: del centro a La Marín y de vuelta.
+  olmedo: { nombre: 'La Olmedo en picada', calle: 'asfalto', lado: 'vereda', hw: 5.4, casas: true, faroles: true, banderas: true, publico: [10, 5] },
+  teatro: { nombre: 'La Plaza del Teatro', calle: 'adoquin', lado: 'plaza', hw: 5.6, casas: true, faroles: true, banderas: true, puestos: 18, publico: [5, 6] },
+  manabi: { nombre: 'La trepada de la Manabí', calle: 'adoquin', lado: 'vereda', hw: 5.0, casas: true, faroles: true, banderas: true, peatones: true, publico: [9, 5] },
+  cuenca: { nombre: 'La Cuenca', calle: 'asfalto', lado: 'vereda', hw: 5.0, casas: true, faroles: true, banderas: true, publico: [6, 6] },
 };
 // Las calles, más anchas que las de verdad: los seis coches salen a la vez,
 // en una fila, y en carrera hay sitio para adelantar y para chocarse.
@@ -619,8 +626,11 @@ const PISTAS = [
   {
     id: 'panecillo', nombre: 'La bajada del Panecillo', salida: 'EL PANECILLO', meta: 'PLAZA GRANDE',
     // Con coches/pistas/panecillo.json, las calles de verdad; si no, los tramos.
-    real: 'panecillo', callesZonas: [['Benavides|Bah[ií]a', 'panecillo'], ['Ambato', 'ambato'], ['24 de Mayo', 'bulevar'], ['Morales', 'ronda'], ['Garc[ií]a', 'garcia'], ['.', 'plaza']],
-    lema: 'De la Virgen a la Plaza Grande: las curvas del Panecillo, la Ambato empinada, La Ronda y la subida de la García Moreno.',
+    // Con coches/pistas/panecillo.json, las calles de verdad: la Melchor de
+    // Aymerich, la Necochea, la Mariscal Sucre, la Chimborazo, la Barahona,
+    // la Ambato y la García Moreno hasta la Plaza Grande.
+    real: 'panecillo', callesZonas: [['Aymerich', 'panecillo'], ['Garc[ií]a', 'garcia'], ['.', 'ambato']], zonasExtra: [['plaza', 2215]],
+    lema: 'De la Virgen a la Plaza Grande por las calles de verdad: las curvas del Panecillo, la Barahona y la Ambato cuesta abajo y la García Moreno, por el Arco de la Reina y la Compañía.',
     tramos: ['panecillo', [0, 40, 0, 0, 0], ['salida', 34], [12, 20, 12, 0, -6], [14, 22, 14, -5, -8], [14, 22, 14, 5, -9],
       [16, 30, 16, 5, -14], [14, 20, 14, -4, -7], [10, 14, 10, 2, -3],
       'ambato', [18, 56, 18, 0, -26], [10, 10, 10, 0, 1.2], [15, 24, 15, 3, -3],
@@ -628,15 +638,14 @@ const PISTAS = [
       'ronda', [9, 15, 9, -4, 0.8], [9, 15, 9, 5, -2.5], [9, 15, 9, -4, 0.6], [9, 15, 9, 4, -2.5], [9, 12, 9, -2, 0],
       'garcia', [12, 36, 12, 0, 2.6], [10, 14, 10, 3, 0],
       'plaza', ['meta', 40], [6, 66, 6, 0, 0], [0, 160, 0, 0, 0]],
-    hitos: [['virgen', 'panecillo', 89, -32], ['torres', 'bulevar', 70, 1], ['compania', 'garcia', 80, -1], ['arco', 'garcia', 40],
-      ['catedral', 'plaza', 16, 1], ['palacio', 'plaza', 20, -1]],
-    rampas: [['ambato', 150, 0], ['bulevar', 40, -1.6], ['bulevar', 120, 1.4], ['ronda', 40, 0], ['panecillo', 62, 1.2]],
-    coladas: [['panecillo', 150], ['panecillo', 262], ['ambato', 110], ['bulevar', 80], ['ronda', 90], ['garcia', 15], ['garcia', 60]],
+    hitos: [['virgen', null, -188.9, 3.8], ['arco', 'garcia', 290], ['compania', 'garcia', 520, -1], ['catedral', 'plaza', 20, 1], ['palacio', 'plaza', 60, -1]],
+    rampas: [['panecillo', 160, 0], ['panecillo', 520, -1.4], ['ambato', 320, 1.4], ['garcia', 150, 0], ['garcia', 420, -1.4]],
+    coladas: [['panecillo', 90], ['panecillo', 330], ['ambato', 60], ['ambato', 460], ['ambato', 760], ['garcia', 70], ['garcia', 360]],
   },
   {
     id: 'guapulo', nombre: 'La cuesta de Guápulo', salida: 'MIRADOR DE GUÁPULO', meta: 'SANTUARIO DE GUÁPULO',
-    real: 'guapulo', callesZonas: [['Gonz[aá]lez', 'mirador'], ['Orellana|Conquistadores|Leonidas|Compte', 'guapulo'], ['.', 'guapulo']],
-    lema: 'Del mirador al santuario por la cuesta más empinada de Quito: horquillas de piedra y una recta que da miedo.',
+    real: 'guapulo', callesZonas: [['Stubel|Le[oó]n Larrea', 'mirador'], ['.', 'guapulo']], zonasExtra: [['plazaguapulo', 1180]],
+    lema: 'Del mirador al santuario por la cuesta más empinada de Quito: el Camino de Orellana, sus horquillas y la picada de la Leonidas Plaza, 160 m más abajo.',
     tramos: ['mirador', [0, 40, 0, 0, 0], ['salida', 34], [10, 30, 10, 0, -4], [12, 20, 12, -4, -5],
       'guapulo', [10, 14, 10, 6, -7], [10, 14, 10, -6, -7], [10, 16, 10, 7, -8], [10, 14, 10, -6, -7],
       [12, 36, 12, 0, -18],
@@ -645,53 +654,55 @@ const PISTAS = [
       [10, 24, 10, 0, 2.5],
       'plazaguapulo', ['meta', 40], [6, 60, 6, 0, 0], [0, 160, 0, 0, 0]],
     hitos: [['santuario', 'plazaguapulo', 30, 1]],
-    rampas: [['guapulo', 182, 0], ['mirador', 60, -1.2]],
-    coladas: [['mirador', 50], ['guapulo', 60], ['guapulo', 232], ['guapulo', 300]],
+    rampas: [['mirador', 150, -1.2], ['guapulo', 140, 0], ['guapulo', 470, 1.2]],
+    coladas: [['mirador', 60], ['guapulo', 60], ['guapulo', 330], ['guapulo', 560], ['guapulo', 760]],
   },
   {
     id: 'sanjuan', nombre: 'La bajada de San Juan', salida: 'LA BASÍLICA', meta: 'SAN FRANCISCO',
-    real: 'sanjuan', callesZonas: [['Carchi|Imbabura', 'basilica'], ['Venezuela', 'venezuela'], ['Rocafuerte|Cuenca', 'rocafuerte'], ['Bol[ií]var', 'sanfrancisco'], ['.', 'venezuela']],
-    lema: 'De la Basílica a la Plaza de San Francisco: la Venezuela en picada y los puestos de la Rocafuerte.',
+    real: 'sanjuan', callesZonas: [['Rocafuerte', 'rocafuerte'], ['Benalc', 'sanfrancisco'], ['.', 'venezuela']], zonasExtra: [['basilica', 0], ['venezuela', 260]],
+    lema: 'De la Basílica a la Plaza de San Francisco por la Venezuela entera: la Plaza Grande, Santo Domingo y los puestos de la Rocafuerte.',
     tramos: ['basilica', [0, 40, 0, 0, 0], ['salida', 34], [10, 20, 10, 0, -2],
       'venezuela', [14, 50, 14, 0, -22], [10, 20, 10, -3, -4], [12, 40, 12, 0, -12], [10, 16, 10, 4, -4],
       'rocafuerte', [9, 15, 9, 4, -2], [9, 15, 9, -4, -2], [9, 22, 9, 0, 2.2], [9, 15, 9, 3, -3], [9, 15, 9, -2, -1],
       'sanfrancisco', ['meta', 45], [6, 70, 6, 0, 0], [0, 160, 0, 0, 0]],
-    hitos: [['basilica', 'basilica', 18, -1], ['torres', 'sanfrancisco', 30, 1]],
-    rampas: [['venezuela', 70, 0], ['venezuela', 150, 1.4], ['rocafuerte', 80, -1]],
-    coladas: [['basilica', 50], ['venezuela', 30], ['venezuela', 120], ['rocafuerte', 60], ['rocafuerte', 140]],
+    hitos: [['basilica', 'basilica', 150, 1], ['torres', 'sanfrancisco', 120, -1]],
+    rampas: [['venezuela', 200, 0], ['venezuela', 560, 1.4], ['venezuela', 980, -1.4], ['rocafuerte', 90, 0]],
+    coladas: [['basilica', 70], ['venezuela', 100], ['venezuela', 420], ['venezuela', 760], ['rocafuerte', 40], ['sanfrancisco', 40]],
   },
   {
-    id: 'tobogan', nombre: 'La bajada grande', salida: 'LA CUMBRE', meta: 'LA CUMBRE', real: 'tobogan', vueltas: 3,
-    lema: 'Tres vueltas: una recta inmensa cuesta abajo, la curva del valle y, con ese impulso, la trepada de vuelta. Lo que falte lo empuja el de atrás.',
+    id: 'tobogan', nombre: 'La bajada grande', salida: 'LA CUENCA', meta: 'LA CUENCA', real: 'tobogan', vueltas: 2,
+    lema: 'Dos vueltas por el centro: la Olmedo recta y en picada hasta el Teatro Sucre, la curva de abajo y, con ese impulso, la trepada de la Manabí. Lo que falte lo empuja el de atrás.',
+    // Sin datos, la generada en código, con sus zonas por metro.
     zonas: [['tobogan', 0], ['valle', 310], ['trepada', 460], ['cumbre', 780]],
+    callesZonas: [['Olmedo', 'olmedo'], ['Guayaquil', 'teatro'], ['Manab', 'manabi'], ['.', 'cuenca']],
     hitos: [['cerro', null, 45, 180, 28, 20]],
-    rampas: [['tobogan', 150, -3.2], ['tobogan', 240, 3.2]],
-    coladas: [['valle', 60], ['trepada', 180], ['cumbre', 60]],
+    rampas: [['olmedo', 150, -2.4], ['olmedo', 270, 2.4], ['manabi', 200, 0]],
+    coladas: [['olmedo', 60], ['teatro', 45], ['manabi', 120], ['manabi', 300], ['cuenca', 50]],
   },
   {
-    id: 'vuelta', nombre: 'La vuelta al Panecillo', salida: 'EL PANECILLO', meta: 'EL PANECILLO', real: 'panecillo-vuelta', vueltas: 2, arbolesLado: -1,
-    callesZonas: [['.', 'panecillo']],
-    lema: 'Dos vueltas al cerro por la carretera que lo rodea: la Virgen siempre a la vista y el que empuja, sin descanso en las subidas.',
-    zonas: [['panecillo', 0], ['miradorpanecillo', 130], ['cumbre', 230], ['panecillo', 330]],
-    hitos: [['cerro', null, 0, 0, 40, 30]],
-    rampas: [['panecillo', 70, 0], ['miradorpanecillo', 50, -1.2], ['cumbre', 60, 1.2]],
-    coladas: [['panecillo', 40], ['miradorpanecillo', 20], ['cumbre', 20], ['panecillo', 360]],
+    id: 'vuelta', nombre: 'La vuelta al Panecillo', salida: 'EL PANECILLO', meta: 'EL PANECILLO', real: 'panecillo-vuelta', vueltas: 2, arbolesLado: 1,
+    lema: 'Dos vueltas a la Virgen por la Melchor de Aymerich, en la cima del cerro: la subida, la horquilla del cruce y el que empuja, sin descanso.',
+    zonas: [['panecillo', 0], ['cumbre', 380], ['miradorpanecillo', 460], ['panecillo', 560]],
+    hitos: [['cerro', null, 0, 0, 40, 30], ['virgen', null, -52.0, 25.9]],
+    rampas: [['panecillo', 110, 0], ['miradorpanecillo', 60, 1.2]],
+    coladas: [['panecillo', 60], ['panecillo', 250], ['cumbre', 30], ['panecillo', 610]],
   },
   {
     id: 'centro', nombre: 'La vuelta a la Plaza Grande', salida: 'PLAZA GRANDE', meta: 'PLAZA GRANDE', real: 'centro-vuelta', vueltas: 3, libre: true,
-    lema: 'Tres vueltas a la manzana de la Plaza Grande por las calles de verdad, entre las casas del centro.',
-    callesZonas: [['Venezuela', 'venezuela'], ['.', 'garcia']],
-    hitos: [], rampas: [], coladas: [['garcia', 30], ['venezuela', 40], ['garcia', 160]],
+    lema: 'Tres vueltas a dos manzanas con la Plaza Grande dentro: la Venezuela, la Espejo junto a la Catedral, la García Moreno por el Palacio y la Mejía.',
+    callesZonas: [['Venezuela', 'venezuela'], ['Espejo', 'plaza'], ['.', 'garcia']],
+    hitos: [], rampas: [['garcia', 90, 0]], coladas: [['venezuela', 90], ['plaza', 50], ['garcia', 140]],
   },
   {
-    id: 'subida', nombre: 'La subida del Panecillo', salida: 'LA AMBATO', meta: 'LA VIRGEN', premio: true,
-    lema: 'Al revés: de la Ambato a la Virgen, cuesta arriba todo el rato. Aquí el que empuja es el motor.',
+    id: 'subida', nombre: 'La subida del Panecillo', salida: 'EL LOMO', meta: 'LA VIRGEN', premio: true, real: 'subida',
+    lema: 'Al revés: la Melchor de Aymerich entera, del lomo del cerro a la Virgen, cuesta arriba todo el rato. Aquí el que empuja es el motor.',
+    zonas: [['subida', 0], ['cumbre', 1000]],
     tramos: ['ambato', [0, 40, 0, 0, 0], ['salida', 34], [10, 20, 10, 0, 2],
       'subida', [12, 22, 12, -6, 7], [12, 22, 12, 6, 7], [12, 26, 12, 0, 6], [12, 22, 12, -5, 6], [10, 16, 10, 3, 3],
       'cumbre', ['meta', 30], [0, 60, 0, 0, 0], [0, 160, 0, 0, 0]],
-    hitos: [['virgen', 'cumbre', 70, -18]],
+    hitos: [['virgen', null, -195.6, 77.8]],
     rampas: [],
-    coladas: [['subida', 40], ['subida', 120], ['subida', 190]],
+    coladas: [['subida', 90], ['subida', 330], ['subida', 560], ['subida', 800], ['cumbre', 30]],
   },
   // La noche de las Fiestas: las mismas calles a oscuras, con los faroles
   // encendidos y fuegos artificiales. Heredan todo de su pista de día.
@@ -792,6 +803,18 @@ function construyePistaReal(def) {
     resto = (resto - l) % 1 + 1; if (resto >= 1) resto -= 1;
   }
   if (!cerrada) vuelta.push(pts[pts.length - 1]);
+  // Una calle de OSM dobla en seco en cada esquina: se redondea (unos
+  // metros de radio, lo que un coche de madera dobla a paso de hombre) y
+  // se vuelve a muestrear cada metro, que el redondeo acorta el camino.
+  if (!d.generada) redondeaEsquinas(vuelta, cerrada);
+  // Tras la meta, la calle sigue recta otros 110 m: para frenar sin
+  // salirse del mundo.
+  const largoReal = vuelta.length;
+  if (!cerrada) {
+    const a = vuelta[largoReal - 2], b = vuelta[largoReal - 1];
+    const dx = b[0] - a[0], dz = b[1] - a[1], l = Math.hypot(dx, dz) || 1;
+    for (let m = 1; m <= 110; m++) vuelta.push([b[0] + (dx / l) * m, b[1] + (dz / l) * m, b[2]]);
+  }
   const largo = vuelta.length;
   // En un circuito la altura y la curva se suavizan sobre la vuelta, en
   // redondo, antes de repetirla: así cada vuelta es idéntica y la calle
@@ -814,6 +837,12 @@ function construyePistaReal(def) {
       if (!zonas.length || zonas[zonas.length - 1][0] !== z) zonas.push([z, Math.max(0, Math.round(s0))]);
     }
     zonas[0][1] = 0;
+    // Las que la pista pone por metro (una plaza al final de una calle):
+    // mandan sobre las de los nombres desde su metro.
+    if (def.zonasExtra) {
+      for (const [z, desde] of def.zonasExtra) zonas.push([z, desde, 1]);
+      zonas.sort((a, b) => a[1] - b[1] || (a[2] || 0) - (b[2] || 0));
+    }
   }
   if (!zonas) zonas = [[def.callesZonas ? def.callesZonas[0][1] : 'panecillo', 0]];
   const zonaDe = (m) => { let z = zonas[0][0]; for (const [n, desde] of zonas) if (m >= desde) z = n; return z; };
@@ -827,7 +856,7 @@ function construyePistaReal(def) {
     SALIDA = 40; META = 40 + largo * def.vueltas;
   } else {
     desde = 0; hasta = largo;
-    SALIDA = def.salidaM ?? 30; META = Math.min(def.metaM ?? largo - 40, largo - 10);
+    SALIDA = def.salidaM ?? 30; META = Math.min(def.metaM ?? largoReal - 40, largoReal - 10);
   }
   let zona = '';
   for (let i = desde; i < hasta; i++) {
@@ -899,6 +928,35 @@ function construyePista(def) {
   P.hw = suavizaArr(P.hw, 8, 1);
   for (let i = 0; i < N; i++) P.pend[i] = (P.y[Math.min(i + 1, N - 1)] - P.y[Math.max(i - 1, 0)]) / 2;
   return true;
+}
+// Redondea las esquinas de un trazado de puntos a cada metro: se suavizan
+// las posiciones (caja de ±6 m, tres pasadas: una esquina de 90° queda con
+// unos 10 m de radio) y se vuelve a muestrear cada metro. En un circuito,
+// en redondo. Las puntas de un trazado abierto se quedan donde estaban.
+function redondeaEsquinas(vuelta, cerrada) {
+  const n = vuelta.length;
+  if (n < 20) return;
+  const xs = vuelta.map((p) => p[0]), zs = vuelta.map((p) => p[1]), ys = vuelta.map((p) => p[2]);
+  const sx = cerrada ? suavizaCiclico(xs, 6, 3) : suavizaArr(xs, 6, 3);
+  const sz = cerrada ? suavizaCiclico(zs, 6, 3) : suavizaArr(zs, 6, 3);
+  if (!cerrada) { sx[0] = xs[0]; sz[0] = zs[0]; sx[n - 1] = xs[n - 1]; sz[n - 1] = zs[n - 1]; }
+  // Otra vez cada metro: con la altura que tocaba en cada punto.
+  const nuevo = [];
+  let resto = 0;
+  const m = cerrada ? n : n - 1;
+  for (let i = 0; i < m; i++) {
+    const i1 = (i + 1) % n;
+    const dx = sx[i1] - sx[i], dz = sz[i1] - sz[i], l = Math.hypot(dx, dz);
+    if (l < 1e-6) continue;
+    for (let t = resto; t < l; t += 1) {
+      const f = t / l;
+      nuevo.push([sx[i] + dx * f, sz[i] + dz * f, mezcla(ys[i], ys[i1], f)]);
+    }
+    resto = ((resto - l) % 1 + 1) % 1;
+  }
+  if (!cerrada) nuevo.push([sx[n - 1], sz[n - 1], ys[n - 1]]);
+  vuelta.length = 0;
+  for (const p of nuevo) vuelta.push(p);
 }
 // Un filtro de caja: cada valor, la media de los 2R+1 de alrededor, varias veces.
 function suavizaArr(arr, R, pasadas) {
@@ -1025,6 +1083,7 @@ function preparaMateriales() {
   const lam = (t, extra) => mate(Object.assign({ map: t, side: THREE.DoubleSide }, extra));
   MAT.asfalto = lam(TEX.asfalto); MAT.adoquin = lam(TEX.adoquin); MAT.vereda = lam(TEX.vereda);
   MAT.pasto = lam(TEX.pasto); MAT.plaza = lam(TEX.plaza);
+  MAT.tierra = mate({ map: TEX.tierra, vertexColors: true, side: THREE.DoubleSide });
   MAT.bordillo = mate({ color: 0xB9B0A0, side: THREE.DoubleSide });
   MAT.raya = new THREE.MeshBasicMaterial({ color: 0xEDE9DF, side: THREE.DoubleSide });
   MAT.madera = mate({ map: TEX.madera });
@@ -1032,6 +1091,14 @@ function preparaMateriales() {
   for (const t of Object.values(TEX)) if (t && t.userData) t.userData.compartido = true;
 }
 
+// Cuánto margen cabe a un lado de la calle en el metro k: 4 m, menos por
+// dentro de una curva cerrada (el radio que queda tras la vereda).
+function margen(k, lado) {
+  let kk = 0;
+  for (let d = -6; d <= 6; d += 2) kk = Math.max(kk, Math.abs(P.k[limita(k + d, 0, N - 1)]) * (Math.sign(P.k[limita(k + d, 0, N - 1)]) === lado ? 1 : 0));
+  if (!kk) return 4;
+  return limita(0.85 / kk - P.hw[k] - ACERA, 0.4, 4);
+}
 function construyeCalle() {
   // Por tramos de zona: cada una con su calzada y su lado.
   const uvCalle = { asfalto: (i, x) => [x / 10 + 0.5, i / 8], adoquin: (i, x) => [x / 2, i / 2] };
@@ -1049,11 +1116,15 @@ function construyeCalle() {
       cinta(i0, i1, (k, l) => [s * hw(k), l ? BORDILLO : 0], (k) => [0, k], MAT.bordillo);
       const acera = z.lado === 'pasto' ? MAT.pasto : MAT.vereda;
       cinta(i0, i1, (k, l) => [s * (hw(k) + (l ? ACERA : 0)), BORDILLO], (k, x) => [x / 1.6, k / 1.6], acera);
-      // El terreno de los lados cae pronto: así una curva de más arriba no
-      // deja su pasto flotando sobre la de más abajo.
-      const lejos = z.lado === 'pasto' ? 30 : 14;
-      cinta(i0, i1, (k, l) => [s * (hw(k) + ACERA + (l ? lejos : 0)), l ? (z.lado === 'pasto' ? -11 : BORDILLO) : BORDILLO],
-        (k, x) => [x / 4, k / 4], MAT[z.lado]);
+      // Un margen de pasto o de vereda que baja (o sube) hasta el terreno:
+      // la calle queda cosida al suelo, sin escalón ni rendija. Por dentro de
+      // una curva cerrada se estrecha, que no se doble sobre sí.
+      cinta(i0, i1, (k, l) => {
+        const x = s * (hw(k) + ACERA + (l ? margen(k, s) : 0));
+        if (!l) return [x, BORDILLO];
+        const p = punto(k, x, 0), y = alturaSuelo(p.x, p.z);
+        return [x, y == null ? BORDILLO : Math.min(BORDILLO, y - P.y[k] + 0.08)];
+      }, (k, x) => [x / 4, k / 4], MAT[z.lado]);
     }
     i0 = i;
   }
@@ -1241,11 +1312,360 @@ const FACHADAS = {
   palacio: [() => palacio(), 30, 19, 14], basilica: [() => basilica(), 20, 30, 16], santuario: [() => santuario(), 18, 22, 14],
 };
 
+// ─── el suelo y lo que hay alrededor de la calle ───────────────────
+// Dónde cae cada cosa respecto a la calle: el metro más cercano, a qué
+// distancia y a qué lado. Con celdas, para no recorrer la pista entera por
+// cada casa, cada vértice del terreno y cada árbol.
+class CercaPista {
+  constructor(celda = 24) {
+    this.c = celda; this.rej = new Map();
+    for (let i = 0; i < N; i += 2) {
+      const k = this.clave(Math.floor(P.x[i] / celda), Math.floor(P.z[i] / celda));
+      let l = this.rej.get(k); if (!l) this.rej.set(k, l = []); l.push(i);
+    }
+  }
+  clave(cx, cz) { return (cx + 32768) * 65536 + (cz + 32768); }
+  // Recorre los metros de pista a menos de `radio` de (x, z).
+  recorre(x, z, radio, fn) {
+    const c = this.c, cx = Math.floor(x / c), cz = Math.floor(z / c), R = Math.ceil(radio / c), r2 = radio * radio;
+    for (let a = -R; a <= R; a++) for (let b = -R; b <= R; b++) {
+      const l = this.rej.get(this.clave(cx + a, cz + b)); if (!l) continue;
+      for (const i of l) { const d = (P.x[i] - x) ** 2 + (P.z[i] - z) ** 2; if (d < r2) fn(i, Math.sqrt(d)); }
+    }
+  }
+  // El metro más cercano a (x, z), a qué distancia y a qué lado (`lat`:
+  // metros a la derecha del que baja), si está a menos de `hasta`.
+  de(x, z, hasta = 60) {
+    let mejor = Infinity, im = -1;
+    this.recorre(x, z, hasta, (i, d) => { if (d < mejor) { mejor = d; im = i; } });
+    if (im < 0) return null;
+    for (let i = Math.max(0, im - 2); i <= Math.min(N - 1, im + 2); i++) { const d = Math.hypot(P.x[i] - x, P.z[i] - z); if (d < mejor) { mejor = d; im = i; } }
+    const th = P.th[im];
+    return { i: im, d: mejor, lat: (x - P.x[im]) * -Math.cos(th) + (z - P.z[im]) * Math.sin(th) };
+  }
+}
+let CERCA = null, TERRENO = null, FRENTE = null, CRUCES = [], EDIFICIOS_CERCA = null, VERDES = [];
+// En un circuito, el metro de la primera vuelta que pasa por ahí.
+const enVuelta = (i) => (LARGO_VUELTA && i >= DECO_FIN ? DECO_INI + ((i - DECO_INI) % LARGO_VUELTA) : i);
+
+// La altura del suelo en (x, z). Pegado a la calle es la de la calle, que
+// las veredas, las casas y el pasto se apoyen en ella; de ahí a 45 m pasa
+// al terreno de verdad (la rejilla de alturas del JSON) o, sin él, a una
+// ladera que baja poco a poco. Entre dos vueltas de una horquilla, la media.
+function alturaSuelo(x, z) {
+  // La calle más cercana manda (pesos de 1/d⁴): así, entre las dos vueltas
+  // de una horquilla, cada una tiene su suelo y el terreno no la atraviesa.
+  // Bajo la calzada, un poco más abajo, que no asome.
+  let sw = 0, sy = 0, dmin = Infinity;
+  CERCA.recorre(x, z, 45, (i, d) => { const w = 1 / Math.max(d, 1) ** 4; sw += w; sy += w * P.y[i]; if (d < dmin) dmin = d; });
+  const dem = TERRENO.dem ? TERRENO.dem(x, z) : null;
+  let calle;
+  if (sw > 0) calle = sy / sw - 0.35;
+  else {
+    if (dem != null) return dem;
+    const q = CERCA.de(x, z, 260);
+    if (!q) return null;
+    calle = P.y[q.i] - 0.35; dmin = q.d;
+  }
+  const f = limita((dmin - 9) / 36, 0, 1);
+  const lejos = dem != null ? dem : calle - 2 - 0.15 * Math.max(0, dmin - 10);
+  return mezcla(calle, lejos, f * f * (3 - 2 * f));
+}
+// Cuánto hay de ciudad en (x, z), de 0 (cerro o parque) a 1 (entre
+// casas): tiñe el terreno de pasto o de tierra y dice dónde levantar los
+// bloques del fondo. Con datos de verdad: casas cerca, ciudad; un parque o
+// un bosque, verde; más allá de donde llegan los edificios (90 m), ciudad,
+// salvo en la ladera brava, que se queda de monte.
+function esCiudad(x, z) {
+  for (const v of VERDES) if (x > v.x0 && x < v.x1 && z > v.z0 && z < v.z1 && dentroDe(v.c, x, z)) return v.t === 'plaza' ? 1 : 0;
+  if (EDIFICIOS_CERCA) {
+    let n = 0;
+    const c = 40, cx = Math.floor(x / c), cz = Math.floor(z / c);
+    for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) {
+      const l = EDIFICIOS_CERCA.get((cx + a + 32768) * 65536 + (cz + b + 32768)); if (!l) continue;
+      for (const [ex, ez] of l) if ((ex - x) ** 2 + (ez - z) ** 2 < 1600) n++;
+    }
+    if (n) return Math.min(1, n / 3);
+    let cerca = false;
+    CERCA.recorre(x, z, 95, () => { cerca = true; });
+    if (cerca) return 0.15;
+    const dem = TERRENO.dem, y0 = dem && dem(x, z);
+    if (y0 == null) return 0.7;
+    const gx = (dem(x + 12, z) ?? y0) - (dem(x - 12, z) ?? y0), gz = (dem(x, z + 12) ?? y0) - (dem(x, z - 12) ?? y0);
+    return Math.hypot(gx, gz) / 24 > 0.4 ? 0.1 : 0.85;
+  }
+  const q = CERCA.de(x, z, 80);
+  return q && ZONAS[P.zona[q.i]].lado !== 'pasto' ? limita((70 - q.d) / 20, 0, 1) : 0;
+}
+// La altura del suelo a (s, x) de la calle, relativa a la calle: sobre la
+// vereda, la vereda; en el margen, la rampa que la cose al terreno; más
+// allá, el terreno.
+function hSuelo(s, x) {
+  const i = limita(Math.round(s), 0, N - 1), borde = P.hw[i] + ACERA;
+  if (Math.abs(x) <= borde) return BORDILLO;
+  const p = punto(s, x, 0), y = alturaSuelo(p.x, p.z);
+  if (y == null) return BORDILLO;
+  const enTerreno = y - muestra(s).y + 0.08, mg = margen(i, Math.sign(x) || 1);
+  return Math.abs(x) >= borde + mg ? enTerreno : mezcla(BORDILLO, Math.min(BORDILLO, enTerreno), (Math.abs(x) - borde) / mg);
+}
+// El resto de la ciudad, detrás de las casas: bloques de colores con techo
+// de teja, de a uno cada 16 m, donde el terreno es de ciudad y no hay calle
+// ni casa de verdad cerca. Dos mallas instanciadas para todos.
+function construyeCiudad(r) {
+  if (!TERRENO || (!EDIFICIOS_CERCA && !TERRENO.dem)) return;
+  const lugares = [];
+  const { x0, z0, x1, z1 } = TERRENO;
+  for (let z = z0 + 8; z < z1 - 8 && lugares.length < 6000; z += 16) {
+    for (let x = x0 + 8; x < x1 - 8 && lugares.length < 6000; x += 16) {
+      const px = x + (r() - 0.5) * 6, pz = z + (r() - 0.5) * 6;
+      let cerca = false;
+      CERCA.recorre(px, pz, 34, () => { cerca = true; });
+      if (cerca) continue;
+      const ciudad = esCiudad(px, pz);
+      if (ciudad < 0.6 || r() > ciudad) continue;
+      if (EDIFICIOS_CERCA) {
+        let ocupado = false;
+        const cx = Math.floor(px / 40), cz = Math.floor(pz / 40);
+        for (let a = -1; a <= 1 && !ocupado; a++) for (let b = -1; b <= 1 && !ocupado; b++) {
+          const l = EDIFICIOS_CERCA.get((cx + a + 32768) * 65536 + (cz + b + 32768));
+          if (l) for (const [ex, ez] of l) if ((ex - px) ** 2 + (ez - pz) ** 2 < 196) { ocupado = true; break; }
+        }
+        if (ocupado) continue;
+      }
+      const y = alturaSuelo(px, pz);
+      if (y == null) continue;
+      lugares.push([px, y, pz]);
+    }
+  }
+  if (!lugares.length) return;
+  const caja = new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0);
+  const techo = new THREE.ConeGeometry(0.75, 1, 4, 1).rotateY(Math.PI / 4).translate(0, 0.5, 0);
+  const muros = new THREE.InstancedMesh(caja, mate({ map: texFachada || (texFachada = textura(fachadaReal(), true)) }), lugares.length);
+  const techos = new THREE.InstancedMesh(techo, mate({}), lugares.length);
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), arriba = new THREE.Vector3(0, 1, 0), col = new THREE.Color();
+  lugares.forEach(([x, y, z], k) => {
+    const w = 8 + r() * 6, d = 8 + r() * 6, h = 5 + r() * 8, giro = r() * Math.PI;
+    q.setFromAxisAngle(arriba, giro);
+    m.compose(new THREE.Vector3(x, y - 2, z), q, new THREE.Vector3(w, h + 2, d));
+    muros.setMatrixAt(k, m); muros.setColorAt(k, col.setHex(COLORES_CASA[Math.floor(r() * COLORES_CASA.length)]));
+    m.compose(new THREE.Vector3(x, y + h, z), q, new THREE.Vector3(w * 1.06, 2.2, d * 1.06));
+    techos.setMatrixAt(k, m); techos.setColorAt(k, col.setHex(r() < 0.75 ? 0xA8442C : 0x8E8A84));
+  });
+  for (const im of [muros, techos]) { im.receiveShadow = true; mundo.add(im); }
+}
+
+const ANCHO_VIA = { motorway: 8, trunk: 8, primary: 7, secondary: 6.5, tertiary: 5.5, unclassified: 4.5, residential: 4.5, living_street: 4, service: 3.5, pedestrian: 4.5, track: 3 };
+// Se apunta que en estos metros, de este lado, no van casas de relleno.
+const reserva = (i, lado, r) => { const f = FRENTE[String(lado)]; for (let k = Math.max(0, Math.round(i - r)); k <= Math.min(N - 1, Math.round(i + r)); k++) f[enVuelta(k)] = 2; };
+// Antes de armar nada: la rejilla de cercanía, el terreno, qué frente de
+// la calle queda cubierto (por casas de verdad, bocacalles, plazas) y por
+// dónde llegan las otras calles.
+function preparaAlrededor() {
+  CERCA = new CercaPista();
+  const t = DATOS_PISTA && DATOS_PISTA.terreno;
+  if (t) {
+    TERRENO = {
+      x0: t.x0, z0: t.z0, x1: t.x0 + (t.nx - 1) * t.paso, z1: t.z0 + (t.nz - 1) * t.paso,
+      dem: (x, z) => {
+        const fx = (x - t.x0) / t.paso, fz = (z - t.z0) / t.paso, i = Math.floor(fx), k = Math.floor(fz);
+        if (i < 0 || k < 0 || i >= t.nx - 1 || k >= t.nz - 1) return null;
+        const a = t.y[k * t.nx + i], b = t.y[k * t.nx + i + 1], c = t.y[(k + 1) * t.nx + i], d = t.y[(k + 1) * t.nx + i + 1];
+        if (a == null || b == null || c == null || d == null) return null;
+        const u = fx - i, v = fz - k;
+        return (a * (1 - u) + b * u) * (1 - v) + (c * (1 - u) + d * u) * v;
+      },
+    };
+  } else {
+    let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+    for (let i = 0; i < N; i++) { x0 = Math.min(x0, P.x[i]); x1 = Math.max(x1, P.x[i]); z0 = Math.min(z0, P.z[i]); z1 = Math.max(z1, P.z[i]); }
+    TERRENO = { x0: x0 - 260, z0: z0 - 260, x1: x1 + 260, z1: z1 + 260, dem: null };
+  }
+  FRENTE = { '-1': new Uint8Array(N), 1: new Uint8Array(N) };
+  CRUCES = [];
+  EDIFICIOS_CERCA = null;
+  VERDES = [];
+  if (!DATOS_PISTA) return;
+  for (const g of DATOS_PISTA.verdes || []) {
+    if (g.p.length < 3) continue;
+    const xs = g.p.map((q) => q[0]), zs = g.p.map((q) => q[1]);
+    VERDES.push({ t: g.t, c: g.p.map(([x, z]) => new THREE.Vector2(x, z)), x0: Math.min(...xs), x1: Math.max(...xs), z0: Math.min(...zs), z1: Math.max(...zs) });
+  }
+  // Las casas, por celdas de 40 m, para teñir el terreno de ciudad.
+  if (DATOS_PISTA.edificios && DATOS_PISTA.edificios.length) {
+    EDIFICIOS_CERCA = new Map();
+    for (const ed of DATOS_PISTA.edificios) {
+      const cx = ed.p.reduce((t2, p) => t2 + p[0], 0) / ed.p.length, cz = ed.p.reduce((t2, p) => t2 + p[1], 0) / ed.p.length;
+      const k = (Math.floor(cx / 40) + 32768) * 65536 + (Math.floor(cz / 40) + 32768);
+      let l = EDIFICIOS_CERCA.get(k); if (!l) EDIFICIOS_CERCA.set(k, l = []); l.push([cx, cz]);
+    }
+  }
+  // Las bocacalles: donde otra calle llega a la nuestra, de lado.
+  for (const v of DATOS_PISTA.vias || []) {
+    const ancho = ANCHO_VIA[v.t];
+    if (!ancho || v.p.length < 2) continue;
+    let mejor = null;
+    for (let k = 0; k < v.p.length; k++) {
+      const [x, z] = v.p[k];
+      const q = CERCA.de(x, z, 16);
+      if (!q || Math.abs(q.lat) > P.hw[q.i] + ACERA + 5) continue;
+      const o = v.p[k + 1] || v.p[k - 1];
+      const dx = o[0] - x, dz = o[1] - z, l = Math.hypot(dx, dz) || 1, th = P.th[q.i];
+      if (Math.abs((dx * Math.sin(th) + dz * Math.cos(th)) / l) > 0.82) continue;   // va al lado, no cruza
+      if (!mejor || Math.abs(q.lat) < Math.abs(mejor.lat)) mejor = { i: q.i, lat: q.lat, k };
+    }
+    if (!mejor) continue;
+    const lado = Math.sign(mejor.lat) || 1;
+    CRUCES.push({ i: enVuelta(mejor.i), lado, ancho, k: mejor.k, v });
+    reserva(mejor.i, lado, ancho / 2 + 2);
+  }
+  // Las plazas y los parques que dan a la calle: ahí tampoco van casas.
+  for (const g of DATOS_PISTA.verdes || []) {
+    const pts = g.p;
+    for (let k = 0; k < pts.length; k++) {
+      const [ax, az] = pts[k], [bx, bz] = pts[(k + 1) % pts.length];
+      const n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az) / 3));
+      for (let m = 0; m <= n; m++) {
+        const q = CERCA.de(ax + (bx - ax) * m / n, az + (bz - az) * m / n, 16);
+        if (q && Math.abs(q.lat) < P.hw[q.i] + ACERA + 8) FRENTE[String(Math.sign(q.lat) || 1)][enVuelta(q.i)] = 2;
+      }
+    }
+  }
+}
+
+// El terreno: una malla continua sobre todo lo que se ve desde la calle,
+// a 10 m, con la altura de `alturaSuelo` y teñida de pasto o de tierra.
+// Llega hasta donde hay datos (330 m del trazado, más allá de la niebla).
+function construyeTerreno() {
+  const { x0, z0, x1, z1 } = TERRENO;
+  let paso = 10;
+  while (((x1 - x0) / paso + 1) * ((z1 - z0) / paso + 1) > 42000) paso += 2;
+  const nx = Math.floor((x1 - x0) / paso) + 1, nz = Math.floor((z1 - z0) / paso) + 1;
+  const pos = new Float32Array(nx * nz * 3), col = new Float32Array(nx * nz * 3), uv = new Float32Array(nx * nz * 2);
+  const vale = new Uint8Array(nx * nz);
+  const pasto = new THREE.Color(0x9ED46A), tierra = new THREE.Color(0xE8DFCD), c = new THREE.Color();
+  for (let k = 0; k < nz; k++) for (let i = 0; i < nx; i++) {
+    const q = k * nx + i, x = x0 + i * paso, z = z0 + k * paso;
+    const y = alturaSuelo(x, z);
+    if (y == null) continue;
+    vale[q] = 1;
+    pos[q * 3] = x; pos[q * 3 + 1] = y; pos[q * 3 + 2] = z;
+    uv[q * 2] = x / 9; uv[q * 2 + 1] = z / 9;
+    c.lerpColors(pasto, tierra, esCiudad(x, z));
+    col[q * 3] = c.r; col[q * 3 + 1] = c.g; col[q * 3 + 2] = c.b;
+  }
+  const idx = [];
+  for (let k = 0; k + 1 < nz; k++) for (let i = 0; i + 1 < nx; i++) {
+    const a = k * nx + i, b = a + 1, cc = a + nx, d = cc + 1;
+    if (!vale[a] || !vale[b] || !vale[cc] || !vale[d]) continue;
+    idx.push(a, cc, b, b, cc, d);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  const m = new THREE.Mesh(g, MAT.tierra);
+  m.receiveShadow = true;
+  mundo.add(m);
+}
+
+// Una tira de calle sobre el terreno, a lo largo de unos puntos [x, z]:
+// para las bocacalles y las otras calles del barrio.
+function tira(pts, ancho, mat, uvDe, alto) {
+  if (pts.length < 2) return null;
+  const pos = [], uvs = [], idx = [];
+  let s = 0;
+  for (let k = 0; k < pts.length; k++) {
+    const a = pts[Math.max(0, k - 1)], b = pts[Math.min(pts.length - 1, k + 1)];
+    let dx = b[0] - a[0], dz = b[1] - a[1]; const l = Math.hypot(dx, dz) || 1; dx /= l; dz /= l;
+    if (k) s += Math.hypot(pts[k][0] - pts[k - 1][0], pts[k][1] - pts[k - 1][1]);
+    const y = pts[k][2] != null ? pts[k][2] : (alturaSuelo(pts[k][0], pts[k][1]) ?? 0) + (alto || 0.06);
+    for (const lado of [-1, 1]) {
+      const x = pts[k][0] + -dz * lado * ancho / 2, z = pts[k][1] + dx * lado * ancho / 2;
+      pos.push(x, y, z);
+      const [u, v] = uvDe(lado, s); uvs.push(u, v);
+    }
+    if (k) { const b2 = k * 2; idx.push(b2 - 2, b2, b2 - 1, b2 - 1, b2, b2 + 1); }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  const m = new THREE.Mesh(g, mat);
+  m.receiveShadow = true;
+  mundo.add(m);
+  return m;
+}
+// Las otras calles del barrio, pegadas al terreno. Un tramo que se mete en
+// nuestra calle se corta en el borde de la calzada; la bocacalle que
+// llega hasta nosotros se cierra contra el bordillo.
+function construyeVias() {
+  if (!DATOS_PISTA || !DATOS_PISTA.vias) return;
+  for (const v of DATOS_PISTA.vias) {
+    const ancho = ANCHO_VIA[v.t];
+    if (!ancho || v.p.length < 2) continue;
+    const piedra = v.s === 'piedra';
+    const mat = piedra ? MAT.adoquin : MAT.asfalto;
+    const uvDe = piedra ? (lado, s) => [lado * ancho / 4, s / 2] : (lado, s) => [0.52 + (lado + 1) * ancho / 20, s / 8];
+    // Por trozos de 2 m: fuera de la calzada se dibuja, dentro no.
+    let trozo = [];
+    const cierra = () => { if (trozo.length > 1) tira(trozo, ancho, mat, uvDe); trozo = []; };
+    for (let k = 0; k + 1 < v.p.length; k++) {
+      const [ax, az] = v.p[k], [bx, bz] = v.p[k + 1];
+      const l = Math.hypot(bx - ax, bz - az), n = Math.max(1, Math.ceil(l / 2));
+      for (let m = k ? 1 : 0; m <= n; m++) {
+        const x = ax + (bx - ax) * m / n, z = az + (bz - az) * m / n;
+        const q = CERCA.de(x, z, 14);
+        const dentro = q && Math.abs(q.lat) < P.hw[q.i] + 0.25;
+        if (dentro) {
+          // Se cierra contra el borde de nuestra calle, a su altura.
+          if (trozo.length) { const pq = punto(q.i, (Math.sign(q.lat) || 1) * (P.hw[q.i] - 0.2), 0.02); trozo.push([pq.x, pq.z, pq.y]); }
+          cierra();
+        } else trozo.push([x, z]);
+      }
+    }
+    cierra();
+  }
+}
+// Los árboles de los parques y bosques de verdad, por dentro y lejos de la
+// calle: un bosque, tupido; un parque, suelto. El verde del suelo ya lo
+// pone el terreno (`esCiudad`), que sigue la ladera.
+function construyeVerdes(arbol, r) {
+  for (const g of VERDES) {
+    if (g.t === 'plaza') continue;
+    const area = Math.abs(THREE.ShapeUtils.area(g.c));
+    const n = Math.min(60, Math.round(area / (g.t === 'bosque' ? 90 : 220)));
+    for (let k = 0, intentos = 0; k < n && intentos < n * 6; intentos++) {
+      const x = g.x0 + r() * (g.x1 - g.x0), z = g.z0 + r() * (g.z1 - g.z0);
+      if (!dentroDe(g.c, x, z)) continue;
+      const q = CERCA.de(x, z, 12);
+      if (q && Math.abs(q.lat) < P.hw[q.i] + ACERA + 2) continue;
+      const y = alturaSuelo(x, z);
+      if (y == null) continue;
+      arbol(x, y, z); k++;
+    }
+  }
+}
+// ¿Está (x, z) dentro del polígono? (par-impar)
+function dentroDe(pts, x, z) {
+  let dentro = false;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+    const a = pts[i], b = pts[j];
+    if ((a.y > z) !== (b.y > z) && x < ((b.x - a.x) * (z - a.y)) / (b.y - a.y) + a.x) dentro = !dentro;
+  }
+  return dentro;
+}
+
 // ─── los edificios de verdad ──────────────────────────────────────
 // Con datos de OpenStreetMap, cada edificio es su planta levantada a su
 // altura: muros con ventanas por piso (una textura blanca teñida con el
 // color de cada casa, como las del centro) y techo de teja o de losa. El
-// que se mete en la calle se corre hacia atrás hasta la vereda.
+// que se mete en la calle se corre hacia atrás hasta la vereda; todos
+// bajan hasta el suelo de verdad, que en la ladera no es el de la calle;
+// y los que tienen nombre y fachada pintada (la Compañía, la Catedral, el
+// Palacio, la Basílica, San Francisco, Guápulo) la llevan delante.
 const COLORES_CASA = [0xF1EDE4, 0xF1EDE4, 0xEDE3C8, 0xE3B95F, 0x5D8FC7, 0x9CC7D9, 0xE8A8A0, 0x8FBF8A, 0xC97B4A];
 let texFachada = null;
 const fachadaReal = () => lienzo(256, 128, (c, w, h) => {
@@ -1260,18 +1680,48 @@ const fachadaReal = () => lienzo(256, 128, (c, w, h) => {
     for (let k = 0; k <= 6; k++) c.fillRect(x0 - 9 + k * (ww + 16) / 6, y0 + hh - 20, 2, 16);
   }
 });
+// Qué fachada pintada lleva cada edificio con nombre.
+const FACHADA_DE = [['compania', /compa[ñn][ií]a/i, true], ['catedral', /catedral/i, true], ['palacio', /carondelet|palacio de gobierno/i],
+  ['basilica', /bas[ií]lica/i, true], ['santuario', /santuario|gu[aá]pulo/i, true], ['torres', /san francisco/i, true]];
+// Apunta que la planta `pts` cubre el frente de la calle: ahí no van casas de relleno.
+function cubreFrente(pts) {
+  for (let k = 0; k < pts.length; k++) {
+    const [ax, az] = pts[k], [bx, bz] = pts[(k + 1) % pts.length];
+    const n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az) / 2));
+    for (let m = 0; m <= n; m++) {
+      const q = CERCA.de(ax + (bx - ax) * m / n, az + (bz - az) * m / n, 30);
+      if (!q || Math.abs(q.lat) > P.hw[q.i] + ACERA + 18) continue;
+      const f = FRENTE[String(Math.sign(q.lat) || 1)];
+      for (let i = Math.max(0, q.i - 1); i <= Math.min(N - 1, q.i + 1); i++) if (!f[enVuelta(i)]) f[enVuelta(i)] = 1;
+    }
+  }
+}
+// La fachada pintada, sobre la pared de la planta que da a la calle.
+function fachadaPintada(clave, pts, yb, h) {
+  let mejor = null;
+  for (let k = 0; k < pts.length; k++) {
+    const [ax, az] = pts[k], [bx, bz] = pts[(k + 1) % pts.length];
+    const l = Math.hypot(bx - ax, bz - az);
+    if (l < 5) continue;
+    const q = CERCA.de((ax + bx) / 2, (az + bz) / 2, 80);
+    if (q && (!mejor || q.d < mejor.d)) mejor = { d: q.d, ax, az, bx, bz, l };
+  }
+  if (!mejor) return;
+  const [pinta, , altoF] = FACHADAS[clave];
+  const canvas = pinta();
+  const alto = Math.max(h, altoF), ancho = Math.min(mejor.l - 0.3, alto * canvas.width / canvas.height);
+  const { ax, az, bx, bz, l } = mejor;
+  const fx = (bz - az) / l, fz = -(bx - ax) / l;   // hacia fuera de la planta
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(ancho, alto), mate({ map: textura(canvas), transparent: true, alphaTest: 0.5, side: THREE.DoubleSide }));
+  m.position.set((ax + bx) / 2 + fx * 0.14, yb + alto / 2, (az + bz) / 2 + fz * 0.14);
+  m.rotation.y = Math.atan2(fx, fz);
+  m.castShadow = true;
+  mundo.add(m);
+}
 function construyeEdificios(edificios) {
   if (!texFachada) texFachada = textura(fachadaReal(), true);
   const M = { pos: [], nor: [], uv: [], col: [] }, T = { pos: [], nor: [], col: [] };
   const color = new THREE.Color(), a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(), n = new THREE.Vector3();
-  // El punto de la calle más cercano: a saltos de 2 m y luego fino.
-  const cerca = (x, z) => {
-    let mejor = Infinity, im = 0;
-    const d2 = (i) => (P.x[i] - x) ** 2 + (P.z[i] - z) ** 2;
-    for (let i = 0; i < N; i += 2) { const d = d2(i); if (d < mejor) { mejor = d; im = i; } }
-    for (let i = Math.max(0, im - 2); i <= Math.min(N - 1, im + 2); i++) { const d = d2(i); if (d < mejor) { mejor = d; im = i; } }
-    return im;
-  };
   // Un triángulo, girado si hace falta para que mire hacia `fuera`.
   const tri = (G, p, q, r, fuera, uvs) => {
     a.fromArray(p); b.fromArray(q); c.fromArray(r);
@@ -1285,28 +1735,37 @@ function construyeEdificios(edificios) {
     }
   };
   const arriba = new THREE.Vector3(0, 1, 0), fuera = new THREE.Vector3();
+  const pintadas = new Set();
   edificios.forEach((ed, k) => {
     let pts = ed.p.map(([x, z]) => [x, z]);
     if (pts.length < 3) return;
     // ¿Se mete en la calle? Se corre hacia atrás, del lado donde está.
-    let falta = 0, rx = 0, rz = 0, lados = new Set(), iRef = 0;
+    let falta = 0, rx = 0, rz = 0, lados = new Set(), iRef = -1, dRef = Infinity;
     for (const [x, z] of pts) {
-      const i = cerca(x, z), th = P.th[i];
-      const ux = -Math.cos(th), uz = Math.sin(th);
-      const lat = (x - P.x[i]) * ux + (z - P.z[i]) * uz;
-      const libre = P.hw[i] + ACERA + 0.3;
+      const q = CERCA.de(x, z, 40);
+      if (!q) continue;
+      const th = P.th[q.i], ux = -Math.cos(th), uz = Math.sin(th), lat = q.lat;
+      const libre = P.hw[q.i] + ACERA + 0.3;
       lados.add(Math.sign(lat) || 1);
-      if (Math.abs(lat) < libre && libre - Math.abs(lat) > falta) { falta = libre - Math.abs(lat); rx = ux * Math.sign(lat || 1); rz = uz * Math.sign(lat || 1); iRef = i; }
-      if (!falta) iRef = i;
+      if (Math.abs(lat) < libre && libre - Math.abs(lat) > falta) { falta = libre - Math.abs(lat); rx = ux * Math.sign(lat || 1); rz = uz * Math.sign(lat || 1); }
+      if (q.d < dRef) { dRef = q.d; iRef = q.i; }
     }
     if (lados.size > 1 && falta > 0) return;      // cruza la calle: fuera
     if (falta > 14) return;                       // casi entero en la calle
     if (falta) pts = pts.map(([x, z]) => [x + rx * falta, z + rz * falta]);
-    // Altura: la de la calle al lado, salvo que el terreno de verdad esté
-    // mucho más arriba o abajo (en la ladera del cerro, por ejemplo).
-    const ry = P.y[iRef];
-    const yb = ed.y != null && Math.abs(ed.y - ry) > 4 ? ed.y : ry;
-    const h = ed.h || 7, y0 = yb - 3, y1 = yb + h;
+    // El suelo: el piso bajo arranca en la esquina más alta de la planta y
+    // los muros bajan hasta la más baja, que nada quede en el aire. Pegado
+    // a la calle, el portal va con la vereda.
+    let ySuelo = -Infinity, yBajo = Infinity;
+    for (const [x, z] of pts) { const y = alturaSuelo(x, z); if (y == null) continue; ySuelo = Math.max(ySuelo, y); yBajo = Math.min(yBajo, y); }
+    if (ySuelo === -Infinity) return;
+    if (iRef >= 0 && dRef < P.hw[iRef] + ACERA + 6) ySuelo = Math.max(ySuelo, P.y[iRef] + BORDILLO);
+    const yb = ySuelo;
+    cubreFrente(pts);
+    const pintada = ed.nombre && FACHADA_DE.find(([clave, re, iglesia]) => !pintadas.has(clave) && re.test(ed.nombre) && (!iglesia || ed.tipo === 'iglesia'));
+    let h = ed.h || 7;
+    if (pintada) { pintadas.add(pintada[0]); h = Math.max(h, FACHADAS[pintada[0]][2] * 0.75); }
+    const y0 = yBajo - 0.6, y1 = yb + h;
     // Orientación: que el área salga positiva en (x, z).
     let area = 0;
     for (let q = 0; q < pts.length; q++) { const [x1, z1] = pts[q], [x2, z2] = pts[(q + 1) % pts.length]; area += x1 * z2 - x2 * z1; }
@@ -1329,9 +1788,12 @@ function construyeEdificios(edificios) {
     // El techo: teja en las casas bajas y en las iglesias; losa en lo alto.
     color.setHex(iglesia || h <= 12 ? 0xA8442C : 0x8E8A84);
     const contorno = pts.map(([x, z]) => new THREE.Vector2(x, z));
-    for (const [p, q, r] of THREE.ShapeUtils.triangulateShape(contorno, [])) {
+    let techo = [];
+    try { techo = THREE.ShapeUtils.triangulateShape(contorno, []); } catch (err) { /* una planta rara: sin techo */ }
+    for (const [p, q, r] of techo) {
       tri(T, [pts[p][0], y1, pts[p][1]], [pts[q][0], y1, pts[q][1]], [pts[r][0], y1, pts[r][1]], arriba);
     }
+    if (pintada) fachadaPintada(pintada[0], pts, yb, h);
   });
   const malla = (G, mat) => {
     if (!G.pos.length) return;
@@ -1347,6 +1809,7 @@ function construyeEdificios(edificios) {
   malla(M, mate({ map: texFachada, vertexColors: true }));
   delete T.uv;
   malla(T, mate({ vertexColors: true }));
+  return pintadas;
 }
 
 // La colada morada: un jarro de barro vidriado, con su filo azul y la
@@ -1401,33 +1864,45 @@ function construyeDecorado(def) {
     const mat = [mate({ color: 0xEDE7DA }), mate({ color: 0xEDE7DA }),
       mate({ color: 0xA8442C }), mate({ color: 0xEDE7DA }),
       mate({ map: textura(canvas), transparent: true, alphaTest: 0.5 }), mate({ color: 0xEDE7DA })];
-    const caja = new THREE.Mesh(new THREE.BoxGeometry(ancho, alto, fondo), mat);
+    // Con zócalo: baja 4 m más, que en la cuesta no quede en el aire.
+    const caja = new THREE.Mesh(new THREE.BoxGeometry(ancho, alto + 4, fondo), mat);
     const hw = muestra(s).hw;
-    caja.applyMatrix4(new THREE.Matrix4().makeTranslation(0, alto / 2 - 0.4, -fondo / 2));
+    caja.applyMatrix4(new THREE.Matrix4().makeTranslation(0, (alto + 4) / 2 - 4.4, -fondo / 2));
     caja.applyMatrix4(matrizEn(s, lado * (hw + ACERA), BORDILLO, -lado));
     mundo.add(caja);
     reservas.push({ s0: s - ancho / 2 - 2, s1: s + ancho / 2 + 2, lado });
   };
-  // Con edificios de verdad no se inventan fachadas, salvo la Virgen del cerro.
+  // Con edificios de verdad, cada fachada pintada va en el suyo (por el
+  // nombre); la que no lo encontró, en caja, donde dice la pista.
   const reales = !!(DATOS_PISTA && DATOS_PISTA.edificios && DATOS_PISTA.edificios.length);
+  const pintadas = reales ? construyeEdificios(DATOS_PISTA.edificios) : new Set();
   for (const [tipo, z, d, lado] of def.hitos || []) {
-    if (!FACHADAS[tipo] || (reales && tipo !== 'virgen')) continue;
+    if (!FACHADAS[tipo] || pintadas.has(tipo)) continue;
     const [pinta, ancho, alto, fondo] = FACHADAS[tipo];
-    fachada(pinta(), enZona(z, d), lado, ancho, alto, fondo);
+    const s = enZona(z, d);
+    fachada(pinta(), s, lado, ancho, alto, fondo);
+    if (reales) reserva(s, lado, ancho / 2 + 1);
   }
 
-  // Las casas, seguidas a los dos lados donde la zona las tiene.
-  if (reales) construyeEdificios(DATOS_PISTA.edificios);
+  // Las casas, seguidas a los dos lados donde la zona las tiene. Con
+  // edificios de verdad, las de la maqueta solo tapan los huecos del frente
+  // (donde no hay casa, ni bocacalle, ni plaza), para que la calle no quede
+  // desdentada. Se hunden según la cuesta: nada queda en el aire.
+  construyeVias();
   for (const cr of corridas) {
-    if (!ZONAS[cr.zona].casas || reales) continue;
+    if (!ZONAS[cr.zona].casas) continue;
     for (const lado of [-1, 1]) {
+      const frente = FRENTE[String(lado)];
+      const libre = (a, b) => { for (let i = Math.max(0, Math.floor(a)); i <= Math.min(N - 1, Math.ceil(b)); i++) if (frente[i]) return false; return true; };
       let s = cr.z0 + 2;
       while (s < hasta(cr.z1, 60)) {
         const casa = elige(r, CASAS);
         const medio = s + casa.ancho / 2;
+        if (reales && !libre(s, s + casa.ancho)) { s += 1; continue; }
         if (!reservas.some((q) => q.lado === lado && medio > q.s0 && medio < q.s1)) {
-          const hw = muestra(medio).hw;
-          f.pon(casa.g, matrizEn(medio, lado * (hw + ACERA), -0.4, -lado));
+          const m = muestra(medio), hunde = 0.4 + Math.abs(m.pend) * casa.ancho / 2;
+          f.pon(casa.g, matrizEn(medio, lado * (m.hw + ACERA), -hunde, -lado));
+          if (reales) for (let i = Math.floor(s); i <= Math.ceil(s + casa.ancho); i++) if (i >= 0 && i < N) frente[i] = 1;
         }
         s += casa.ancho + 0.15;
       }
@@ -1537,8 +2012,10 @@ function construyeDecorado(def) {
       for (const lado of [-1, 1]) {
         // En un anillo, los árboles van por fuera: por dentro se ve el cerro.
         if (def.arbolesLado && lado !== def.arbolesLado) continue;
-        const hw = muestra(s).hw, x = lado * (hw + ACERA + 1.5 + r() * 9);
-        const m = matrizEn(s + r() * 4, x, BORDILLO - 0.2, 0, r() * 6);
+        const hw = muestra(s).hw, x = lado * (hw + ACERA + 1.5 + r() * 9), sa = s + r() * 4;
+        // Donde hay casa de verdad, no: el árbol quedaría dentro.
+        if (reales && FRENTE[String(lado)][limita(Math.round(sa), 0, N - 1)] === 1 && Math.abs(x) > hw + ACERA + 4) continue;
+        const m = matrizEn(sa, x, hSuelo(sa, x) - 0.2, 0, r() * 6);
         if (r() < 0.3) {
           // Un arrayán: bajo y redondo.
           fP.pon(new THREE.Mesh(troncoBajo, matTronco), m);
@@ -1554,7 +2031,7 @@ function construyeDecorado(def) {
           }
         }
         // Arbustos al pie, junto a la calle.
-        if (r() < 0.5) { const e = 0.7 + r() * 0.8; fP.pon(new THREE.Mesh(arbusto, elige(r, verdes)), matrizEn(s + r() * 5, lado * (hw + ACERA + 0.6 + r() * 1.2), BORDILLO + 0.3 * e, 0).multiply(new THREE.Matrix4().makeScale(e, e * 0.8, e))); }
+        if (r() < 0.5) { const e = 0.7 + r() * 0.8, sb = s + r() * 5, xb = lado * (hw + ACERA + 0.6 + r() * 1.2); fP.pon(new THREE.Mesh(arbusto, elige(r, verdes)), matrizEn(sb, xb, hSuelo(sb, xb) + 0.3 * e, 0).multiply(new THREE.Matrix4().makeScale(e, e * 0.8, e))); }
       }
     }
     for (let s = Math.max(cr.z0, SALIDA + 11); s < cr.z1; s += 6) {
@@ -1564,12 +2041,30 @@ function construyeDecorado(def) {
       }
     }
   }
+  // Los parques y bosques de verdad, con sus árboles; y más allá de las
+  // casas, el resto de la ciudad en bloques sencillos.
+  const arbol = (x, y, z) => {
+    const m = new THREE.Matrix4().compose(new THREE.Vector3(x, y - 0.2, z), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), r() * 6), new THREE.Vector3(1, 1, 1));
+    if (r() < 0.5) {
+      fP.pon(new THREE.Mesh(troncoBajo, matTronco), m);
+      const e = 0.7 + r() * 0.5;
+      fP.pon(new THREE.Mesh(copaRedonda, elige(r, verdes)), m.clone().multiply(new THREE.Matrix4().makeTranslation(0, 3.6, 0).multiply(new THREE.Matrix4().makeScale(e, e * 0.9, e))));
+    } else {
+      fP.pon(new THREE.Mesh(tronco, matTronco), m);
+      for (let k = 0; k < 2; k++) {
+        const e = 0.8 + r() * 0.6;
+        fP.pon(new THREE.Mesh(copa, elige(r, verdes)), m.clone().multiply(new THREE.Matrix4().makeTranslation((r() - 0.5) * 2, 8 + r() * 2.5, (r() - 0.5) * 2).multiply(new THREE.Matrix4().makeScale(e, e * 1.25, e))));
+      }
+    }
+  };
+  construyeVerdes(arbol, r);
   fP.funde();
+  construyeCiudad(r);
   // El cerro: una loma de pasto con la Virgen encima, para el circuito que
   // le da la vuelta. [tipo, zona, d, x, radio, alto]; con zona null, d y x
   // son coordenadas del mundo (el centro del anillo generado es 0, 0).
   for (const [tipo, z, d, x, radio, alto] of def.hitos) {
-    if (tipo !== 'cerro') continue;
+    if (tipo !== 'cerro' || (DATOS_PISTA && !DATOS_PISTA.generada)) continue;
     const g = new THREE.SphereGeometry(1, 24, 10, 0, Math.PI * 2, 0, Math.PI / 2);
     g.scale(radio, alto, radio);
     const pos = g.attributes.position;
@@ -1589,11 +2084,19 @@ function construyeDecorado(def) {
     v.position.copy(loma.position).y += alto + 11;
     mundo.add(v);
   }
+  // La Virgen. Con zona null, (d, x) es su sitio en el mundo de los datos
+  // de verdad: se para en el suelo de ahí, sobre su pedestal.
   for (const [tipo, z, d, x] of def.hitos) {
-    if (tipo !== 'virgen') continue;
+    if (tipo !== 'virgen' || (z === null && (!DATOS_PISTA || DATOS_PISTA.generada))) continue;
     const v = new THREE.Sprite(new THREE.SpriteMaterial({ map: textura(virgen()), fog: false }));
     v.scale.set(15, 26.7, 1);
-    v.position.copy(punto(enZona(z, d), x, 13.3));
+    if (z === null) {
+      const suelo = alturaSuelo(d, x) ?? P.y[0];
+      const pedestal = new THREE.Mesh(new THREE.CylinderGeometry(4, 5, 8, 10).translate(0, 2, 0), mate({ color: 0xC9C2B4 }));
+      pedestal.position.set(d, suelo, x);
+      mundo.add(pedestal);
+      v.position.set(d, suelo + 6 + 13.3, x);
+    } else v.position.copy(punto(enZona(z, d), x, 13.3));
     mundo.add(v);
   }
 
@@ -1752,7 +2255,9 @@ function cargaPista(id) {
   limpiaMundo();
   obstaculos.length = 0;
   ambienta(!!def.noche);
+  preparaAlrededor();
   construyeCalle();
+  construyeTerreno();
   if (CASAS.length) construyeDecorado(def);
   pistaActual = def;
   reinicia();
@@ -4240,6 +4745,30 @@ window.coches = {
   volcar: () => volcar(),
   pista: (id) => cargaPista(id), noche: () => noche, copas: COPAS, empiezaCopa,
   renderiza: () => render.render(escena, camara),
+  // Lo que hay en la pista, para las pruebas (sprites, mallas, posiciones).
+  mundo: () => mundo, three: THREE,
+  // Agujeros: desde la calle, cada `paso` metros y a `h` de altura, rayos
+  // hacia abajo (de `pitches` grados) en todas las direcciones; cuenta los
+  // que no tocan nada antes de la niebla (ahí se vería el fondo).
+  huecos: (o = {}) => {
+    const paso = o.paso || 25, yaws = o.yaws || [0, 45, 90, 135, 180, 225, 270, 315], pitches = o.pitches || [-10, -20], h = o.h || 2.8;
+    const ray = new THREE.Raycaster(); ray.far = o.lejos || escena.fog.far;
+    const objetos = [];
+    mundo.traverse((q) => { if ((q.isMesh || q.isInstancedMesh) && q.visible) objetos.push(q); });
+    const fin = LARGO_VUELTA ? DECO_FIN : META;
+    const fallos = [];
+    let total = 0;
+    for (let s = LARGO_VUELTA ? DECO_INI : SALIDA; s < fin; s += paso) {
+      const pos = punto(s, 0, h), th = muestra(s).th;
+      for (const yaw of yaws) for (const pit of pitches) {
+        const a = th + (yaw * Math.PI) / 180, b = (pit * Math.PI) / 180;
+        ray.set(pos, new THREE.Vector3(Math.sin(a) * Math.cos(b), Math.sin(b), Math.cos(a) * Math.cos(b)));
+        total++;
+        if (!ray.intersectObjects(objetos, false).length) fallos.push([Math.round(s), yaw, pit]);
+      }
+    }
+    return { total, fallos: fallos.length, fraccion: +(fallos.length / Math.max(1, total)).toFixed(4), ejemplos: fallos.slice(0, 12) };
+  },
   limpia: () => { limpiaMundo(); obstaculos.length = 0; return { ...render.info.memory }; },
   memoria: () => ({ geometrias: render.info.memory.geometries, texturas: render.info.memory.textures, programas: render.info.programs.length, hijos: mundo.children.length, obstaculos: obstaculos.length }),
   cohete: (s) => lanzaCohete(s),
