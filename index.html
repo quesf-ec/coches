@@ -23,9 +23,9 @@
 <!-- El sello ?v= se sube a mano en cada cambio del juego (CSS, JS y, con el
      JS, los modelos, que heredan su sello): así el navegador no se queda con
      la versión anterior. -->
-<link rel="stylesheet" href="coches.css?v=9c018f6e6c">
+<link rel="stylesheet" href="coches.css?v=c44a218463">
 <!-- La piel del juego: variante del tema juegos (ver tema/LEEME.md). Va al final para mandar. -->
-<link rel="stylesheet" href="tema/tema.css?v=9c018f6e6c">
+<link rel="stylesheet" href="tema/tema.css?v=c44a218463">
 <link rel="modulepreload" href="vendor/three.module.min.js">
 <script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js", "three/addons/": "./vendor/addons/" } }</script>
 <script type="application/ld+json">
@@ -227,7 +227,7 @@
       <div><dt>↓</dt><dd>frenar con la suela</dd></div>
       <div><dt>← →</dt><dd>a pie: pie izquierdo, pie derecho</dd></div>
       <div><dt>← ←</dt><dd>un pie en la tabla: gira al otro lado</dd></div>
-      <div><dt>← + →</dt><dd>con colada: empujón fuerte y se sube</dd></div>
+      <div><dt>← + →</dt><dd>a pie: empujón (con colada, el fuerte) · a bordo y lento: bajarse a empujar</dd></div>
       <div><dt>↑</dt><dd>lento: bajarse a empujar · a pie: saltar al carro (corriendo, subida perfecta; con colada, el empujón fuerte)</dd></div>
       <div><dt>3, 2, 1…</dt><dd>pisar al compás durante la cuenta: arranque extra</dd></div>
 
@@ -236,7 +236,8 @@
     <dl class="coches-teclas coches-solo-tactil">
       <div><dt>◀ ▶</dt><dd>a bordo: tocar un lado gira</dd></div>
       <div><dt>◀ ▶ a pie</dt><dd>cada toque es un paso, al compás: cuando la aguja entra en lo verde</dd></div>
-      <div><dt>◀ ◀</dt><dd>dos del mismo lado: un pie en la tabla, gira al otro lado</dd></div>
+      <div><dt>◀ ◀</dt><dd>dos del mismo lado: el coche se inclina hacia ese lado</dd></div>
+      <div><dt>◀ ▶ a la vez</dt><dd>a pie: empujón · a bordo y lento: bajarse a empujar</dd></div>
       <div><dt>Freno</dt><dd>a la izquierda, arriba de la flecha: para las curvas cerradas</dd></div>
       <div><dt>Botón redondo</dt><dd>«Bájate» (lento) · «¡Sube ya!» (a pie y corriendo: subida perfecta) · «¡Colada!» (empujón fuerte)</dd></div>
       <div><dt>3, 2, 1…</dt><dd>tocar alternando al compás en la cuenta: arranque extra</dd></div>
@@ -412,6 +413,6 @@
 </div>
 
 <script src="https://franciscombp.github.io/ds/mal/mal.js?v=1.0.22" defer></script>
-<script type="module" src="coches.js?v=9c018f6e6c"></script>
+<script type="module" src="coches.js?v=c44a218463"></script>
 </body>
 </html>
