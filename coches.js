@@ -1590,7 +1590,7 @@ function construyeTerreno() {
 
 // Una tira de calle sobre el terreno, a lo largo de unos puntos [x, z]:
 // para las bocacalles y las otras calles del barrio.
-function tira(pts, ancho, mat, uvDe, alto) {
+function tira(pts, ancho, uvDe, alto) {
   if (pts.length < 2) return null;
   const pos = [], uvs = [], idx = [];
   let s = 0;
@@ -1611,25 +1611,24 @@ function tira(pts, ancho, mat, uvDe, alto) {
   g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
   g.setIndex(idx);
   g.computeVertexNormals();
-  const m = new THREE.Mesh(g, mat);
-  m.receiveShadow = true;
-  mundo.add(m);
-  return m;
+  return g;
 }
 // Las otras calles del barrio, pegadas al terreno. Un tramo que se mete en
 // nuestra calle se corta en el borde de la calzada; la bocacalle que
 // llega hasta nosotros se cierra contra el bordillo.
 function construyeVias() {
   if (!DATOS_PISTA || !DATOS_PISTA.vias) return;
+  // Todas en dos mallas, una de asfalto y otra de empedrado.
+  const geos = { asfalto: [], adoquin: [] };
   for (const v of DATOS_PISTA.vias) {
     const ancho = ANCHO_VIA[v.t];
     if (!ancho || v.p.length < 2) continue;
     const piedra = v.s === 'piedra';
-    const mat = piedra ? MAT.adoquin : MAT.asfalto;
+    const lista = geos[piedra ? 'adoquin' : 'asfalto'];
     const uvDe = piedra ? (lado, s) => [lado * ancho / 4, s / 2] : (lado, s) => [0.52 + (lado + 1) * ancho / 20, s / 8];
     // Por trozos de 2 m: fuera de la calzada se dibuja, dentro no.
     let trozo = [];
-    const cierra = () => { if (trozo.length > 1) tira(trozo, ancho, mat, uvDe); trozo = []; };
+    const cierra = () => { if (trozo.length > 1) lista.push(tira(trozo, ancho, uvDe)); trozo = []; };
     for (let k = 0; k + 1 < v.p.length; k++) {
       const [ax, az] = v.p[k], [bx, bz] = v.p[k + 1];
       const l = Math.hypot(bx - ax, bz - az), n = Math.max(1, Math.ceil(l / 2));
@@ -1645,6 +1644,13 @@ function construyeVias() {
       }
     }
     cierra();
+  }
+  for (const [nombre, gs] of Object.entries(geos)) {
+    if (!gs.length) continue;
+    const m = new THREE.Mesh(mergeGeometries(gs), MAT[nombre]);
+    for (const g of gs) g.dispose();
+    m.receiveShadow = true;
+    mundo.add(m);
   }
 }
 // Los árboles de los parques y bosques de verdad, por dentro y lejos de la
@@ -2288,83 +2294,108 @@ function cargaPista(id) {
 // todos; cuando pasa la carrera, saltan. Algunos llevan cartel.
 let publico = null;
 function construyePublico(lugares, r) {
+  // Con calles de verdad, largas, sale mucha gente: se deja a lo sumo 650
+  // (quitando a los de en medio de la fila, no a los de la salida y la meta).
+  const TOPE_GENTE = 650;
+  if (lugares.length > TOPE_GENTE) {
+    const prioridad = (l) => (Math.abs(l.s - SALIDA) < 30 || Math.abs(l.s - META) < 30 ? 0 : 1);
+    const quedan = lugares.filter((l) => !prioridad(l));
+    const resto = lugares.filter((l) => prioridad(l));
+    const cada = resto.length / Math.max(1, TOPE_GENTE - quedan.length);
+    for (let k = 0; k < resto.length && quedan.length < TOPE_GENTE; k += cada) quedan.push(resto[Math.floor(k)]);
+    lugares = quedan.sort((a2, b2) => a2.s - b2.s);
+  }
   const n = lugares.length;
-  const pierna = new THREE.CylinderGeometry(0.1, 0.12, 0.74, 7).translate(0, 0.37, 0);
+  // Pocos lados: se ven a tres metros como mucho.
+  const pierna = new THREE.CylinderGeometry(0.1, 0.12, 0.74, 5).translate(0, 0.37, 0);
   const gPiernas = mergeGeometries([pierna.clone().translate(-0.1, 0, 0), pierna.clone().translate(0.1, 0, 0)]);
-  const brazo = new THREE.CylinderGeometry(0.06, 0.075, 0.55, 7);
+  const brazo = new THREE.CylinderGeometry(0.06, 0.075, 0.55, 5);
   const gCuerpo = mergeGeometries([
-    new THREE.CylinderGeometry(0.2, 0.27, 0.64, 10).translate(0, 1.06, 0),
+    new THREE.CylinderGeometry(0.2, 0.27, 0.64, 8).translate(0, 1.06, 0),
     brazo.clone().rotateZ(0.55).translate(-0.33, 1.45, 0),
     brazo.clone().rotateZ(-0.55).translate(0.33, 1.45, 0),
   ]);
   const gPiel = mergeGeometries([
-    new THREE.SphereGeometry(0.19, 14, 10).translate(0, 1.57, 0),
-    new THREE.SphereGeometry(0.075, 8, 6).translate(-0.48, 1.69, 0),
-    new THREE.SphereGeometry(0.075, 8, 6).translate(0.48, 1.69, 0),
+    new THREE.SphereGeometry(0.19, 10, 7).translate(0, 1.57, 0),
+    new THREE.SphereGeometry(0.075, 6, 4).translate(-0.48, 1.69, 0),
+    new THREE.SphereGeometry(0.075, 6, 4).translate(0.48, 1.69, 0),
   ]);
   const gSombrero = mergeGeometries([
-    new THREE.CylinderGeometry(0.3, 0.3, 0.03, 16).translate(0, 1.71, 0),
-    new THREE.CylinderGeometry(0.15, 0.18, 0.2, 14).translate(0, 1.82, 0),
+    new THREE.CylinderGeometry(0.3, 0.3, 0.03, 10).translate(0, 1.71, 0),
+    new THREE.CylinderGeometry(0.15, 0.18, 0.2, 8).translate(0, 1.82, 0),
   ]);
-  const crea = (geo) => {
-    const m = new THREE.InstancedMesh(geo, mate({ roughness: 0.7 }), n);
-    m.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-    m.frustumCulled = false;
-    mundo.add(m);
-    return m;
-  };
-  const mallas = [crea(gPiernas), crea(gCuerpo), crea(gPiel), crea(gSombrero)];
   const ropa = ['#D6382B', '#1B5FAA', '#F5A623', '#2E7D4F', '#6B2D7B', '#F3F1EC', '#E01B6A', '#00A3A3', '#F5C518', '#8C3B2E'];
   const pantalon = ['#2F3A4F', '#3B4A6B', '#1C1A18', '#5A4632', '#2E3B2E'];
   const piel = ['#8D5A3B', '#A86E48', '#C68B5E', '#7A4A2E', '#E0A88A'];
   const sombrero = ['#2A2420', '#F3F1EC', '#5A3A22', '#1C1A18'];
-  const cartel = CARTELES.map((t) => new THREE.MeshStandardMaterial({ map: textura(lienzo(160, 90, (c, w, h) => {
+  const cartel = CARTELES.map((tx) => new THREE.MeshStandardMaterial({ map: textura(lienzo(160, 90, (c, w, h) => {
     c.fillStyle = '#FFF8E6'; c.fillRect(0, 0, w, h); c.strokeStyle = TINTA; c.lineWidth = 6; c.strokeRect(3, 3, w - 6, h - 6);
-    c.fillStyle = '#D6382B'; c.font = '800 34px system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(t, w / 2, h / 2 + 2);
+    c.fillStyle = '#D6382B'; c.font = '800 34px system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(tx, w / 2, h / 2 + 2);
   })), side: THREE.DoubleSide, roughness: 0.8 }));
   const geoCartel = new THREE.PlaneGeometry(0.9, 0.5);
+  const mats = [0, 1, 2, 3].map(() => mate({ roughness: 0.7 }));
+  // Por tandas de 80 a lo largo de la calle, cada una con sus cuatro mallas:
+  // las que quedan fuera de la cámara no se dibujan.
+  const TANDA = 80;
+  const tandas = [];
   const datos = lugares.map((l, k) => {
     const hw = muestra(l.s).hw;
     const x = l.lado * (hw + 0.5 + l.fondo * 0.9);
     const base = matrizEn(l.s, x, BORDILLO, -l.lado, (r() - 0.5) * 0.5);
     const e = 0.9 + r() * 0.22;
     base.multiply(new THREE.Matrix4().makeScale(e, e, e));
-    const conSombrero = r() < 0.55;
-    mallas[0].setColorAt(k, new THREE.Color(elige(r, pantalon)));
-    mallas[1].setColorAt(k, new THREE.Color(elige(r, ropa)));
-    mallas[2].setColorAt(k, new THREE.Color(elige(r, piel)));
-    mallas[3].setColorAt(k, new THREE.Color(elige(r, sombrero)));
-    let letrero = null;
-    if (r() < 0.12) {
-      letrero = new THREE.Mesh(geoCartel, elige(r, cartel));
-      mundo.add(letrero);
-    }
-    return { s: l.s, base, conSombrero, fase: r() * 7, ritmo: 6 + r() * 4, letrero, enAire: true };
+    return { s: l.s, base, conSombrero: r() < 0.55, fase: r() * 7, ritmo: 6 + r() * 4, cartel: r() < 0.12 ? Math.floor(r() * cartel.length) : -1, enAire: true, tanda: Math.floor(k / TANDA), i: k % TANDA,
+      colores: [elige(r, pantalon), elige(r, ropa), elige(r, piel), elige(r, sombrero)] };
   });
+  for (let q = 0; q * TANDA < n; q++) {
+    const m = Math.min(TANDA, n - q * TANDA);
+    const mallas = [gPiernas, gCuerpo, gPiel, gSombrero].map((geo, k) => {
+      const im = new THREE.InstancedMesh(geo, mats[k], m);
+      im.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      mundo.add(im);
+      return im;
+    });
+    tandas.push({ mallas, tocada: false });
+  }
+  // Los carteles: una malla instanciada por cartel, para toda la gente.
+  const porCartel = cartel.map((mat, k) => {
+    const cuantos = datos.filter((d) => d.cartel === k).length;
+    if (!cuantos) return null;
+    const im = new THREE.InstancedMesh(geoCartel, mat, cuantos);
+    im.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    im.frustumCulled = false;
+    mundo.add(im);
+    return { im, n: 0, tocada: false };
+  });
+  datos.forEach((d) => { if (d.cartel >= 0) d.iCartel = porCartel[d.cartel].n++; });
+  const color = new THREE.Color();
+  datos.forEach((d) => { const mallas = tandas[d.tanda].mallas; d.colores.forEach((cc, k) => mallas[k].setColorAt(d.i, color.set(cc))); });
   const _m = new THREE.Matrix4(), _t = new THREE.Matrix4(), cero = new THREE.Matrix4().makeScale(0, 0, 0);
   // Solo se recolocan los que saltan cerca del jugador y los que acaban de
   // dejar de saltar (para dejarlos en el suelo): cientos de muñecos quietos
   // no se vuelven a subir a la GPU cada cuadro.
   const coloca = (t, sJ) => {
-    let tocado = false;
-    datos.forEach((d, k) => {
+    for (const d of datos) {
       const cerca = Math.abs(d.s - sJ) < 45;
-      if (!cerca && !d.enAire) return;
-      d.enAire = cerca; tocado = true;
+      if (!cerca && !d.enAire) continue;
+      d.enAire = cerca;
       const y = cerca ? Math.abs(Math.sin(t * d.ritmo + d.fase)) * 0.22 : 0;
       _m.copy(d.base).multiply(_t.makeTranslation(0, y, 0));
-      for (let i = 0; i < 3; i++) mallas[i].setMatrixAt(k, _m);
-      mallas[3].setMatrixAt(k, d.conSombrero ? _m : cero);
-      if (d.letrero) {
-        d.letrero.matrixAutoUpdate = false;
-        d.letrero.matrix.copy(_m).multiply(_t.makeTranslation(0, 2.25, 0.1));
-        d.letrero.matrixWorldNeedsUpdate = true;
+      const td = tandas[d.tanda]; td.tocada = true;
+      for (let i = 0; i < 3; i++) td.mallas[i].setMatrixAt(d.i, _m);
+      td.mallas[3].setMatrixAt(d.i, d.conSombrero ? _m : cero);
+      if (d.cartel >= 0) {
+        const pc = porCartel[d.cartel];
+        pc.im.setMatrixAt(d.iCartel, _m.multiply(_t.makeTranslation(0, 2.25, 0.1)));
+        pc.tocada = true;
       }
-    });
-    if (tocado) for (const m of mallas) m.instanceMatrix.needsUpdate = true;
+    }
+    for (const td of tandas) if (td.tocada) { for (const m of td.mallas) m.instanceMatrix.needsUpdate = true; td.tocada = false; }
+    for (const pc of porCartel) if (pc && pc.tocada) { pc.im.instanceMatrix.needsUpdate = true; pc.tocada = false; }
   };
   coloca(0, -999);
-  for (const m of mallas) if (m.instanceColor) m.instanceColor.needsUpdate = true;
+  // Con todos en su sitio, la esfera de cada tanda (para no dibujar la que no se ve).
+  for (const td of tandas) for (const m of td.mallas) { if (m.instanceColor) m.instanceColor.needsUpdate = true; m.computeBoundingSphere(); m.boundingSphere.radius += 1; }
   return { coloca };
 }
 
@@ -4928,7 +4959,7 @@ window.coches = {
     return { total, fallos: fallos.length, fraccion: +(fallos.length / Math.max(1, total)).toFixed(4), ejemplos: fallos.slice(0, 12) };
   },
   limpia: () => { limpiaMundo(); obstaculos.length = 0; return { ...render.info.memory }; },
-  memoria: () => ({ geometrias: render.info.memory.geometries, texturas: render.info.memory.textures, programas: render.info.programs.length, hijos: mundo.children.length, obstaculos: obstaculos.length }),
+  memoria: () => ({ geometrias: render.info.memory.geometries, texturas: render.info.memory.textures, programas: render.info.programs.length, hijos: mundo.children.length, obstaculos: obstaculos.length, llamadas: render.info.render.calls, triangulos: render.info.render.triangles }),
   cohete: (s) => lanzaCohete(s),
   fuegos: () => ({ visible: fuegos.points && fuegos.points.visible, vivos: fuegos.datos.filter((d) => d.vivo).map((d) => [Math.round(d.x), Math.round(d.y), Math.round(d.z), +d.t.toFixed(1)]), cam: camara.position.toArray().map(Math.round) }),
   // Mete una calle de verdad y su pista sin pasar por la red, para probar.

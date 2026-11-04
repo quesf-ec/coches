@@ -23,9 +23,9 @@
 <!-- El sello ?v= se sube a mano en cada cambio del juego (CSS, JS y, con el
      JS, los modelos, que heredan su sello): así el navegador no se queda con
      la versión anterior. -->
-<link rel="stylesheet" href="coches.css?v=15c0aa4693">
+<link rel="stylesheet" href="coches.css?v=e967bfe35a">
 <!-- La piel del juego: variante del tema juegos (ver tema/LEEME.md). Va al final para mandar. -->
-<link rel="stylesheet" href="tema/tema.css?v=15c0aa4693">
+<link rel="stylesheet" href="tema/tema.css?v=e967bfe35a">
 <link rel="modulepreload" href="vendor/three.module.min.js">
 <script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js", "three/addons/": "./vendor/addons/" } }</script>
 <script type="application/ld+json">
@@ -221,27 +221,27 @@
   <div class="coches-panel coches-menu">
     <p class="coches-banner">Cómo se juega</p>
     <p class="caption">Cero motores y dos en cada coche: uno maneja y el otro
-    empuja a pie. El lado izquierdo mueve su pie izquierdo y el derecho el derecho: cuantos más pasos por segundo, más empuja. Alternando va recto; dos veces el mismo pie sube el otro a la tabla y el coche se va hacia el lado contrario. Cuando el coche ya va rápido, se trepa solo.</p>
+    empuja a pie. El lado izquierdo mueve su pie izquierdo y el derecho el derecho. No gana el que más aprieta sino el que lleva el compás: el siguiente paso va cuando la aguja entra en lo verde; apurado, se tropieza. Corriendo ya, los pasos se acortan. Empujar cansa (la barra de aliento) y a bordo se descansa. Saltar al carro corriendo casi a lo que da es la subida perfecta; cuando va rápido, se trepa solo.</p>
     <dl class="coches-teclas">
       <div><dt>← →</dt><dd>girar</dd></div>
       <div><dt>↓</dt><dd>frenar con la suela</dd></div>
       <div><dt>← →</dt><dd>a pie: pie izquierdo, pie derecho</dd></div>
       <div><dt>← ←</dt><dd>un pie en la tabla: gira al otro lado</dd></div>
       <div><dt>← + →</dt><dd>con colada: empujón fuerte y se sube</dd></div>
-      <div><dt>↑</dt><dd>lento: bajarse a empujar · a pie: saltar al carro con impulso (con colada, el empujón fuerte)</dd></div>
-      <div><dt>3, 2, 1…</dt><dd>pisar ya durante la cuenta: a buen ritmo, arranque extra</dd></div>
+      <div><dt>↑</dt><dd>lento: bajarse a empujar · a pie: saltar al carro (corriendo, subida perfecta; con colada, el empujón fuerte)</dd></div>
+      <div><dt>3, 2, 1…</dt><dd>pisar al compás durante la cuenta: arranque extra</dd></div>
 
       <div><dt>Esc</dt><dd>pausa</dd></div>
     </dl>
     <dl class="coches-teclas coches-solo-tactil">
       <div><dt>◀ ▶</dt><dd>a bordo: tocar un lado gira</dd></div>
-      <div><dt>◀ ▶ a pie</dt><dd>cada toque es un paso: pie izquierdo, pie derecho</dd></div>
+      <div><dt>◀ ▶ a pie</dt><dd>cada toque es un paso, al compás: cuando la aguja entra en lo verde</dd></div>
       <div><dt>◀ ◀</dt><dd>dos del mismo lado: un pie en la tabla, gira al otro lado</dd></div>
       <div><dt>Freno</dt><dd>a la izquierda, arriba de la flecha: para las curvas cerradas</dd></div>
-      <div><dt>Botón redondo</dt><dd>«Bájate» (lento) · «¡Sube!» (a pie) · «¡Colada!» (a pie con colada: empujón fuerte)</dd></div>
-      <div><dt>3, 2, 1…</dt><dd>tocar alternando ya en la cuenta: a buen ritmo, arranque extra</dd></div>
+      <div><dt>Botón redondo</dt><dd>«Bájate» (lento) · «¡Sube ya!» (a pie y corriendo: subida perfecta) · «¡Colada!» (empujón fuerte)</dd></div>
+      <div><dt>3, 2, 1…</dt><dd>tocar alternando al compás en la cuenta: arranque extra</dd></div>
     </dl>
-    <p class="caption">En las rampas no se gira en el aire. Las coladas moradas se guardan (hasta tres) para el empujón fuerte, que solo sirve a pie. En un choque, el que embiste le quita una colada al otro.
+    <p class="caption">Las calles son las de verdad: cuando sale «¡Frena!», la esquina viene cerrada. Detrás de otro coche, en su carril, vas con rebufo. En las rampas no se gira en el aire. Las coladas moradas se guardan (hasta tres) para el empujón fuerte, que solo sirve a pie y devuelve el aliento. En un choque, el que embiste le quita una colada al otro.
     Las medallas abren parejas nuevas y ganar la Copa abre la subida del Panecillo.</p>
     <button class="btn btn-ghost btn-block" id="b-volver-ayuda" type="button">
       <svg class="icono" aria-hidden="true"><use href="#i-flecha-izq"/></svg> Volver</button>
@@ -412,6 +412,6 @@
 </div>
 
 <script src="https://franciscombp.github.io/ds/mal/mal.js?v=1.0.22" defer></script>
-<script type="module" src="coches.js?v=15c0aa4693"></script>
+<script type="module" src="coches.js?v=e967bfe35a"></script>
 </body>
 </html>
