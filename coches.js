@@ -3766,6 +3766,10 @@ function dibujaMundo(dt) {
 }
 
 let camS = 0;
+// Cuánto está la cámara ya al frente del coche (0 detrás, 1 delante): al
+// cruzar la meta se pone delante, mirando hacia atrás, para que se vea que
+// la carrera terminó.
+let camFrente = 0;
 function dibujaCamara(dt) {
   // Mientras se vuelca, la cámara se queda atrás y llega tarde: se ve el
   // tumbo entero en vez de pegada a la tabla.
@@ -3775,11 +3779,17 @@ function dibujaCamara(dt) {
   // Cada buen paso la acerca un pelo: se siente el empujón.
   const empujon = pasos.burst / 0.35;
   const lejos = 4.8 + j.v * 0.035 - empujon * 0.4;
-  const objetivo = punto(camS - lejos, j.x * 0.75, 2.6 + j.v * 0.01 - empujon * 0.08);
+  // En la meta, la cámara pasa por encima del coche (con un arco, para no
+  // atravesarlo) y se queda delante, mirándolo.
+  camFrente = mezcla(camFrente, estado === 'llegada' ? 1 : 0, Math.min(1, dt * 1.8));
+  const f = camFrente * camFrente * (3 - 2 * camFrente);
+  const arco = Math.sin(Math.PI * f);
+  const sCam = mezcla(camS - lejos, j.s + 15, f);
+  const objetivo = punto(sCam, mezcla(j.x * 0.75, j.x * 0.6, f), 2.6 + j.v * 0.01 - empujon * 0.08 + 7 * arco);
   // La cámara no se mete bajo la calle en las bajadas fuertes.
-  const suelo = muestra(camS - lejos).y + 1.4;
+  const suelo = muestra(sCam).y + 1.4;
   if (objetivo.y < suelo) objetivo.y = suelo;
-  const mira = punto(camS + 8 + j.v * 0.12, j.x * 0.5, 0.5 + j.h * 0.5);
+  const mira = punto(mezcla(camS + 8 + j.v * 0.12, j.s, f), mezcla(j.x * 0.5, j.x * 0.2, f), mezcla(0.5 + j.h * 0.5, 1.2, f));
   // Si la cámara quedó lejos (al empezar o tras un salto de tiempo), se
   // pone en su sitio de golpe: deslizarse cien metros la mete en las casas.
   if (camara.position.distanceToSquared(objetivo) > 225) camara.position.copy(objetivo);
@@ -4656,7 +4666,7 @@ function empieza() {
   tocaMusica('carrera');
   armaRuta();
   ultimoHud = {};
-  camS = j.s;
+  camS = j.s; camFrente = 0;
   punto(camS - 5.4, j.x * 0.8, 2.25, camara.position);
   camara.clearViewOffset();
   camara.fov = 60; camara.updateProjectionMatrix();
@@ -4954,7 +4964,9 @@ window.coches = {
   pista: (id) => cargaPista(id), noche: () => noche, copas: COPAS, empiezaCopa,
   renderiza: () => render.render(escena, camara),
   // Lo que hay en la pista, para las pruebas (sprites, mallas, posiciones).
-  mundo: () => mundo, three: THREE,
+  mundo: () => mundo, three: THREE, camara: () => camara.position.toArray(),
+  // Encuadra la cámara un cuadro (lo que hace el bucle al dibujar).
+  encuadra: (dt) => dibujaCamara(dt),
   // Agujeros: desde la calle, cada `paso` metros y a `h` de altura, rayos
   // hacia abajo (de `pitches` grados) en todas las direcciones; cuenta los
   // que no tocan nada antes de la niebla (ahí se vería el fondo).
