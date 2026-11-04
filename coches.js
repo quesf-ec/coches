@@ -37,18 +37,18 @@ const modeloUrl = (n) => new URL(`modelos/${n}.glb${SELLO}`, import.meta.url).hr
 
 // ─── la física, en metros y segundos ───────────────────────────────
 const G = 9.8;
-const CUESTA = 1.8;           // la cuesta tira bastante más que en la vida: es un juego
+const CUESTA = 1.4;           // la cuesta tira más que en la vida (es un juego), pero las calles ya son de verdad
 const ROCE = 0.12;            // rulimanes contra el asfalto…
 const ROCE_PIEDRA = 0.22;     // …y contra el empedrado, que frena y traquetea
 const AIRE = 0.0018;
 const TOPE = 40;              // ~145 km/h, lo más que da la bajada grande
 const TOPE_TURBO = 46;
-const EMPUJE = 7.5;           // lo que empuja el que va atrás…
-const CORRE = 10;             // …y lo más rápido que corre
+const EMPUJE = 8;             // lo que empuja el que va atrás…
+const CORRE = 11;             // …y lo más rápido que corre
 const ENGANCHE = CORRE + 0.8; // a esta velocidad, el de atrás se sube solo
 const FRENO = 11;
 const FUERA = 4;              // la vereda frena
-const GIRO = 0.42;            // el volante: metros de lado por cada m/s
+const GIRO = 0.5;             // el volante: metros de lado por cada m/s
 const CENTRIFUGA = 0.62;      // la curva te saca a v² · curvatura
 const KAPPA = 0.008;          // de «curva 7» a curvatura en 1/m
 const ACERA = 1.6;
@@ -470,7 +470,7 @@ const ICONOS = {
 const CROMOS = [
   { id: 'virgen', nombre: 'La Virgen de Quito', desc: 'La única Virgen con alas: la del Panecillo, de aluminio y 41 metros.', pista: 'panecillo', zona: 'panecillo', d: 200, x: -2.2, fachada: 'virgen' },
   { id: 'chulla', nombre: 'El Chulla Quiteño', desc: 'Terno, sombrero y bastón: el personaje de la canción y de la ciudad.', pista: 'panecillo', zona: 'garcia', d: 40, x: 1.8, icono: 'chulla' },
-  { id: 'farol', nombre: 'Los faroles de La Ronda', desc: 'La calle de los artesanos, con sus faroles encendidos en las Fiestas.', pista: 'panecillo', zona: 'ronda', d: 25, x: -1.9, icono: 'farol' },
+  { id: 'farol', nombre: 'Los faroles de La Ronda', desc: 'La calle de los artesanos, con sus faroles encendidos en las Fiestas.', pista: 'panecillo', zona: 'garcia', d: 140, x: -1.9, icono: 'farol' },
   { id: 'santuario', nombre: 'El Santuario de Guápulo', desc: 'Del siglo XVII, al pie de la cuesta, mirando al valle.', pista: 'guapulo', zona: 'guapulo', d: 120, x: 2, fachada: 'santuario' },
   { id: 'canelazo', nombre: 'El canelazo', desc: 'Naranjilla, canela y un chorro de puntas: lo que calienta la noche.', pista: 'guapulo', zona: 'mirador', d: 70, x: -1.6, icono: 'canelazo' },
   { id: 'guagua', nombre: 'La guagua de pan', desc: 'El pan con forma de niño que se come en noviembre con la colada.', pista: 'guapulo', zona: 'guapulo', d: 280, x: -2.1, icono: 'guagua' },
@@ -479,13 +479,13 @@ const CROMOS = [
   { id: 'chiva', nombre: 'La chiva', desc: 'El bus abierto, con banda arriba, que recorre la ciudad en las Fiestas.', pista: 'sanjuan', zona: 'rocafuerte', d: 110, x: -1.8, icono: 'chiva' },
   { id: 'banderin', nombre: 'Los banderines', desc: 'Rojo y azul, los colores de Quito, cruzando las calles.', pista: 'vuelta', zona: 'panecillo', d: 100, x: 2.4, icono: 'banderin' },
   { id: 'cometa', nombre: 'La cometa', desc: 'En agosto el Panecillo se llena de cometas; alguna queda para noviembre.', pista: 'vuelta', zona: 'miradorpanecillo', d: 70, x: -2.4, icono: 'cometa' },
-  { id: 'hornado', nombre: 'El hornado', desc: 'Chancho entero al horno, con mote y agrio, en cualquier mercado.', pista: 'vuelta', zona: 'cumbre', d: 90, x: 2.2, icono: 'hornado' },
+  { id: 'hornado', nombre: 'El hornado', desc: 'Chancho entero al horno, con mote y agrio, en cualquier mercado.', pista: 'vuelta', zona: 'cumbre', d: 50, x: 2.2, icono: 'hornado' },
   { id: 'capirote', nombre: 'El cucurucho', desc: 'El penitente morado de la procesión de Viernes Santo.', pista: 'subida', zona: 'subida', d: 60, x: 2.3, icono: 'capirote' },
   { id: 'gallo', nombre: 'El Gallo de la Catedral', desc: 'La veleta de la Catedral que, según la leyenda, bajó a picotear a un borracho.', pista: 'subida', zona: 'subida', d: 160, x: -2.3, icono: 'gallo' },
   { id: 'corona', nombre: 'La Reina de Quito', desc: 'Cada año, antes de las Fiestas, se elige una; la corona es lo de menos.', pista: 'subida', zona: 'cumbre', d: 25, x: 1.9, icono: 'corona' },
-  { id: 'tabla', nombre: 'La tabla', desc: 'Tres tablones, dos ejes y rulimanes: el coche entero, hecho en casa.', pista: 'tobogan', zona: 'cumbre', d: 40, x: -2.6, icono: 'tabla' },
-  { id: 'rulimanes', nombre: 'Los rulimanes', desc: 'Las ruedas de verdad: rodamientos de camión, que chillan en el empedrado.', pista: 'tobogan', zona: 'valle', d: 100, x: 2.6, icono: 'rulimanes' },
-  { id: 'soga', nombre: 'La soga', desc: 'El volante: una soga atada al eje de adelante y, con suerte, un freno de madera.', pista: 'tobogan', zona: 'trepada', d: 250, x: -2.4, icono: 'soga' },
+  { id: 'tabla', nombre: 'La tabla', desc: 'Tres tablones, dos ejes y rulimanes: el coche entero, hecho en casa.', pista: 'tobogan', zona: 'cuenca', d: 40, x: -2.6, icono: 'tabla' },
+  { id: 'rulimanes', nombre: 'Los rulimanes', desc: 'Las ruedas de verdad: rodamientos de camión, que chillan en el empedrado.', pista: 'tobogan', zona: 'teatro', d: 20, x: 2.6, icono: 'rulimanes' },
+  { id: 'soga', nombre: 'La soga', desc: 'El volante: una soga atada al eje de adelante y, con suerte, un freno de madera.', pista: 'tobogan', zona: 'manabi', d: 250, x: -2.4, icono: 'soga' },
   { id: 'cohete', nombre: 'Los fuegos artificiales', desc: 'La noche del 5 de diciembre el cielo de Quito se llena de luces.', pista: 'noche-vuelta', zona: 'panecillo', d: 60, x: -2.3, icono: 'cohete' },
   { id: 'vaca', nombre: 'La vaca loca', desc: 'Un armazón de vaca cargado de cohetes que alguien se pone y sale a corretear a la gente.', pista: 'noche-sanjuan', zona: 'rocafuerte', d: 60, x: 1.9, icono: 'vaca' },
   { id: 'castillo', nombre: 'El castillo', desc: 'La torre de carrizo con ruedas de fuegos que se enciende de abajo arriba.', pista: 'noche-guapulo', zona: 'guapulo', d: 200, x: -2, icono: 'castillo' },
@@ -557,6 +557,8 @@ function texturasSuelo() {
       for (let k = 0; k <= 4; k++) { c.beginPath(); c.moveTo(0, k * 64); c.lineTo(w, k * 64); c.moveTo(k * 64, 0); c.lineTo(k * 64, h); c.stroke(); }
     }), true),
     pasto: textura(lienzo(256, 256, (c, w, h) => ruido(c, w, h, '#76A04B', 2500, ['#6C9644', '#82AC55', '#668E40', '#8DB45E'])), true),
+    // El terreno: un ruido gris que cada vértice tiñe de pasto o de tierra.
+    tierra: textura(lienzo(256, 256, (c, w, h) => ruido(c, w, h, '#BDBDBD', 2600, ['#B0B0B0', '#C8C8C8', '#A8A8A8', '#D2D2D2'])), true),
     plaza: textura(lienzo(256, 256, (c, w, h) => {
       ruido(c, w, h, '#DCD4C4', 800, ['#D2CAB9', '#E3DCCE']);
       c.strokeStyle = 'rgba(90,80,65,.35)'; c.lineWidth = 3;
@@ -605,6 +607,11 @@ const ZONAS = {
   valle: { nombre: 'El valle', calle: 'asfalto', lado: 'pasto', hw: 5.6, arboles: true, publico: [10, 6] },
   trepada: { nombre: 'La trepada', calle: 'asfalto', lado: 'pasto', hw: 5.4, arboles: true, publico: [12, 5] },
   cumbre: { nombre: 'La cumbre', calle: 'asfalto', lado: 'pasto', hw: 5.2, arboles: true, publico: [6, 6] },
+  // La bajada grande de verdad: del centro a La Marín y de vuelta.
+  olmedo: { nombre: 'La Olmedo en picada', calle: 'asfalto', lado: 'vereda', hw: 5.4, casas: true, faroles: true, banderas: true, publico: [10, 5] },
+  teatro: { nombre: 'La Plaza del Teatro', calle: 'adoquin', lado: 'plaza', hw: 5.6, casas: true, faroles: true, banderas: true, puestos: 18, publico: [5, 6] },
+  manabi: { nombre: 'La trepada de la Manabí', calle: 'adoquin', lado: 'vereda', hw: 5.0, casas: true, faroles: true, banderas: true, peatones: true, publico: [9, 5] },
+  cuenca: { nombre: 'La Cuenca', calle: 'asfalto', lado: 'vereda', hw: 5.0, casas: true, faroles: true, banderas: true, publico: [6, 6] },
 };
 // Las calles, más anchas que las de verdad: los seis coches salen a la vez,
 // en una fila, y en carrera hay sitio para adelantar y para chocarse.
@@ -619,8 +626,11 @@ const PISTAS = [
   {
     id: 'panecillo', nombre: 'La bajada del Panecillo', salida: 'EL PANECILLO', meta: 'PLAZA GRANDE',
     // Con coches/pistas/panecillo.json, las calles de verdad; si no, los tramos.
-    real: 'panecillo', callesZonas: [['Benavides|Bah[ií]a', 'panecillo'], ['Ambato', 'ambato'], ['24 de Mayo', 'bulevar'], ['Morales', 'ronda'], ['Garc[ií]a', 'garcia'], ['.', 'plaza']],
-    lema: 'De la Virgen a la Plaza Grande: las curvas del Panecillo, la Ambato empinada, La Ronda y la subida de la García Moreno.',
+    // Con coches/pistas/panecillo.json, las calles de verdad: la Melchor de
+    // Aymerich, la Necochea, la Mariscal Sucre, la Chimborazo, la Barahona,
+    // la Ambato y la García Moreno hasta la Plaza Grande.
+    real: 'panecillo', callesZonas: [['Aymerich', 'panecillo'], ['Garc[ií]a', 'garcia'], ['.', 'ambato']], zonasExtra: [['plaza', 2215]],
+    lema: 'De la Virgen a la Plaza Grande por las calles de verdad: las curvas del Panecillo, la Barahona y la Ambato cuesta abajo y la García Moreno, por el Arco de la Reina y la Compañía.',
     tramos: ['panecillo', [0, 40, 0, 0, 0], ['salida', 34], [12, 20, 12, 0, -6], [14, 22, 14, -5, -8], [14, 22, 14, 5, -9],
       [16, 30, 16, 5, -14], [14, 20, 14, -4, -7], [10, 14, 10, 2, -3],
       'ambato', [18, 56, 18, 0, -26], [10, 10, 10, 0, 1.2], [15, 24, 15, 3, -3],
@@ -628,15 +638,14 @@ const PISTAS = [
       'ronda', [9, 15, 9, -4, 0.8], [9, 15, 9, 5, -2.5], [9, 15, 9, -4, 0.6], [9, 15, 9, 4, -2.5], [9, 12, 9, -2, 0],
       'garcia', [12, 36, 12, 0, 2.6], [10, 14, 10, 3, 0],
       'plaza', ['meta', 40], [6, 66, 6, 0, 0], [0, 160, 0, 0, 0]],
-    hitos: [['virgen', 'panecillo', 89, -32], ['torres', 'bulevar', 70, 1], ['compania', 'garcia', 80, -1], ['arco', 'garcia', 40],
-      ['catedral', 'plaza', 16, 1], ['palacio', 'plaza', 20, -1]],
-    rampas: [['ambato', 150, 0], ['bulevar', 40, -1.6], ['bulevar', 120, 1.4], ['ronda', 40, 0], ['panecillo', 62, 1.2]],
-    coladas: [['panecillo', 150], ['panecillo', 262], ['ambato', 110], ['bulevar', 80], ['ronda', 90], ['garcia', 15], ['garcia', 60]],
+    hitos: [['virgen', null, -188.9, 3.8], ['arco', 'garcia', 290], ['compania', 'garcia', 520, -1], ['catedral', 'plaza', 20, 1], ['palacio', 'plaza', 60, -1]],
+    rampas: [['panecillo', 160, 0], ['panecillo', 520, -1.4], ['ambato', 320, 1.4], ['garcia', 150, 0], ['garcia', 420, -1.4]],
+    coladas: [['panecillo', 90], ['panecillo', 330], ['ambato', 60], ['ambato', 460], ['ambato', 760], ['garcia', 70], ['garcia', 360]],
   },
   {
     id: 'guapulo', nombre: 'La cuesta de Guápulo', salida: 'MIRADOR DE GUÁPULO', meta: 'SANTUARIO DE GUÁPULO',
-    real: 'guapulo', callesZonas: [['Gonz[aá]lez', 'mirador'], ['Orellana|Conquistadores|Leonidas|Compte', 'guapulo'], ['.', 'guapulo']],
-    lema: 'Del mirador al santuario por la cuesta más empinada de Quito: horquillas de piedra y una recta que da miedo.',
+    real: 'guapulo', callesZonas: [['Stubel|Le[oó]n Larrea', 'mirador'], ['.', 'guapulo']], zonasExtra: [['plazaguapulo', 1180]],
+    lema: 'Del mirador al santuario por la cuesta más empinada de Quito: el Camino de Orellana, sus horquillas y la picada de la Leonidas Plaza, 160 m más abajo.',
     tramos: ['mirador', [0, 40, 0, 0, 0], ['salida', 34], [10, 30, 10, 0, -4], [12, 20, 12, -4, -5],
       'guapulo', [10, 14, 10, 6, -7], [10, 14, 10, -6, -7], [10, 16, 10, 7, -8], [10, 14, 10, -6, -7],
       [12, 36, 12, 0, -18],
@@ -645,53 +654,55 @@ const PISTAS = [
       [10, 24, 10, 0, 2.5],
       'plazaguapulo', ['meta', 40], [6, 60, 6, 0, 0], [0, 160, 0, 0, 0]],
     hitos: [['santuario', 'plazaguapulo', 30, 1]],
-    rampas: [['guapulo', 182, 0], ['mirador', 60, -1.2]],
-    coladas: [['mirador', 50], ['guapulo', 60], ['guapulo', 232], ['guapulo', 300]],
+    rampas: [['mirador', 150, -1.2], ['guapulo', 140, 0], ['guapulo', 470, 1.2]],
+    coladas: [['mirador', 60], ['guapulo', 60], ['guapulo', 330], ['guapulo', 560], ['guapulo', 760]],
   },
   {
     id: 'sanjuan', nombre: 'La bajada de San Juan', salida: 'LA BASÍLICA', meta: 'SAN FRANCISCO',
-    real: 'sanjuan', callesZonas: [['Carchi|Imbabura', 'basilica'], ['Venezuela', 'venezuela'], ['Rocafuerte|Cuenca', 'rocafuerte'], ['Bol[ií]var', 'sanfrancisco'], ['.', 'venezuela']],
-    lema: 'De la Basílica a la Plaza de San Francisco: la Venezuela en picada y los puestos de la Rocafuerte.',
+    real: 'sanjuan', callesZonas: [['Rocafuerte', 'rocafuerte'], ['Benalc', 'sanfrancisco'], ['.', 'venezuela']], zonasExtra: [['basilica', 0], ['venezuela', 260]],
+    lema: 'De la Basílica a la Plaza de San Francisco por la Venezuela entera: la Plaza Grande, Santo Domingo y los puestos de la Rocafuerte.',
     tramos: ['basilica', [0, 40, 0, 0, 0], ['salida', 34], [10, 20, 10, 0, -2],
       'venezuela', [14, 50, 14, 0, -22], [10, 20, 10, -3, -4], [12, 40, 12, 0, -12], [10, 16, 10, 4, -4],
       'rocafuerte', [9, 15, 9, 4, -2], [9, 15, 9, -4, -2], [9, 22, 9, 0, 2.2], [9, 15, 9, 3, -3], [9, 15, 9, -2, -1],
       'sanfrancisco', ['meta', 45], [6, 70, 6, 0, 0], [0, 160, 0, 0, 0]],
-    hitos: [['basilica', 'basilica', 18, -1], ['torres', 'sanfrancisco', 30, 1]],
-    rampas: [['venezuela', 70, 0], ['venezuela', 150, 1.4], ['rocafuerte', 80, -1]],
-    coladas: [['basilica', 50], ['venezuela', 30], ['venezuela', 120], ['rocafuerte', 60], ['rocafuerte', 140]],
+    hitos: [['basilica', 'basilica', 150, 1], ['torres', 'sanfrancisco', 120, -1]],
+    rampas: [['venezuela', 200, 0], ['venezuela', 560, 1.4], ['venezuela', 980, -1.4], ['rocafuerte', 90, 0]],
+    coladas: [['basilica', 70], ['venezuela', 100], ['venezuela', 420], ['venezuela', 760], ['rocafuerte', 40], ['sanfrancisco', 40]],
   },
   {
-    id: 'tobogan', nombre: 'La bajada grande', salida: 'LA CUMBRE', meta: 'LA CUMBRE', real: 'tobogan', vueltas: 3,
-    lema: 'Tres vueltas: una recta inmensa cuesta abajo, la curva del valle y, con ese impulso, la trepada de vuelta. Lo que falte lo empuja el de atrás.',
+    id: 'tobogan', nombre: 'La bajada grande', salida: 'LA OLMEDO', meta: 'LA OLMEDO', real: 'tobogan', vueltas: 1,
+    lema: 'Una vuelta entera al centro: la Olmedo recta y en picada hasta el Teatro Sucre, la curva de abajo y, con ese impulso, la trepada de la Manabí. Lo que falte lo empuja el de atrás.',
+    // Sin datos, la generada en código, con sus zonas por metro.
     zonas: [['tobogan', 0], ['valle', 310], ['trepada', 460], ['cumbre', 780]],
+    callesZonas: [['Olmedo', 'olmedo'], ['Guayaquil', 'teatro'], ['Manab', 'manabi'], ['.', 'cuenca']], desfase: 60,
     hitos: [['cerro', null, 45, 180, 28, 20]],
-    rampas: [['tobogan', 150, -3.2], ['tobogan', 240, 3.2]],
-    coladas: [['valle', 60], ['trepada', 180], ['cumbre', 60]],
+    rampas: [['olmedo', 150, -2.4], ['olmedo', 270, 2.4], ['manabi', 200, 0]],
+    coladas: [['olmedo', 60], ['teatro', 45], ['manabi', 120], ['manabi', 300], ['cuenca', 50]],
   },
   {
-    id: 'vuelta', nombre: 'La vuelta al Panecillo', salida: 'EL PANECILLO', meta: 'EL PANECILLO', real: 'panecillo-vuelta', vueltas: 2, arbolesLado: -1,
-    callesZonas: [['.', 'panecillo']],
-    lema: 'Dos vueltas al cerro por la carretera que lo rodea: la Virgen siempre a la vista y el que empuja, sin descanso en las subidas.',
-    zonas: [['panecillo', 0], ['miradorpanecillo', 130], ['cumbre', 230], ['panecillo', 330]],
-    hitos: [['cerro', null, 0, 0, 40, 30]],
-    rampas: [['panecillo', 70, 0], ['miradorpanecillo', 50, -1.2], ['cumbre', 60, 1.2]],
-    coladas: [['panecillo', 40], ['miradorpanecillo', 20], ['cumbre', 20], ['panecillo', 360]],
+    id: 'vuelta', nombre: 'La vuelta al Panecillo', salida: 'EL PANECILLO', meta: 'EL PANECILLO', real: 'panecillo-vuelta', vueltas: 2, arbolesLado: 1,
+    lema: 'Dos vueltas a la Virgen por la Melchor de Aymerich, en la cima del cerro: la subida, la horquilla del cruce y el que empuja, sin descanso.',
+    zonas: [['panecillo', 0], ['cumbre', 380], ['miradorpanecillo', 460], ['panecillo', 560]],
+    hitos: [['cerro', null, 0, 0, 40, 30], ['virgen', null, -52.0, 25.9]],
+    rampas: [['panecillo', 110, 0], ['miradorpanecillo', 60, 1.2]],
+    coladas: [['panecillo', 60], ['panecillo', 250], ['cumbre', 30], ['panecillo', 610]],
   },
   {
-    id: 'centro', nombre: 'La vuelta a la Plaza Grande', salida: 'PLAZA GRANDE', meta: 'PLAZA GRANDE', real: 'centro-vuelta', vueltas: 3, libre: true,
-    lema: 'Tres vueltas a la manzana de la Plaza Grande por las calles de verdad, entre las casas del centro.',
-    callesZonas: [['Venezuela', 'venezuela'], ['.', 'garcia']],
-    hitos: [], rampas: [], coladas: [['garcia', 30], ['venezuela', 40], ['garcia', 160]],
+    id: 'centro', nombre: 'La vuelta a la Plaza Grande', salida: 'PLAZA GRANDE', meta: 'PLAZA GRANDE', real: 'centro-vuelta', vueltas: 2, libre: true,
+    lema: 'Dos vueltas a dos manzanas con la Plaza Grande dentro: la Venezuela, la Espejo junto a la Catedral, la García Moreno por el Palacio y la Mejía.',
+    callesZonas: [['Venezuela', 'venezuela'], ['Espejo', 'plaza'], ['.', 'garcia']], desfase: 50,
+    hitos: [], rampas: [['garcia', 90, 0]], coladas: [['venezuela', 90], ['plaza', 50], ['garcia', 140]],
   },
   {
-    id: 'subida', nombre: 'La subida del Panecillo', salida: 'LA AMBATO', meta: 'LA VIRGEN', premio: true,
-    lema: 'Al revés: de la Ambato a la Virgen, cuesta arriba todo el rato. Aquí el que empuja es el motor.',
+    id: 'subida', nombre: 'La subida del Panecillo', salida: 'LA MELCHOR', meta: 'LA VIRGEN', premio: true, real: 'subida', salidaM: 420,
+    lema: 'Al revés: la Melchor de Aymerich por el sur del cerro y su última horquilla hasta la Virgen, cuesta arriba todo el rato. Aquí el que empuja es el motor.',
+    zonas: [['subida', 0], ['cumbre', 1000]],
     tramos: ['ambato', [0, 40, 0, 0, 0], ['salida', 34], [10, 20, 10, 0, 2],
       'subida', [12, 22, 12, -6, 7], [12, 22, 12, 6, 7], [12, 26, 12, 0, 6], [12, 22, 12, -5, 6], [10, 16, 10, 3, 3],
       'cumbre', ['meta', 30], [0, 60, 0, 0, 0], [0, 160, 0, 0, 0]],
-    hitos: [['virgen', 'cumbre', 70, -18]],
+    hitos: [['virgen', null, -195.6, 77.8]],
     rampas: [],
-    coladas: [['subida', 40], ['subida', 120], ['subida', 190]],
+    coladas: [['subida', 90], ['subida', 330], ['subida', 560], ['subida', 800], ['cumbre', 30]],
   },
   // La noche de las Fiestas: las mismas calles a oscuras, con los faroles
   // encendidos y fuegos artificiales. Heredan todo de su pista de día.
@@ -770,6 +781,10 @@ const GENERADAS = {
   },
 };
 
+// Los lugares que se anuncian al pasar: iglesias, plazas, museos,
+// miradores; no las tiendas ni los locales con nombre.
+const LUGAR_QUE_SE_ANUNCIA = /^(place_of_worship|museum|attraction|viewpoint|square|park|monument|memorial|townhall|theatre|marketplace|artwork|castle|church|ruins|yes)$/;
+const LUGAR_QUE_NO = /testigos|evang[eé]lic|cooperativa|almacenes|balc[oó]n de servicios|hotel|restaurante|sal[oó]n del reino/i;
 // Una pista sobre una calle de verdad: el trazado viene en metros, cada
 // pocos metros, y aquí se muestrea cada metro. Si es un circuito, la vuelta
 // se repite `vueltas` veces, con 40 m antes de la línea y 220 después.
@@ -792,6 +807,23 @@ function construyePistaReal(def) {
     resto = (resto - l) % 1 + 1; if (resto >= 1) resto -= 1;
   }
   if (!cerrada) vuelta.push(pts[pts.length - 1]);
+  // Una calle de OSM dobla en seco en cada esquina: se redondea (unos
+  // metros de radio, lo que un coche de madera dobla a paso de hombre) y
+  // se vuelve a muestrear cada metro, que el redondeo acorta el camino.
+  if (!d.generada) redondeaEsquinas(vuelta, cerrada);
+  // En un circuito, la línea puede ir `desfase` metros más allá del primer
+  // punto (para no salir en plena esquina): se gira la vuelta, y con ella
+  // los metros de las calles y de los lugares.
+  const desfase = cerrada && def.desfase ? Math.round(def.desfase) % vuelta.length : 0;
+  if (desfase) vuelta.push(...vuelta.splice(0, desfase));
+  // Tras la meta, la calle sigue recta otros 110 m: para frenar sin
+  // salirse del mundo.
+  const largoReal = vuelta.length;
+  if (!cerrada) {
+    const a = vuelta[largoReal - 2], b = vuelta[largoReal - 1];
+    const dx = b[0] - a[0], dz = b[1] - a[1], l = Math.hypot(dx, dz) || 1;
+    for (let m = 1; m <= 110; m++) vuelta.push([b[0] + (dx / l) * m, b[1] + (dz / l) * m, b[2]]);
+  }
   const largo = vuelta.length;
   // En un circuito la altura y la curva se suavizan sobre la vuelta, en
   // redondo, antes de repetirla: así cada vuelta es idéntica y la calle
@@ -805,7 +837,13 @@ function construyePistaReal(def) {
   }
   // Las zonas: las de la pista o, con calles de verdad y `callesZonas`, una
   // por calle según su nombre. Y el nombre real de la calle en cada metro.
-  const calles = d.generada ? [] : (d.calles || []);
+  let calles = d.generada ? [] : (d.calles || []);
+  const largoV = vuelta.length;
+  const corre = (s0) => (desfase ? (((s0 - desfase) % largoV) + largoV) % largoV : s0);
+  if (desfase && calles.length) {
+    const deCalle = (m) => { let c = calles[0][1]; for (const [desde, n] of calles) if (m >= desde) c = n; return c; };
+    calles = [[0, deCalle(desfase)], ...calles.map(([s0, n]) => [corre(s0), n])].sort((a, b) => a[0] - b[0]);
+  }
   let zonas = def.zonas;
   if (calles.length && def.callesZonas) {
     zonas = [];
@@ -814,6 +852,12 @@ function construyePistaReal(def) {
       if (!zonas.length || zonas[zonas.length - 1][0] !== z) zonas.push([z, Math.max(0, Math.round(s0))]);
     }
     zonas[0][1] = 0;
+    // Las que la pista pone por metro (una plaza al final de una calle):
+    // mandan sobre las de los nombres desde su metro.
+    if (def.zonasExtra) {
+      for (const [z, desde] of def.zonasExtra) zonas.push([z, desde, 1]);
+      zonas.sort((a, b) => a[1] - b[1] || (a[2] || 0) - (b[2] || 0));
+    }
   }
   if (!zonas) zonas = [[def.callesZonas ? def.callesZonas[0][1] : 'panecillo', 0]];
   const zonaDe = (m) => { let z = zonas[0][0]; for (const [n, desde] of zonas) if (m >= desde) z = n; return z; };
@@ -827,7 +871,7 @@ function construyePistaReal(def) {
     SALIDA = 40; META = 40 + largo * def.vueltas;
   } else {
     desde = 0; hasta = largo;
-    SALIDA = def.salidaM ?? 30; META = Math.min(def.metaM ?? largo - 40, largo - 10);
+    SALIDA = def.salidaM ?? 30; META = Math.min(def.metaM ?? largoReal - 40, largoReal - 10);
   }
   let zona = '';
   for (let i = desde; i < hasta; i++) {
@@ -844,8 +888,11 @@ function construyePistaReal(def) {
     if (P.calle) P.calle.push(calleDe(m));
   }
   // Los lugares con nombre, en el metro de la primera vuelta donde se pasan.
-  LUGARES = (d.lugares || []).map(([s0, , , nombre]) => ({ i: Math.round(s0) - desde, nombre }))
-    .filter((l) => l.i >= 0 && l.i < P.x.length).sort((a, b) => a.i - b.i);
+  LUGARES = (d.lugares || []).map(([s0, , , nombre, tipo]) => ({ i: Math.round(corre(s0)) - desde, nombre, tipo }))
+    .filter((l) => l.i >= 0 && l.i < P.x.length && (!l.tipo || LUGAR_QUE_SE_ANUNCIA.test(l.tipo)) && !LUGAR_QUE_NO.test(l.nombre))
+    .sort((a, b) => a.i - b.i)
+    // De a uno cada 80 m, que no se pisen los avisos.
+    .filter((l, k, todos) => !k || l.i - todos[k - 1].i > 80);
   // Sin saltos de 2π en el rumbo, y la curva es lo que gira cada metro.
   for (let i = 1; i < P.th.length; i++) {
     while (P.th[i] - P.th[i - 1] > Math.PI) P.th[i] -= Math.PI * 2;
@@ -899,6 +946,35 @@ function construyePista(def) {
   P.hw = suavizaArr(P.hw, 8, 1);
   for (let i = 0; i < N; i++) P.pend[i] = (P.y[Math.min(i + 1, N - 1)] - P.y[Math.max(i - 1, 0)]) / 2;
   return true;
+}
+// Redondea las esquinas de un trazado de puntos a cada metro: se suavizan
+// las posiciones (caja de ±6 m, tres pasadas: una esquina de 90° queda con
+// unos 13 m de radio) y se vuelve a muestrear cada metro. En un circuito,
+// en redondo. Las puntas de un trazado abierto se quedan donde estaban.
+function redondeaEsquinas(vuelta, cerrada) {
+  const n = vuelta.length;
+  if (n < 20) return;
+  const xs = vuelta.map((p) => p[0]), zs = vuelta.map((p) => p[1]), ys = vuelta.map((p) => p[2]);
+  const sx = cerrada ? suavizaCiclico(xs, 8, 3) : suavizaArr(xs, 8, 3);
+  const sz = cerrada ? suavizaCiclico(zs, 8, 3) : suavizaArr(zs, 8, 3);
+  if (!cerrada) { sx[0] = xs[0]; sz[0] = zs[0]; sx[n - 1] = xs[n - 1]; sz[n - 1] = zs[n - 1]; }
+  // Otra vez cada metro: con la altura que tocaba en cada punto.
+  const nuevo = [];
+  let resto = 0;
+  const m = cerrada ? n : n - 1;
+  for (let i = 0; i < m; i++) {
+    const i1 = (i + 1) % n;
+    const dx = sx[i1] - sx[i], dz = sz[i1] - sz[i], l = Math.hypot(dx, dz);
+    if (l < 1e-6) continue;
+    for (let t = resto; t < l; t += 1) {
+      const f = t / l;
+      nuevo.push([sx[i] + dx * f, sz[i] + dz * f, mezcla(ys[i], ys[i1], f)]);
+    }
+    resto = ((resto - l) % 1 + 1) % 1;
+  }
+  if (!cerrada) nuevo.push([sx[n - 1], sz[n - 1], ys[n - 1]]);
+  vuelta.length = 0;
+  for (const p of nuevo) vuelta.push(p);
 }
 // Un filtro de caja: cada valor, la media de los 2R+1 de alrededor, varias veces.
 function suavizaArr(arr, R, pasadas) {
@@ -1025,6 +1101,7 @@ function preparaMateriales() {
   const lam = (t, extra) => mate(Object.assign({ map: t, side: THREE.DoubleSide }, extra));
   MAT.asfalto = lam(TEX.asfalto); MAT.adoquin = lam(TEX.adoquin); MAT.vereda = lam(TEX.vereda);
   MAT.pasto = lam(TEX.pasto); MAT.plaza = lam(TEX.plaza);
+  MAT.tierra = mate({ map: TEX.tierra, vertexColors: true, side: THREE.DoubleSide });
   MAT.bordillo = mate({ color: 0xB9B0A0, side: THREE.DoubleSide });
   MAT.raya = new THREE.MeshBasicMaterial({ color: 0xEDE9DF, side: THREE.DoubleSide });
   MAT.madera = mate({ map: TEX.madera });
@@ -1032,6 +1109,14 @@ function preparaMateriales() {
   for (const t of Object.values(TEX)) if (t && t.userData) t.userData.compartido = true;
 }
 
+// Cuánto margen cabe a un lado de la calle en el metro k: 4 m, menos por
+// dentro de una curva cerrada (el radio que queda tras la vereda).
+function margen(k, lado) {
+  let kk = 0;
+  for (let d = -6; d <= 6; d += 2) kk = Math.max(kk, Math.abs(P.k[limita(k + d, 0, N - 1)]) * (Math.sign(P.k[limita(k + d, 0, N - 1)]) === lado ? 1 : 0));
+  if (!kk) return 4;
+  return limita(0.85 / kk - P.hw[k] - ACERA, 0.4, 4);
+}
 function construyeCalle() {
   // Por tramos de zona: cada una con su calzada y su lado.
   const uvCalle = { asfalto: (i, x) => [x / 10 + 0.5, i / 8], adoquin: (i, x) => [x / 2, i / 2] };
@@ -1049,11 +1134,15 @@ function construyeCalle() {
       cinta(i0, i1, (k, l) => [s * hw(k), l ? BORDILLO : 0], (k) => [0, k], MAT.bordillo);
       const acera = z.lado === 'pasto' ? MAT.pasto : MAT.vereda;
       cinta(i0, i1, (k, l) => [s * (hw(k) + (l ? ACERA : 0)), BORDILLO], (k, x) => [x / 1.6, k / 1.6], acera);
-      // El terreno de los lados cae pronto: así una curva de más arriba no
-      // deja su pasto flotando sobre la de más abajo.
-      const lejos = z.lado === 'pasto' ? 30 : 14;
-      cinta(i0, i1, (k, l) => [s * (hw(k) + ACERA + (l ? lejos : 0)), l ? (z.lado === 'pasto' ? -11 : BORDILLO) : BORDILLO],
-        (k, x) => [x / 4, k / 4], MAT[z.lado]);
+      // Un margen de pasto o de vereda que baja (o sube) hasta el terreno:
+      // la calle queda cosida al suelo, sin escalón ni rendija. Por dentro de
+      // una curva cerrada se estrecha, que no se doble sobre sí.
+      cinta(i0, i1, (k, l) => {
+        const x = s * (hw(k) + ACERA + (l ? margen(k, s) : 0));
+        if (!l) return [x, BORDILLO];
+        const p = punto(k, x, 0), y = alturaSuelo(p.x, p.z);
+        return [x, y == null ? BORDILLO : Math.min(BORDILLO, y - P.y[k] + 0.08)];
+      }, (k, x) => [x / 4, k / 4], MAT[z.lado]);
     }
     i0 = i;
   }
@@ -1241,11 +1330,366 @@ const FACHADAS = {
   palacio: [() => palacio(), 30, 19, 14], basilica: [() => basilica(), 20, 30, 16], santuario: [() => santuario(), 18, 22, 14],
 };
 
+// ─── el suelo y lo que hay alrededor de la calle ───────────────────
+// Dónde cae cada cosa respecto a la calle: el metro más cercano, a qué
+// distancia y a qué lado. Con celdas, para no recorrer la pista entera por
+// cada casa, cada vértice del terreno y cada árbol.
+class CercaPista {
+  constructor(celda = 24) {
+    this.c = celda; this.rej = new Map();
+    for (let i = 0; i < N; i += 2) {
+      const k = this.clave(Math.floor(P.x[i] / celda), Math.floor(P.z[i] / celda));
+      let l = this.rej.get(k); if (!l) this.rej.set(k, l = []); l.push(i);
+    }
+  }
+  clave(cx, cz) { return (cx + 32768) * 65536 + (cz + 32768); }
+  // Recorre los metros de pista a menos de `radio` de (x, z).
+  recorre(x, z, radio, fn) {
+    const c = this.c, cx = Math.floor(x / c), cz = Math.floor(z / c), R = Math.ceil(radio / c), r2 = radio * radio;
+    for (let a = -R; a <= R; a++) for (let b = -R; b <= R; b++) {
+      const l = this.rej.get(this.clave(cx + a, cz + b)); if (!l) continue;
+      for (const i of l) { const d = (P.x[i] - x) ** 2 + (P.z[i] - z) ** 2; if (d < r2) fn(i, Math.sqrt(d)); }
+    }
+  }
+  // El metro más cercano a (x, z), a qué distancia y a qué lado (`lat`:
+  // metros a la derecha del que baja), si está a menos de `hasta`.
+  de(x, z, hasta = 60) {
+    let mejor = Infinity, im = -1;
+    this.recorre(x, z, hasta, (i, d) => { if (d < mejor) { mejor = d; im = i; } });
+    if (im < 0) return null;
+    for (let i = Math.max(0, im - 2); i <= Math.min(N - 1, im + 2); i++) { const d = Math.hypot(P.x[i] - x, P.z[i] - z); if (d < mejor) { mejor = d; im = i; } }
+    const th = P.th[im];
+    return { i: im, d: mejor, lat: (x - P.x[im]) * -Math.cos(th) + (z - P.z[im]) * Math.sin(th) };
+  }
+}
+let CERCA = null, TERRENO = null, FRENTE = null, CRUCES = [], EDIFICIOS_CERCA = null, VERDES = [];
+// En un circuito, el metro de la primera vuelta que pasa por ahí.
+const enVuelta = (i) => (LARGO_VUELTA && i >= DECO_FIN ? DECO_INI + ((i - DECO_INI) % LARGO_VUELTA) : i);
+
+// La altura del suelo en (x, z). Pegado a la calle es la de la calle, que
+// las veredas, las casas y el pasto se apoyen en ella; de ahí a 45 m pasa
+// al terreno de verdad (la rejilla de alturas del JSON) o, sin él, a una
+// ladera que baja poco a poco. Entre dos vueltas de una horquilla, la media.
+function alturaSuelo(x, z) {
+  // La calle más cercana manda (pesos de 1/d⁴): así, entre las dos vueltas
+  // de una horquilla, cada una tiene su suelo y el terreno no la atraviesa.
+  // Bajo la calzada, un poco más abajo, que no asome.
+  let sw = 0, sy = 0, dmin = Infinity;
+  CERCA.recorre(x, z, 45, (i, d) => { const w = 1 / Math.max(d, 1) ** 4; sw += w; sy += w * P.y[i]; if (d < dmin) dmin = d; });
+  const dem = TERRENO.dem ? TERRENO.dem(x, z) : null;
+  let calle;
+  if (sw > 0) calle = sy / sw - 0.35;
+  else {
+    if (dem != null) return dem;
+    const q = CERCA.de(x, z, 260);
+    if (!q) return null;
+    calle = P.y[q.i] - 0.35; dmin = q.d;
+  }
+  const f = limita((dmin - 9) / 36, 0, 1);
+  const lejos = dem != null ? dem : calle - 2 - 0.15 * Math.max(0, dmin - 10);
+  return mezcla(calle, lejos, f * f * (3 - 2 * f));
+}
+// Cuánto hay de ciudad en (x, z), de 0 (cerro o parque) a 1 (entre
+// casas): tiñe el terreno de pasto o de tierra y dice dónde levantar los
+// bloques del fondo. Con datos de verdad: casas cerca, ciudad; un parque o
+// un bosque, verde; más allá de donde llegan los edificios (90 m), ciudad,
+// salvo en la ladera brava, que se queda de monte.
+function esCiudad(x, z) {
+  for (const v of VERDES) if (x > v.x0 && x < v.x1 && z > v.z0 && z < v.z1 && dentroDe(v.c, x, z)) return v.t === 'plaza' ? 1 : 0;
+  if (EDIFICIOS_CERCA) {
+    let n = 0;
+    const c = 40, cx = Math.floor(x / c), cz = Math.floor(z / c);
+    for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) {
+      const l = EDIFICIOS_CERCA.get((cx + a + 32768) * 65536 + (cz + b + 32768)); if (!l) continue;
+      for (const [ex, ez] of l) if ((ex - x) ** 2 + (ez - z) ** 2 < 1600) n++;
+    }
+    if (n) return Math.min(1, n / 3);
+    let cerca = false;
+    CERCA.recorre(x, z, 95, () => { cerca = true; });
+    if (cerca) return 0.15;
+    const dem = TERRENO.dem, y0 = dem && dem(x, z);
+    if (y0 == null) return 0.7;
+    const gx = (dem(x + 12, z) ?? y0) - (dem(x - 12, z) ?? y0), gz = (dem(x, z + 12) ?? y0) - (dem(x, z - 12) ?? y0);
+    return Math.hypot(gx, gz) / 24 > 0.4 ? 0.1 : 0.85;
+  }
+  const q = CERCA.de(x, z, 80);
+  return q && ZONAS[P.zona[q.i]].lado !== 'pasto' ? limita((70 - q.d) / 20, 0, 1) : 0;
+}
+// La altura del suelo a (s, x) de la calle, relativa a la calle: sobre la
+// vereda, la vereda; en el margen, la rampa que la cose al terreno; más
+// allá, el terreno.
+function hSuelo(s, x) {
+  const i = limita(Math.round(s), 0, N - 1), borde = P.hw[i] + ACERA;
+  if (Math.abs(x) <= borde) return BORDILLO;
+  const p = punto(s, x, 0), y = alturaSuelo(p.x, p.z);
+  if (y == null) return BORDILLO;
+  const enTerreno = y - muestra(s).y + 0.08, mg = margen(i, Math.sign(x) || 1);
+  return Math.abs(x) >= borde + mg ? enTerreno : mezcla(BORDILLO, Math.min(BORDILLO, enTerreno), (Math.abs(x) - borde) / mg);
+}
+// El resto de la ciudad, detrás de las casas: bloques de colores con techo
+// de teja, de a uno cada 16 m, donde el terreno es de ciudad y no hay calle
+// ni casa de verdad cerca. Dos mallas instanciadas para todos.
+function construyeCiudad(r) {
+  if (!TERRENO || (!EDIFICIOS_CERCA && !TERRENO.dem)) return;
+  const lugares = [];
+  const { x0, z0, x1, z1 } = TERRENO;
+  for (let z = z0 + 8; z < z1 - 8 && lugares.length < 6000; z += 16) {
+    for (let x = x0 + 8; x < x1 - 8 && lugares.length < 6000; x += 16) {
+      const px = x + (r() - 0.5) * 6, pz = z + (r() - 0.5) * 6;
+      let cerca = false;
+      CERCA.recorre(px, pz, 34, () => { cerca = true; });
+      if (cerca) continue;
+      const ciudad = esCiudad(px, pz);
+      if (ciudad < 0.6 || r() > ciudad) continue;
+      if (EDIFICIOS_CERCA) {
+        let ocupado = false;
+        const cx = Math.floor(px / 40), cz = Math.floor(pz / 40);
+        for (let a = -1; a <= 1 && !ocupado; a++) for (let b = -1; b <= 1 && !ocupado; b++) {
+          const l = EDIFICIOS_CERCA.get((cx + a + 32768) * 65536 + (cz + b + 32768));
+          if (l) for (const [ex, ez] of l) if ((ex - px) ** 2 + (ez - pz) ** 2 < 196) { ocupado = true; break; }
+        }
+        if (ocupado) continue;
+      }
+      const y = alturaSuelo(px, pz);
+      if (y == null) continue;
+      lugares.push([px, y, pz]);
+    }
+  }
+  if (!lugares.length) return;
+  const caja = new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0);
+  const techo = new THREE.ConeGeometry(0.75, 1, 4, 1).rotateY(Math.PI / 4).translate(0, 0.5, 0);
+  const muros = new THREE.InstancedMesh(caja, mate({ map: texFachada || (texFachada = textura(fachadaReal(), true)) }), lugares.length);
+  const techos = new THREE.InstancedMesh(techo, mate({}), lugares.length);
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), arriba = new THREE.Vector3(0, 1, 0), col = new THREE.Color();
+  lugares.forEach(([x, y, z], k) => {
+    const w = 8 + r() * 6, d = 8 + r() * 6, h = 5 + r() * 8, giro = r() * Math.PI;
+    q.setFromAxisAngle(arriba, giro);
+    m.compose(new THREE.Vector3(x, y - 2, z), q, new THREE.Vector3(w, h + 2, d));
+    muros.setMatrixAt(k, m); muros.setColorAt(k, col.setHex(COLORES_CASA[Math.floor(r() * COLORES_CASA.length)]));
+    m.compose(new THREE.Vector3(x, y + h, z), q, new THREE.Vector3(w * 1.06, 2.2, d * 1.06));
+    techos.setMatrixAt(k, m); techos.setColorAt(k, col.setHex(r() < 0.75 ? 0xA8442C : 0x8E8A84));
+  });
+  for (const im of [muros, techos]) { im.receiveShadow = true; mundo.add(im); }
+}
+
+const ANCHO_VIA = { motorway: 8, trunk: 8, primary: 7, secondary: 6.5, tertiary: 5.5, unclassified: 4.5, residential: 4.5, living_street: 4, service: 3.5, pedestrian: 4.5, track: 3 };
+// Se apunta que en estos metros, de este lado, no van casas de relleno.
+const reserva = (i, lado, r) => { const f = FRENTE[String(lado)]; for (let k = Math.max(0, Math.round(i - r)); k <= Math.min(N - 1, Math.round(i + r)); k++) f[enVuelta(k)] = 2; };
+// Antes de armar nada: la rejilla de cercanía, el terreno, qué frente de
+// la calle queda cubierto (por casas de verdad, bocacalles, plazas) y por
+// dónde llegan las otras calles.
+function preparaAlrededor() {
+  CERCA = new CercaPista();
+  const t = DATOS_PISTA && DATOS_PISTA.terreno;
+  if (t) {
+    TERRENO = {
+      x0: t.x0, z0: t.z0, x1: t.x0 + (t.nx - 1) * t.paso, z1: t.z0 + (t.nz - 1) * t.paso,
+      dem: (x, z) => {
+        const fx = (x - t.x0) / t.paso, fz = (z - t.z0) / t.paso, i = Math.floor(fx), k = Math.floor(fz);
+        if (i < 0 || k < 0 || i >= t.nx - 1 || k >= t.nz - 1) return null;
+        const a = t.y[k * t.nx + i], b = t.y[k * t.nx + i + 1], c = t.y[(k + 1) * t.nx + i], d = t.y[(k + 1) * t.nx + i + 1];
+        if (a == null || b == null || c == null || d == null) return null;
+        const u = fx - i, v = fz - k;
+        return (a * (1 - u) + b * u) * (1 - v) + (c * (1 - u) + d * u) * v;
+      },
+    };
+  } else {
+    let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+    for (let i = 0; i < N; i++) { x0 = Math.min(x0, P.x[i]); x1 = Math.max(x1, P.x[i]); z0 = Math.min(z0, P.z[i]); z1 = Math.max(z1, P.z[i]); }
+    TERRENO = { x0: x0 - 260, z0: z0 - 260, x1: x1 + 260, z1: z1 + 260, dem: null };
+  }
+  FRENTE = { '-1': new Uint8Array(N), 1: new Uint8Array(N) };
+  CRUCES = [];
+  EDIFICIOS_CERCA = null;
+  VERDES = [];
+  if (!DATOS_PISTA) return;
+  for (const g of DATOS_PISTA.verdes || []) {
+    if (g.p.length < 3) continue;
+    const xs = g.p.map((q) => q[0]), zs = g.p.map((q) => q[1]);
+    VERDES.push({ t: g.t, c: g.p.map(([x, z]) => new THREE.Vector2(x, z)), x0: Math.min(...xs), x1: Math.max(...xs), z0: Math.min(...zs), z1: Math.max(...zs) });
+  }
+  // Las casas, por celdas de 40 m, para teñir el terreno de ciudad.
+  if (DATOS_PISTA.edificios && DATOS_PISTA.edificios.length) {
+    EDIFICIOS_CERCA = new Map();
+    for (const ed of DATOS_PISTA.edificios) {
+      const cx = ed.p.reduce((t2, p) => t2 + p[0], 0) / ed.p.length, cz = ed.p.reduce((t2, p) => t2 + p[1], 0) / ed.p.length;
+      const k = (Math.floor(cx / 40) + 32768) * 65536 + (Math.floor(cz / 40) + 32768);
+      let l = EDIFICIOS_CERCA.get(k); if (!l) EDIFICIOS_CERCA.set(k, l = []); l.push([cx, cz]);
+    }
+  }
+  // Las bocacalles: donde otra calle llega a la nuestra, de lado.
+  for (const v of DATOS_PISTA.vias || []) {
+    const ancho = ANCHO_VIA[v.t];
+    if (!ancho || v.p.length < 2) continue;
+    let mejor = null;
+    for (let k = 0; k < v.p.length; k++) {
+      const [x, z] = v.p[k];
+      const q = CERCA.de(x, z, 16);
+      if (!q || Math.abs(q.lat) > P.hw[q.i] + ACERA + 5) continue;
+      const o = v.p[k + 1] || v.p[k - 1];
+      const dx = o[0] - x, dz = o[1] - z, l = Math.hypot(dx, dz) || 1, th = P.th[q.i];
+      if (Math.abs((dx * Math.sin(th) + dz * Math.cos(th)) / l) > 0.82) continue;   // va al lado, no cruza
+      if (!mejor || Math.abs(q.lat) < Math.abs(mejor.lat)) mejor = { i: q.i, lat: q.lat, k };
+    }
+    if (!mejor) continue;
+    const lado = Math.sign(mejor.lat) || 1;
+    CRUCES.push({ i: enVuelta(mejor.i), lado, ancho, k: mejor.k, v });
+    reserva(mejor.i, lado, ancho / 2 + 2);
+  }
+  // Las plazas y los parques que dan a la calle: ahí tampoco van casas.
+  for (const g of DATOS_PISTA.verdes || []) {
+    const pts = g.p;
+    for (let k = 0; k < pts.length; k++) {
+      const [ax, az] = pts[k], [bx, bz] = pts[(k + 1) % pts.length];
+      const n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az) / 3));
+      for (let m = 0; m <= n; m++) {
+        const q = CERCA.de(ax + (bx - ax) * m / n, az + (bz - az) * m / n, 16);
+        if (q && Math.abs(q.lat) < P.hw[q.i] + ACERA + 8) FRENTE[String(Math.sign(q.lat) || 1)][enVuelta(q.i)] = 2;
+      }
+    }
+  }
+}
+
+// El terreno: una malla continua sobre todo lo que se ve desde la calle,
+// a 10 m, con la altura de `alturaSuelo` y teñida de pasto o de tierra.
+// Llega hasta donde hay datos (330 m del trazado, más allá de la niebla).
+function construyeTerreno() {
+  const { x0, z0, x1, z1 } = TERRENO;
+  let paso = 10;
+  while (((x1 - x0) / paso + 1) * ((z1 - z0) / paso + 1) > 42000) paso += 2;
+  const nx = Math.floor((x1 - x0) / paso) + 1, nz = Math.floor((z1 - z0) / paso) + 1;
+  const pos = new Float32Array(nx * nz * 3), col = new Float32Array(nx * nz * 3), uv = new Float32Array(nx * nz * 2);
+  const vale = new Uint8Array(nx * nz);
+  const pasto = new THREE.Color(0x9ED46A), tierra = new THREE.Color(0xE8DFCD), c = new THREE.Color();
+  for (let k = 0; k < nz; k++) for (let i = 0; i < nx; i++) {
+    const q = k * nx + i, x = x0 + i * paso, z = z0 + k * paso;
+    const y = alturaSuelo(x, z);
+    if (y == null) continue;
+    vale[q] = 1;
+    pos[q * 3] = x; pos[q * 3 + 1] = y; pos[q * 3 + 2] = z;
+    uv[q * 2] = x / 9; uv[q * 2 + 1] = z / 9;
+    c.lerpColors(pasto, tierra, esCiudad(x, z));
+    col[q * 3] = c.r; col[q * 3 + 1] = c.g; col[q * 3 + 2] = c.b;
+  }
+  const idx = [];
+  for (let k = 0; k + 1 < nz; k++) for (let i = 0; i + 1 < nx; i++) {
+    const a = k * nx + i, b = a + 1, cc = a + nx, d = cc + 1;
+    if (!vale[a] || !vale[b] || !vale[cc] || !vale[d]) continue;
+    idx.push(a, cc, b, b, cc, d);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  const m = new THREE.Mesh(g, MAT.tierra);
+  m.receiveShadow = true;
+  mundo.add(m);
+}
+
+// Una tira de calle sobre el terreno, a lo largo de unos puntos [x, z]:
+// para las bocacalles y las otras calles del barrio.
+function tira(pts, ancho, uvDe, alto) {
+  if (pts.length < 2) return null;
+  const pos = [], uvs = [], idx = [];
+  let s = 0;
+  for (let k = 0; k < pts.length; k++) {
+    const a = pts[Math.max(0, k - 1)], b = pts[Math.min(pts.length - 1, k + 1)];
+    let dx = b[0] - a[0], dz = b[1] - a[1]; const l = Math.hypot(dx, dz) || 1; dx /= l; dz /= l;
+    if (k) s += Math.hypot(pts[k][0] - pts[k - 1][0], pts[k][1] - pts[k - 1][1]);
+    const y = pts[k][2] != null ? pts[k][2] : (alturaSuelo(pts[k][0], pts[k][1]) ?? 0) + (alto || 0.06);
+    for (const lado of [-1, 1]) {
+      const x = pts[k][0] + -dz * lado * ancho / 2, z = pts[k][1] + dx * lado * ancho / 2;
+      pos.push(x, y, z);
+      const [u, v] = uvDe(lado, s); uvs.push(u, v);
+    }
+    if (k) { const b2 = k * 2; idx.push(b2 - 2, b2, b2 - 1, b2 - 1, b2, b2 + 1); }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  return g;
+}
+// Las otras calles del barrio, pegadas al terreno. Un tramo que se mete en
+// nuestra calle se corta en el borde de la calzada; la bocacalle que
+// llega hasta nosotros se cierra contra el bordillo.
+function construyeVias() {
+  if (!DATOS_PISTA || !DATOS_PISTA.vias) return;
+  // Todas en dos mallas, una de asfalto y otra de empedrado.
+  const geos = { asfalto: [], adoquin: [] };
+  for (const v of DATOS_PISTA.vias) {
+    const ancho = ANCHO_VIA[v.t];
+    if (!ancho || v.p.length < 2) continue;
+    const piedra = v.s === 'piedra';
+    const lista = geos[piedra ? 'adoquin' : 'asfalto'];
+    const uvDe = piedra ? (lado, s) => [lado * ancho / 4, s / 2] : (lado, s) => [0.52 + (lado + 1) * ancho / 20, s / 8];
+    // Por trozos de 2 m: fuera de la calzada se dibuja, dentro no.
+    let trozo = [];
+    const cierra = () => { if (trozo.length > 1) lista.push(tira(trozo, ancho, uvDe)); trozo = []; };
+    for (let k = 0; k + 1 < v.p.length; k++) {
+      const [ax, az] = v.p[k], [bx, bz] = v.p[k + 1];
+      const l = Math.hypot(bx - ax, bz - az), n = Math.max(1, Math.ceil(l / 2));
+      for (let m = k ? 1 : 0; m <= n; m++) {
+        const x = ax + (bx - ax) * m / n, z = az + (bz - az) * m / n;
+        const q = CERCA.de(x, z, 14);
+        const dentro = q && Math.abs(q.lat) < P.hw[q.i] + 0.25;
+        if (dentro) {
+          // Se cierra contra el borde de nuestra calle, a su altura.
+          if (trozo.length) { const pq = punto(q.i, (Math.sign(q.lat) || 1) * (P.hw[q.i] - 0.2), 0.02); trozo.push([pq.x, pq.z, pq.y]); }
+          cierra();
+        } else trozo.push([x, z]);
+      }
+    }
+    cierra();
+  }
+  for (const [nombre, gs] of Object.entries(geos)) {
+    if (!gs.length) continue;
+    const m = new THREE.Mesh(mergeGeometries(gs), MAT[nombre]);
+    for (const g of gs) g.dispose();
+    m.receiveShadow = true;
+    mundo.add(m);
+  }
+}
+// Los árboles de los parques y bosques de verdad, por dentro y lejos de la
+// calle: un bosque, tupido; un parque, suelto. El verde del suelo ya lo
+// pone el terreno (`esCiudad`), que sigue la ladera.
+function construyeVerdes(arbol, r) {
+  for (const g of VERDES) {
+    if (g.t === 'plaza') continue;
+    const area = Math.abs(THREE.ShapeUtils.area(g.c));
+    const n = Math.min(60, Math.round(area / (g.t === 'bosque' ? 90 : 220)));
+    for (let k = 0, intentos = 0; k < n && intentos < n * 6; intentos++) {
+      const x = g.x0 + r() * (g.x1 - g.x0), z = g.z0 + r() * (g.z1 - g.z0);
+      if (!dentroDe(g.c, x, z)) continue;
+      const q = CERCA.de(x, z, 12);
+      if (q && Math.abs(q.lat) < P.hw[q.i] + ACERA + 2) continue;
+      const y = alturaSuelo(x, z);
+      if (y == null) continue;
+      arbol(x, y, z); k++;
+    }
+  }
+}
+// ¿Está (x, z) dentro del polígono? (par-impar)
+function dentroDe(pts, x, z) {
+  let dentro = false;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+    const a = pts[i], b = pts[j];
+    if ((a.y > z) !== (b.y > z) && x < ((b.x - a.x) * (z - a.y)) / (b.y - a.y) + a.x) dentro = !dentro;
+  }
+  return dentro;
+}
+
 // ─── los edificios de verdad ──────────────────────────────────────
 // Con datos de OpenStreetMap, cada edificio es su planta levantada a su
 // altura: muros con ventanas por piso (una textura blanca teñida con el
 // color de cada casa, como las del centro) y techo de teja o de losa. El
-// que se mete en la calle se corre hacia atrás hasta la vereda.
+// que se mete en la calle se corre hacia atrás hasta la vereda; todos
+// bajan hasta el suelo de verdad, que en la ladera no es el de la calle;
+// y los que tienen nombre y fachada pintada (la Compañía, la Catedral, el
+// Palacio, la Basílica, San Francisco, Guápulo) la llevan delante.
 const COLORES_CASA = [0xF1EDE4, 0xF1EDE4, 0xEDE3C8, 0xE3B95F, 0x5D8FC7, 0x9CC7D9, 0xE8A8A0, 0x8FBF8A, 0xC97B4A];
 let texFachada = null;
 const fachadaReal = () => lienzo(256, 128, (c, w, h) => {
@@ -1260,18 +1704,48 @@ const fachadaReal = () => lienzo(256, 128, (c, w, h) => {
     for (let k = 0; k <= 6; k++) c.fillRect(x0 - 9 + k * (ww + 16) / 6, y0 + hh - 20, 2, 16);
   }
 });
+// Qué fachada pintada lleva cada edificio con nombre.
+const FACHADA_DE = [['compania', /compa[ñn][ií]a/i, true], ['catedral', /catedral/i, true], ['palacio', /carondelet|palacio de gobierno/i],
+  ['basilica', /bas[ií]lica/i, true], ['santuario', /santuario|gu[aá]pulo/i, true], ['torres', /san francisco/i, true]];
+// Apunta que la planta `pts` cubre el frente de la calle: ahí no van casas de relleno.
+function cubreFrente(pts) {
+  for (let k = 0; k < pts.length; k++) {
+    const [ax, az] = pts[k], [bx, bz] = pts[(k + 1) % pts.length];
+    const n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az) / 2));
+    for (let m = 0; m <= n; m++) {
+      const q = CERCA.de(ax + (bx - ax) * m / n, az + (bz - az) * m / n, 30);
+      if (!q || Math.abs(q.lat) > P.hw[q.i] + ACERA + 18) continue;
+      const f = FRENTE[String(Math.sign(q.lat) || 1)];
+      for (let i = Math.max(0, q.i - 1); i <= Math.min(N - 1, q.i + 1); i++) if (!f[enVuelta(i)]) f[enVuelta(i)] = 1;
+    }
+  }
+}
+// La fachada pintada, sobre la pared de la planta que da a la calle.
+function fachadaPintada(clave, pts, yb, h) {
+  let mejor = null;
+  for (let k = 0; k < pts.length; k++) {
+    const [ax, az] = pts[k], [bx, bz] = pts[(k + 1) % pts.length];
+    const l = Math.hypot(bx - ax, bz - az);
+    if (l < 5) continue;
+    const q = CERCA.de((ax + bx) / 2, (az + bz) / 2, 80);
+    if (q && (!mejor || q.d < mejor.d)) mejor = { d: q.d, ax, az, bx, bz, l };
+  }
+  if (!mejor) return;
+  const [pinta, , altoF] = FACHADAS[clave];
+  const canvas = pinta();
+  const alto = Math.max(h, altoF), ancho = Math.min(mejor.l - 0.3, alto * canvas.width / canvas.height);
+  const { ax, az, bx, bz, l } = mejor;
+  const fx = (bz - az) / l, fz = -(bx - ax) / l;   // hacia fuera de la planta
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(ancho, alto), mate({ map: textura(canvas), transparent: true, alphaTest: 0.5, side: THREE.DoubleSide }));
+  m.position.set((ax + bx) / 2 + fx * 0.14, yb + alto / 2, (az + bz) / 2 + fz * 0.14);
+  m.rotation.y = Math.atan2(fx, fz);
+  m.castShadow = true;
+  mundo.add(m);
+}
 function construyeEdificios(edificios) {
   if (!texFachada) texFachada = textura(fachadaReal(), true);
   const M = { pos: [], nor: [], uv: [], col: [] }, T = { pos: [], nor: [], col: [] };
   const color = new THREE.Color(), a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(), n = new THREE.Vector3();
-  // El punto de la calle más cercano: a saltos de 2 m y luego fino.
-  const cerca = (x, z) => {
-    let mejor = Infinity, im = 0;
-    const d2 = (i) => (P.x[i] - x) ** 2 + (P.z[i] - z) ** 2;
-    for (let i = 0; i < N; i += 2) { const d = d2(i); if (d < mejor) { mejor = d; im = i; } }
-    for (let i = Math.max(0, im - 2); i <= Math.min(N - 1, im + 2); i++) { const d = d2(i); if (d < mejor) { mejor = d; im = i; } }
-    return im;
-  };
   // Un triángulo, girado si hace falta para que mire hacia `fuera`.
   const tri = (G, p, q, r, fuera, uvs) => {
     a.fromArray(p); b.fromArray(q); c.fromArray(r);
@@ -1285,28 +1759,37 @@ function construyeEdificios(edificios) {
     }
   };
   const arriba = new THREE.Vector3(0, 1, 0), fuera = new THREE.Vector3();
+  const pintadas = new Set();
   edificios.forEach((ed, k) => {
     let pts = ed.p.map(([x, z]) => [x, z]);
     if (pts.length < 3) return;
     // ¿Se mete en la calle? Se corre hacia atrás, del lado donde está.
-    let falta = 0, rx = 0, rz = 0, lados = new Set(), iRef = 0;
+    let falta = 0, rx = 0, rz = 0, lados = new Set(), iRef = -1, dRef = Infinity;
     for (const [x, z] of pts) {
-      const i = cerca(x, z), th = P.th[i];
-      const ux = -Math.cos(th), uz = Math.sin(th);
-      const lat = (x - P.x[i]) * ux + (z - P.z[i]) * uz;
-      const libre = P.hw[i] + ACERA + 0.3;
+      const q = CERCA.de(x, z, 40);
+      if (!q) continue;
+      const th = P.th[q.i], ux = -Math.cos(th), uz = Math.sin(th), lat = q.lat;
+      const libre = P.hw[q.i] + ACERA + 0.3;
       lados.add(Math.sign(lat) || 1);
-      if (Math.abs(lat) < libre && libre - Math.abs(lat) > falta) { falta = libre - Math.abs(lat); rx = ux * Math.sign(lat || 1); rz = uz * Math.sign(lat || 1); iRef = i; }
-      if (!falta) iRef = i;
+      if (Math.abs(lat) < libre && libre - Math.abs(lat) > falta) { falta = libre - Math.abs(lat); rx = ux * Math.sign(lat || 1); rz = uz * Math.sign(lat || 1); }
+      if (q.d < dRef) { dRef = q.d; iRef = q.i; }
     }
     if (lados.size > 1 && falta > 0) return;      // cruza la calle: fuera
     if (falta > 14) return;                       // casi entero en la calle
     if (falta) pts = pts.map(([x, z]) => [x + rx * falta, z + rz * falta]);
-    // Altura: la de la calle al lado, salvo que el terreno de verdad esté
-    // mucho más arriba o abajo (en la ladera del cerro, por ejemplo).
-    const ry = P.y[iRef];
-    const yb = ed.y != null && Math.abs(ed.y - ry) > 4 ? ed.y : ry;
-    const h = ed.h || 7, y0 = yb - 3, y1 = yb + h;
+    // El suelo: el piso bajo arranca en la esquina más alta de la planta y
+    // los muros bajan hasta la más baja, que nada quede en el aire. Pegado
+    // a la calle, el portal va con la vereda.
+    let ySuelo = -Infinity, yBajo = Infinity;
+    for (const [x, z] of pts) { const y = alturaSuelo(x, z); if (y == null) continue; ySuelo = Math.max(ySuelo, y); yBajo = Math.min(yBajo, y); }
+    if (ySuelo === -Infinity) return;
+    if (iRef >= 0 && dRef < P.hw[iRef] + ACERA + 6) ySuelo = Math.max(ySuelo, P.y[iRef] + BORDILLO);
+    const yb = ySuelo;
+    cubreFrente(pts);
+    const pintada = ed.nombre && FACHADA_DE.find(([clave, re, iglesia]) => !pintadas.has(clave) && re.test(ed.nombre) && (!iglesia || ed.tipo === 'iglesia'));
+    let h = ed.h || 7;
+    if (pintada) { pintadas.add(pintada[0]); h = Math.max(h, FACHADAS[pintada[0]][2] * 0.75); }
+    const y0 = yBajo - 0.6, y1 = yb + h;
     // Orientación: que el área salga positiva en (x, z).
     let area = 0;
     for (let q = 0; q < pts.length; q++) { const [x1, z1] = pts[q], [x2, z2] = pts[(q + 1) % pts.length]; area += x1 * z2 - x2 * z1; }
@@ -1329,9 +1812,12 @@ function construyeEdificios(edificios) {
     // El techo: teja en las casas bajas y en las iglesias; losa en lo alto.
     color.setHex(iglesia || h <= 12 ? 0xA8442C : 0x8E8A84);
     const contorno = pts.map(([x, z]) => new THREE.Vector2(x, z));
-    for (const [p, q, r] of THREE.ShapeUtils.triangulateShape(contorno, [])) {
+    let techo = [];
+    try { techo = THREE.ShapeUtils.triangulateShape(contorno, []); } catch (err) { /* una planta rara: sin techo */ }
+    for (const [p, q, r] of techo) {
       tri(T, [pts[p][0], y1, pts[p][1]], [pts[q][0], y1, pts[q][1]], [pts[r][0], y1, pts[r][1]], arriba);
     }
+    if (pintada) fachadaPintada(pintada[0], pts, yb, h);
   });
   const malla = (G, mat) => {
     if (!G.pos.length) return;
@@ -1347,6 +1833,7 @@ function construyeEdificios(edificios) {
   malla(M, mate({ map: texFachada, vertexColors: true }));
   delete T.uv;
   malla(T, mate({ vertexColors: true }));
+  return pintadas;
 }
 
 // La colada morada: un jarro de barro vidriado, con su filo azul y la
@@ -1401,33 +1888,45 @@ function construyeDecorado(def) {
     const mat = [mate({ color: 0xEDE7DA }), mate({ color: 0xEDE7DA }),
       mate({ color: 0xA8442C }), mate({ color: 0xEDE7DA }),
       mate({ map: textura(canvas), transparent: true, alphaTest: 0.5 }), mate({ color: 0xEDE7DA })];
-    const caja = new THREE.Mesh(new THREE.BoxGeometry(ancho, alto, fondo), mat);
+    // Con zócalo: baja 4 m más, que en la cuesta no quede en el aire.
+    const caja = new THREE.Mesh(new THREE.BoxGeometry(ancho, alto + 4, fondo), mat);
     const hw = muestra(s).hw;
-    caja.applyMatrix4(new THREE.Matrix4().makeTranslation(0, alto / 2 - 0.4, -fondo / 2));
+    caja.applyMatrix4(new THREE.Matrix4().makeTranslation(0, (alto + 4) / 2 - 4.4, -fondo / 2));
     caja.applyMatrix4(matrizEn(s, lado * (hw + ACERA), BORDILLO, -lado));
     mundo.add(caja);
     reservas.push({ s0: s - ancho / 2 - 2, s1: s + ancho / 2 + 2, lado });
   };
-  // Con edificios de verdad no se inventan fachadas, salvo la Virgen del cerro.
+  // Con edificios de verdad, cada fachada pintada va en el suyo (por el
+  // nombre); la que no lo encontró, en caja, donde dice la pista.
   const reales = !!(DATOS_PISTA && DATOS_PISTA.edificios && DATOS_PISTA.edificios.length);
+  const pintadas = reales ? construyeEdificios(DATOS_PISTA.edificios) : new Set();
   for (const [tipo, z, d, lado] of def.hitos || []) {
-    if (!FACHADAS[tipo] || (reales && tipo !== 'virgen')) continue;
+    if (!FACHADAS[tipo] || pintadas.has(tipo)) continue;
     const [pinta, ancho, alto, fondo] = FACHADAS[tipo];
-    fachada(pinta(), enZona(z, d), lado, ancho, alto, fondo);
+    const s = enZona(z, d);
+    fachada(pinta(), s, lado, ancho, alto, fondo);
+    if (reales) reserva(s, lado, ancho / 2 + 1);
   }
 
-  // Las casas, seguidas a los dos lados donde la zona las tiene.
-  if (reales) construyeEdificios(DATOS_PISTA.edificios);
+  // Las casas, seguidas a los dos lados donde la zona las tiene. Con
+  // edificios de verdad, las de la maqueta solo tapan los huecos del frente
+  // (donde no hay casa, ni bocacalle, ni plaza), para que la calle no quede
+  // desdentada. Se hunden según la cuesta: nada queda en el aire.
+  construyeVias();
   for (const cr of corridas) {
-    if (!ZONAS[cr.zona].casas || reales) continue;
+    if (!ZONAS[cr.zona].casas) continue;
     for (const lado of [-1, 1]) {
+      const frente = FRENTE[String(lado)];
+      const libre = (a, b) => { for (let i = Math.max(0, Math.floor(a)); i <= Math.min(N - 1, Math.ceil(b)); i++) if (frente[i]) return false; return true; };
       let s = cr.z0 + 2;
       while (s < hasta(cr.z1, 60)) {
         const casa = elige(r, CASAS);
         const medio = s + casa.ancho / 2;
+        if (reales && !libre(s, s + casa.ancho)) { s += 1; continue; }
         if (!reservas.some((q) => q.lado === lado && medio > q.s0 && medio < q.s1)) {
-          const hw = muestra(medio).hw;
-          f.pon(casa.g, matrizEn(medio, lado * (hw + ACERA), -0.4, -lado));
+          const m = muestra(medio), hunde = 0.4 + Math.abs(m.pend) * casa.ancho / 2;
+          f.pon(casa.g, matrizEn(medio, lado * (m.hw + ACERA), -hunde, -lado));
+          if (reales) for (let i = Math.floor(s); i <= Math.ceil(s + casa.ancho); i++) if (i >= 0 && i < N) frente[i] = 1;
         }
         s += casa.ancho + 0.15;
       }
@@ -1537,8 +2036,10 @@ function construyeDecorado(def) {
       for (const lado of [-1, 1]) {
         // En un anillo, los árboles van por fuera: por dentro se ve el cerro.
         if (def.arbolesLado && lado !== def.arbolesLado) continue;
-        const hw = muestra(s).hw, x = lado * (hw + ACERA + 1.5 + r() * 9);
-        const m = matrizEn(s + r() * 4, x, BORDILLO - 0.2, 0, r() * 6);
+        const hw = muestra(s).hw, x = lado * (hw + ACERA + 1.5 + r() * 9), sa = s + r() * 4;
+        // Donde hay casa de verdad, no: el árbol quedaría dentro.
+        if (reales && FRENTE[String(lado)][limita(Math.round(sa), 0, N - 1)] === 1 && Math.abs(x) > hw + ACERA + 4) continue;
+        const m = matrizEn(sa, x, hSuelo(sa, x) - 0.2, 0, r() * 6);
         if (r() < 0.3) {
           // Un arrayán: bajo y redondo.
           fP.pon(new THREE.Mesh(troncoBajo, matTronco), m);
@@ -1554,7 +2055,7 @@ function construyeDecorado(def) {
           }
         }
         // Arbustos al pie, junto a la calle.
-        if (r() < 0.5) { const e = 0.7 + r() * 0.8; fP.pon(new THREE.Mesh(arbusto, elige(r, verdes)), matrizEn(s + r() * 5, lado * (hw + ACERA + 0.6 + r() * 1.2), BORDILLO + 0.3 * e, 0).multiply(new THREE.Matrix4().makeScale(e, e * 0.8, e))); }
+        if (r() < 0.5) { const e = 0.7 + r() * 0.8, sb = s + r() * 5, xb = lado * (hw + ACERA + 0.6 + r() * 1.2); fP.pon(new THREE.Mesh(arbusto, elige(r, verdes)), matrizEn(sb, xb, hSuelo(sb, xb) + 0.3 * e, 0).multiply(new THREE.Matrix4().makeScale(e, e * 0.8, e))); }
       }
     }
     for (let s = Math.max(cr.z0, SALIDA + 11); s < cr.z1; s += 6) {
@@ -1564,12 +2065,30 @@ function construyeDecorado(def) {
       }
     }
   }
+  // Los parques y bosques de verdad, con sus árboles; y más allá de las
+  // casas, el resto de la ciudad en bloques sencillos.
+  const arbol = (x, y, z) => {
+    const m = new THREE.Matrix4().compose(new THREE.Vector3(x, y - 0.2, z), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), r() * 6), new THREE.Vector3(1, 1, 1));
+    if (r() < 0.5) {
+      fP.pon(new THREE.Mesh(troncoBajo, matTronco), m);
+      const e = 0.7 + r() * 0.5;
+      fP.pon(new THREE.Mesh(copaRedonda, elige(r, verdes)), m.clone().multiply(new THREE.Matrix4().makeTranslation(0, 3.6, 0).multiply(new THREE.Matrix4().makeScale(e, e * 0.9, e))));
+    } else {
+      fP.pon(new THREE.Mesh(tronco, matTronco), m);
+      for (let k = 0; k < 2; k++) {
+        const e = 0.8 + r() * 0.6;
+        fP.pon(new THREE.Mesh(copa, elige(r, verdes)), m.clone().multiply(new THREE.Matrix4().makeTranslation((r() - 0.5) * 2, 8 + r() * 2.5, (r() - 0.5) * 2).multiply(new THREE.Matrix4().makeScale(e, e * 1.25, e))));
+      }
+    }
+  };
+  construyeVerdes(arbol, r);
   fP.funde();
+  construyeCiudad(r);
   // El cerro: una loma de pasto con la Virgen encima, para el circuito que
   // le da la vuelta. [tipo, zona, d, x, radio, alto]; con zona null, d y x
   // son coordenadas del mundo (el centro del anillo generado es 0, 0).
   for (const [tipo, z, d, x, radio, alto] of def.hitos) {
-    if (tipo !== 'cerro') continue;
+    if (tipo !== 'cerro' || (DATOS_PISTA && !DATOS_PISTA.generada)) continue;
     const g = new THREE.SphereGeometry(1, 24, 10, 0, Math.PI * 2, 0, Math.PI / 2);
     g.scale(radio, alto, radio);
     const pos = g.attributes.position;
@@ -1589,11 +2108,19 @@ function construyeDecorado(def) {
     v.position.copy(loma.position).y += alto + 11;
     mundo.add(v);
   }
+  // La Virgen. Con zona null, (d, x) es su sitio en el mundo de los datos
+  // de verdad: se para en el suelo de ahí, sobre su pedestal.
   for (const [tipo, z, d, x] of def.hitos) {
-    if (tipo !== 'virgen') continue;
+    if (tipo !== 'virgen' || (z === null && (!DATOS_PISTA || DATOS_PISTA.generada))) continue;
     const v = new THREE.Sprite(new THREE.SpriteMaterial({ map: textura(virgen()), fog: false }));
     v.scale.set(15, 26.7, 1);
-    v.position.copy(punto(enZona(z, d), x, 13.3));
+    if (z === null) {
+      const suelo = alturaSuelo(d, x) ?? P.y[0];
+      const pedestal = new THREE.Mesh(new THREE.CylinderGeometry(4, 5, 8, 10).translate(0, 2, 0), mate({ color: 0xC9C2B4 }));
+      pedestal.position.set(d, suelo, x);
+      mundo.add(pedestal);
+      v.position.set(d, suelo + 6 + 13.3, x);
+    } else v.position.copy(punto(enZona(z, d), x, 13.3));
     mundo.add(v);
   }
 
@@ -1606,7 +2133,7 @@ function construyeDecorado(def) {
       lugares.push({ s, lado, fondo: r() });
     }
   };
-  for (let s = LARGO_VUELTA ? SALIDA + 4 : 4; s < SALIDA + 10; s += 5) { fila(s, -1, 5); fila(s + 2.5, 1, 5); }
+  for (let s = LARGO_VUELTA ? SALIDA + 4 : Math.max(4, SALIDA - 26); s < SALIDA + 10; s += 5) { fila(s, -1, 5); fila(s + 2.5, 1, 5); }
   if (!LARGO_VUELTA) for (let s = META - 14; s < META + 16; s += 5) { fila(s, -1, 6); fila(s + 2.5, 1, 6); }
   corridas.forEach((cr, k) => {
     const [paso, n] = ZONAS[cr.zona].publico || [0, 0];
@@ -1752,7 +2279,9 @@ function cargaPista(id) {
   limpiaMundo();
   obstaculos.length = 0;
   ambienta(!!def.noche);
+  preparaAlrededor();
   construyeCalle();
+  construyeTerreno();
   if (CASAS.length) construyeDecorado(def);
   pistaActual = def;
   reinicia();
@@ -1765,83 +2294,108 @@ function cargaPista(id) {
 // todos; cuando pasa la carrera, saltan. Algunos llevan cartel.
 let publico = null;
 function construyePublico(lugares, r) {
+  // Con calles de verdad, largas, sale mucha gente: se deja a lo sumo 650
+  // (quitando a los de en medio de la fila, no a los de la salida y la meta).
+  const TOPE_GENTE = 650;
+  if (lugares.length > TOPE_GENTE) {
+    const prioridad = (l) => (Math.abs(l.s - SALIDA) < 30 || Math.abs(l.s - META) < 30 ? 0 : 1);
+    const quedan = lugares.filter((l) => !prioridad(l));
+    const resto = lugares.filter((l) => prioridad(l));
+    const cada = resto.length / Math.max(1, TOPE_GENTE - quedan.length);
+    for (let k = 0; k < resto.length && quedan.length < TOPE_GENTE; k += cada) quedan.push(resto[Math.floor(k)]);
+    lugares = quedan.sort((a2, b2) => a2.s - b2.s);
+  }
   const n = lugares.length;
-  const pierna = new THREE.CylinderGeometry(0.1, 0.12, 0.74, 7).translate(0, 0.37, 0);
+  // Pocos lados: se ven a tres metros como mucho.
+  const pierna = new THREE.CylinderGeometry(0.1, 0.12, 0.74, 5).translate(0, 0.37, 0);
   const gPiernas = mergeGeometries([pierna.clone().translate(-0.1, 0, 0), pierna.clone().translate(0.1, 0, 0)]);
-  const brazo = new THREE.CylinderGeometry(0.06, 0.075, 0.55, 7);
+  const brazo = new THREE.CylinderGeometry(0.06, 0.075, 0.55, 5);
   const gCuerpo = mergeGeometries([
-    new THREE.CylinderGeometry(0.2, 0.27, 0.64, 10).translate(0, 1.06, 0),
+    new THREE.CylinderGeometry(0.2, 0.27, 0.64, 8).translate(0, 1.06, 0),
     brazo.clone().rotateZ(0.55).translate(-0.33, 1.45, 0),
     brazo.clone().rotateZ(-0.55).translate(0.33, 1.45, 0),
   ]);
   const gPiel = mergeGeometries([
-    new THREE.SphereGeometry(0.19, 14, 10).translate(0, 1.57, 0),
-    new THREE.SphereGeometry(0.075, 8, 6).translate(-0.48, 1.69, 0),
-    new THREE.SphereGeometry(0.075, 8, 6).translate(0.48, 1.69, 0),
+    new THREE.SphereGeometry(0.19, 10, 7).translate(0, 1.57, 0),
+    new THREE.SphereGeometry(0.075, 6, 4).translate(-0.48, 1.69, 0),
+    new THREE.SphereGeometry(0.075, 6, 4).translate(0.48, 1.69, 0),
   ]);
   const gSombrero = mergeGeometries([
-    new THREE.CylinderGeometry(0.3, 0.3, 0.03, 16).translate(0, 1.71, 0),
-    new THREE.CylinderGeometry(0.15, 0.18, 0.2, 14).translate(0, 1.82, 0),
+    new THREE.CylinderGeometry(0.3, 0.3, 0.03, 10).translate(0, 1.71, 0),
+    new THREE.CylinderGeometry(0.15, 0.18, 0.2, 8).translate(0, 1.82, 0),
   ]);
-  const crea = (geo) => {
-    const m = new THREE.InstancedMesh(geo, mate({ roughness: 0.7 }), n);
-    m.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-    m.frustumCulled = false;
-    mundo.add(m);
-    return m;
-  };
-  const mallas = [crea(gPiernas), crea(gCuerpo), crea(gPiel), crea(gSombrero)];
   const ropa = ['#D6382B', '#1B5FAA', '#F5A623', '#2E7D4F', '#6B2D7B', '#F3F1EC', '#E01B6A', '#00A3A3', '#F5C518', '#8C3B2E'];
   const pantalon = ['#2F3A4F', '#3B4A6B', '#1C1A18', '#5A4632', '#2E3B2E'];
   const piel = ['#8D5A3B', '#A86E48', '#C68B5E', '#7A4A2E', '#E0A88A'];
   const sombrero = ['#2A2420', '#F3F1EC', '#5A3A22', '#1C1A18'];
-  const cartel = CARTELES.map((t) => new THREE.MeshStandardMaterial({ map: textura(lienzo(160, 90, (c, w, h) => {
+  const cartel = CARTELES.map((tx) => new THREE.MeshStandardMaterial({ map: textura(lienzo(160, 90, (c, w, h) => {
     c.fillStyle = '#FFF8E6'; c.fillRect(0, 0, w, h); c.strokeStyle = TINTA; c.lineWidth = 6; c.strokeRect(3, 3, w - 6, h - 6);
-    c.fillStyle = '#D6382B'; c.font = '800 34px system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(t, w / 2, h / 2 + 2);
+    c.fillStyle = '#D6382B'; c.font = '800 34px system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(tx, w / 2, h / 2 + 2);
   })), side: THREE.DoubleSide, roughness: 0.8 }));
   const geoCartel = new THREE.PlaneGeometry(0.9, 0.5);
+  const mats = [0, 1, 2, 3].map(() => mate({ roughness: 0.7 }));
+  // Por tandas de 80 a lo largo de la calle, cada una con sus cuatro mallas:
+  // las que quedan fuera de la cámara no se dibujan.
+  const TANDA = 80;
+  const tandas = [];
   const datos = lugares.map((l, k) => {
     const hw = muestra(l.s).hw;
     const x = l.lado * (hw + 0.5 + l.fondo * 0.9);
     const base = matrizEn(l.s, x, BORDILLO, -l.lado, (r() - 0.5) * 0.5);
     const e = 0.9 + r() * 0.22;
     base.multiply(new THREE.Matrix4().makeScale(e, e, e));
-    const conSombrero = r() < 0.55;
-    mallas[0].setColorAt(k, new THREE.Color(elige(r, pantalon)));
-    mallas[1].setColorAt(k, new THREE.Color(elige(r, ropa)));
-    mallas[2].setColorAt(k, new THREE.Color(elige(r, piel)));
-    mallas[3].setColorAt(k, new THREE.Color(elige(r, sombrero)));
-    let letrero = null;
-    if (r() < 0.12) {
-      letrero = new THREE.Mesh(geoCartel, elige(r, cartel));
-      mundo.add(letrero);
-    }
-    return { s: l.s, base, conSombrero, fase: r() * 7, ritmo: 6 + r() * 4, letrero, enAire: true };
+    return { s: l.s, base, conSombrero: r() < 0.55, fase: r() * 7, ritmo: 6 + r() * 4, cartel: r() < 0.12 ? Math.floor(r() * cartel.length) : -1, enAire: true, tanda: Math.floor(k / TANDA), i: k % TANDA,
+      colores: [elige(r, pantalon), elige(r, ropa), elige(r, piel), elige(r, sombrero)] };
   });
+  for (let q = 0; q * TANDA < n; q++) {
+    const m = Math.min(TANDA, n - q * TANDA);
+    const mallas = [gPiernas, gCuerpo, gPiel, gSombrero].map((geo, k) => {
+      const im = new THREE.InstancedMesh(geo, mats[k], m);
+      im.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      mundo.add(im);
+      return im;
+    });
+    tandas.push({ mallas, tocada: false });
+  }
+  // Los carteles: una malla instanciada por cartel, para toda la gente.
+  const porCartel = cartel.map((mat, k) => {
+    const cuantos = datos.filter((d) => d.cartel === k).length;
+    if (!cuantos) return null;
+    const im = new THREE.InstancedMesh(geoCartel, mat, cuantos);
+    im.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    im.frustumCulled = false;
+    mundo.add(im);
+    return { im, n: 0, tocada: false };
+  });
+  datos.forEach((d) => { if (d.cartel >= 0) d.iCartel = porCartel[d.cartel].n++; });
+  const color = new THREE.Color();
+  datos.forEach((d) => { const mallas = tandas[d.tanda].mallas; d.colores.forEach((cc, k) => mallas[k].setColorAt(d.i, color.set(cc))); });
   const _m = new THREE.Matrix4(), _t = new THREE.Matrix4(), cero = new THREE.Matrix4().makeScale(0, 0, 0);
   // Solo se recolocan los que saltan cerca del jugador y los que acaban de
   // dejar de saltar (para dejarlos en el suelo): cientos de muñecos quietos
   // no se vuelven a subir a la GPU cada cuadro.
   const coloca = (t, sJ) => {
-    let tocado = false;
-    datos.forEach((d, k) => {
+    for (const d of datos) {
       const cerca = Math.abs(d.s - sJ) < 45;
-      if (!cerca && !d.enAire) return;
-      d.enAire = cerca; tocado = true;
+      if (!cerca && !d.enAire) continue;
+      d.enAire = cerca;
       const y = cerca ? Math.abs(Math.sin(t * d.ritmo + d.fase)) * 0.22 : 0;
       _m.copy(d.base).multiply(_t.makeTranslation(0, y, 0));
-      for (let i = 0; i < 3; i++) mallas[i].setMatrixAt(k, _m);
-      mallas[3].setMatrixAt(k, d.conSombrero ? _m : cero);
-      if (d.letrero) {
-        d.letrero.matrixAutoUpdate = false;
-        d.letrero.matrix.copy(_m).multiply(_t.makeTranslation(0, 2.25, 0.1));
-        d.letrero.matrixWorldNeedsUpdate = true;
+      const td = tandas[d.tanda]; td.tocada = true;
+      for (let i = 0; i < 3; i++) td.mallas[i].setMatrixAt(d.i, _m);
+      td.mallas[3].setMatrixAt(d.i, d.conSombrero ? _m : cero);
+      if (d.cartel >= 0) {
+        const pc = porCartel[d.cartel];
+        pc.im.setMatrixAt(d.iCartel, _m.multiply(_t.makeTranslation(0, 2.25, 0.1)));
+        pc.tocada = true;
       }
-    });
-    if (tocado) for (const m of mallas) m.instanceMatrix.needsUpdate = true;
+    }
+    for (const td of tandas) if (td.tocada) { for (const m of td.mallas) m.instanceMatrix.needsUpdate = true; td.tocada = false; }
+    for (const pc of porCartel) if (pc && pc.tocada) { pc.im.instanceMatrix.needsUpdate = true; pc.tocada = false; }
   };
   coloca(0, -999);
-  for (const m of mallas) if (m.instanceColor) m.instanceColor.needsUpdate = true;
+  // Con todos en su sitio, la esfera de cada tanda (para no dibujar la que no se ve).
+  for (const td of tandas) for (const m of td.mallas) { if (m.instanceColor) m.instanceColor.needsUpdate = true; m.computeBoundingSphere(); m.boundingSphere.radius += 1; }
   return { coloca };
 }
 
@@ -2288,18 +2842,18 @@ function reinicia() {
   const sitios = [...Array(n).keys()].filter((k) => k !== tuSitio);
   rivales.forEach((rv, k) => {
     const p = enFila(sitios[k]);
-    Object.assign(rv, { s: p.s, x: p.x, carril: p.x, v: 0, llegada: 0, empuja: true, coladas: 0, turbo: 0, tChoque: -9 });
+    Object.assign(rv, { s: p.s, x: p.x, carril: p.x, v: 0, llegada: 0, empuja: true, coladas: 0, turbo: 0, tChoque: -9, aliento: 1, rebufo: 0 });
   });
   for (const t of tazas) t.visible = true;
   for (const q of vuelos) mundo.remove(q.t);
   vuelos.length = 0;
   const p = enFila(tuSitio);
-  Object.assign(j, { s: p.s, x: p.x, v: 0, vx: 0, h: 0, vh: 0, aire: false, volcado: 0, turbo: 0, coladas: 0, giro: 0, puesto: rivales.length + 1, llegada: 0 });
-  Object.assign(e, { estado: 'empujando', s: j.s - 1.3, x: j.x, t: 0, tSube: -9 });
+  Object.assign(j, { s: p.s, x: p.x, v: 0, vx: 0, h: 0, vh: 0, aire: false, volcado: 0, turbo: 0, coladas: 0, giro: 0, puesto: rivales.length + 1, llegada: 0, rebufo: 0, enPared: false });
+  Object.assign(e, { estado: 'empujando', s: j.s - 1.3, x: j.x, t: 0, tSube: -9, aliento: 1 });
   Object.assign(c, { suelto: false, s: 0, x: 0, v: 0 });
   for (const pe of peatones) pe.estado = 'libre';
   reloj = 0; zonaActual = ''; lugarSig = 0; tiemposVuelta.length = 0; sacudida = 0; tPeaton = 1; vueltaActual = 1;
-  Object.assign(pasos, { ultimo: 0, combo: 0, burst: 0, tIzq: -9, tDer: -9, prevEmp: false, pulsos: [], unPie: 0, sesgo: 0, t: 0 });
+  Object.assign(pasos, { ultimo: 0, combo: 0, mejor: 0, burst: 0, tIzq: -9, tDer: -9, tPaso: -9, q: 0, nota: '', apurados: 0, prevEmp: false, unPie: 0, sesgo: 0, t: 0, tBaja: -9, tNo: -9 });
   enseña.t = -9; enseña.unPieAntes = false;
   pulsos.izq = pulsos.der = pulsos.empuja = 0;
   demoPaso = 0;
@@ -2494,32 +3048,46 @@ function endereza() {
 }
 
 // ─── el que empuja: a pie, pisando ──────────────────────────────
-// Cuando el coche va lento, el de atrás se baja y empuja a pie. La flecha
-// izquierda mueve su pie izquierdo y la derecha el derecho: cuantos más pasos
-// por segundo, más empuja. Alternando, empuja recto. Dos veces el mismo pie
-// sube el otro a la tabla y empuja solo con ese, de un lado: el coche se va
-// hacia el lado contrario. Los dos lados a la vez, o la tecla de arriba, son
-// el empujón fuerte, pero solo a pie y gastando una colada morada guardada:
-// sale disparado y se sube al carro. Cuando el coche ya va rápido, se trepa solo.
+// Cuando el coche va lento, el de atrás se baja y empuja a pie. Cada flecha
+// es un pie: alternando, empuja recto. No gana quien más aprieta sino quien
+// lleva el compás: cada paso tiene su momento, que se acorta cuando el coche
+// ya corre (hay que correr detrás). El paso a tiempo empuja entero; el
+// apurado se tropieza y empuja poco; el que tarda deja caer el empujón.
+// Seis pasos a tiempo seguidos son la racha: empuja un poco más. Dos veces
+// el mismo pie sube el otro a la tabla y empuja de un lado: el coche se va
+// al contrario.
+// Empujar cansa: el aliento baja a pie y se recupera a bordo (y con la
+// colada). Subirse a tiempo, corriendo ya casi a lo que da, es la subida
+// perfecta: un empujón de más. Con colada guardada, la tecla de arriba (o
+// los dos pies a la vez) es el empujón fuerte. Bajarse y subirse sin
+// empujar no da nada: el que salta al carro solo lleva el impulso que traía.
 // `t` es el reloj de los pasos: corre también en la cuenta atrás, donde el
 // reloj de la carrera está parado.
 const pasos = { ultimo: 0, combo: 0, mejor: 0, prevIzq: false, prevDer: false, prevEmp: false,
-  tIzq: -9, tDer: -9, pulsos: [], burst: 0, unPie: 0, sesgo: 0, t: 0 };
+  tIzq: -9, tDer: -9, tPaso: -9, q: 0, nota: '', apurados: 0, burst: 0, unPie: 0, sesgo: 0, t: 0, tBaja: -9, tNo: -9 };
 const COLADAS_MAX = 3;       // coladas que se pueden guardar para el empujón
-const PASOS_VENTANA = 1;     // segundos que cuentan para el ritmo
-const PASOS_TOPE = 3;        // pasos en ese segundo para el empuje entero
 const DOBLE_VENTANA = 0.1;   // los dos lados en una décima son a la vez
 const BAJA_EMPUJE = 4;       // por debajo de esta velocidad se baja solo a empujar (m/s)
 const BAJA_MANUAL = 8.5;     // y por debajo de esta, se puede bajar con la tecla de empujar
-
-// Cuánto empuja lo que pisa, de 0 a 1: los pasos del último segundo.
+const SUBE_MIN = 5;          // por debajo, el de atrás todavía no alcanza a saltar al carro
+const SUBE_PERFECTA = CORRE - 1.5;   // de aquí al enganche, la subida perfecta
+const RACHA = 6;             // pasos a tiempo seguidos para la racha
+// El compás: cuánto debería tardar cada paso a esta velocidad, en segundos.
+// Parado, pasos largos de empujar con el cuerpo; corriendo, cortos.
+const compas = (v) => limita(0.46 - 0.022 * v, 0.26, 0.46);
+// La ventana del paso a tiempo, en compases desde el anterior.
+const VENTANA = [0.78, 1.35];
+// Cuánto empuja lo que pisa, de 0 a 1: la nota del último paso, que dura
+// un compás entero y se cae del todo al segundo (si no llega el siguiente).
 function ritmo() {
-  const corte = pasos.t - PASOS_VENTANA;
-  while (pasos.pulsos.length && pasos.pulsos[0].t < corte) pasos.pulsos.shift();
-  let n = 0;
-  for (const q of pasos.pulsos) n += q.peso;
-  return Math.min(1, n / PASOS_TOPE);
+  const T = compas(j.v), dt0 = pasos.t - pasos.tPaso;
+  return pasos.q * limita((2 * T - dt0) / (0.9 * T), 0, 1);
 }
+// El aliento multiplica el empuje: entero hasta un tercio, y de ahí baja
+// hasta el 60 %. Y se gasta más cuanto más fuerte se empuja.
+const alientoF = (a) => 0.6 + 0.4 * Math.min(1, a / 0.33);
+const GASTO = (fuerza) => 0.01 + 0.018 * fuerza;
+const RESPIRO = 0.12;
 
 function pasaPasos(dt) {
   pasos.t += dt;
@@ -2530,25 +3098,18 @@ function pasaPasos(dt) {
   pulsos.izq = pulsos.der = pulsos.empuja = 0;
   pasos.burst = Math.max(0, pasos.burst - dt);
   pasos.sesgo = Math.sign(pasos.sesgo) * Math.max(0, Math.abs(pasos.sesgo) - dt * 1.4);
+  // La racha se corta si se deja de pisar.
+  if (pasos.combo && pasos.t - pasos.tPaso > compas(j.v) * 2.2) pasos.combo = 0;
   if (subeIzq) pasos.tIzq = pasos.t;
   if (subeDer) pasos.tDer = pasos.t;
   if (!subeIzq && !subeDer && !subeEmp) return;
   if (j.aire || j.volcado > 0) return;
-  // La tecla de empujar: lento y a bordo, se baja a empujar; a pie, salta
-  // al carro, y el salto lleva el impulso del ritmo que traía.
+  // La tecla de arriba: lento y a bordo, se baja a empujar; a pie, salta
+  // al carro (con colada, el empujón fuerte).
   if (subeEmp) {
-    if (e.estado === 'a_bordo' && j.v < BAJA_MANUAL) {
-      e.estado = 'empujando'; cocheJ.empujador.pon('correr');
-      Object.assign(pasos, { ultimo: 0, combo: 0, unPie: 0, sesgo: 0 });
-      tono(320, 0.08, 'triangle', 0.15);
-    } else if (e.estado === 'empujando' && j.coladas > 0) {
-      empujonColada();
-    } else if (e.estado === 'empujando') {
-      j.v = Math.min(j.v + (1 + 3 * ritmo()) * ST.empuje, TOPE_TURBO * ST.tope);
-      Object.assign(pasos, { burst: 0.4, unPie: 0, sesgo: 0 });
-      e.estado = 'a_bordo'; e.tSube = reloj; cocheJ.empujador.pon('montado');
-      tono(520, 0.1, 'triangle', 0.15); setTimeout(() => tono(700, 0.1, 'triangle', 0.12), 70);
-    }
+    if (e.estado === 'a_bordo' && j.v < BAJA_MANUAL && reloj - (e.tSube ?? -9) > 0.8) bajarse();
+    else if (e.estado === 'empujando' && j.coladas > 0) empujonColada();
+    else if (e.estado === 'empujando') subirse();
     if (!subeIzq && !subeDer) return;
   }
   const doble = (subeIzq && teclas.der && pasos.t - pasos.tDer < DOBLE_VENTANA)
@@ -2563,28 +3124,66 @@ function pasaPasos(dt) {
   if (e.estado !== 'empujando') return;   // a bordo, los pies no cuentan
   pisaUnPie(subeIzq ? -1 : 1);
 }
-// El empujón fuerte: gasta una colada, sale disparado y se sube al carro.
-function empujonColada() {
-  {
-    j.coladas--;
-    j.v = Math.min(j.v + 6 * ST.empuje, TOPE_TURBO * ST.tope);
-    j.turbo = Math.max(j.turbo, 1.2);
-    pasos.burst = 0.5; pasos.unPie = 0; pasos.sesgo = 0;
-    sacudida = Math.max(sacudida, 0.6);
-    e.estado = 'a_bordo'; e.tSube = reloj; cocheJ.empujador.pon('montado');
-    tono(520, 0.12, 'triangle', 0.18); setTimeout(() => tono(880, 0.14, 'triangle', 0.16), 80);
-    avisa('¡Empujón de colada!', 800); vibra(30);
-  }
+// Se baja a empujar: el salto le quita un poco al coche, y los pies empiezan de cero.
+function bajarse() {
+  e.estado = 'empujando'; cocheJ.empujador.pon('correr');
+  j.v *= 0.97;
+  Object.assign(pasos, { ultimo: 0, combo: 0, unPie: 0, sesgo: 0, q: 0, tPaso: -9, tBaja: pasos.t });
+  tono(320, 0.08, 'triangle', 0.15);
 }
+// Salta al carro. Lento todavía no alcanza; corriendo casi a lo que da y
+// empujando a tiempo, la subida perfecta; si no, solo lleva lo que traía.
+function subirse() {
+  if (j.v < SUBE_MIN) {
+    if (pasos.t - pasos.tNo > 1.2) { pasos.tNo = pasos.t; tono(160, 0.07, 'triangle', 0.08); avisa('Todavía no alcanza: ¡empuja!', 900); }
+    return;
+  }
+  const f = ritmo();
+  let extra = 0;
+  if (j.v >= SUBE_PERFECTA && f > 0.6) {
+    extra = 2.4;
+    e.aliento = Math.min(1, e.aliento + 0.1);
+    avisa('¡Subida perfecta!', 900); sacudida = Math.max(sacudida, 0.4); vibra(20);
+    tono(660, 0.08, 'square', 0.12); setTimeout(() => tono(990, 0.12, 'square', 0.12), 70);
+  } else if (pasos.t - pasos.tBaja > 0.8) extra = 0.8 * f;
+  j.v = Math.min(j.v + extra * ST.empuje, TOPE_TURBO * ST.tope);
+  Object.assign(pasos, { burst: extra ? 0.4 : 0, unPie: 0, sesgo: 0, combo: 0 });
+  e.estado = 'a_bordo'; e.tSube = reloj; cocheJ.empujador.pon('montado');
+  if (!extra) tono(520, 0.1, 'triangle', 0.15);
+}
+// El empujón fuerte: gasta una colada, da aliento, sale disparado y se sube al carro.
+function empujonColada() {
+  j.coladas--;
+  j.v = Math.min(j.v + 6 * ST.empuje, TOPE_TURBO * ST.tope);
+  j.turbo = Math.max(j.turbo, 1.2);
+  e.aliento = Math.min(1, e.aliento + 0.4);
+  pasos.burst = 0.5; pasos.unPie = 0; pasos.sesgo = 0;
+  sacudida = Math.max(sacudida, 0.6);
+  e.estado = 'a_bordo'; e.tSube = reloj; cocheJ.empujador.pon('montado');
+  tono(520, 0.12, 'triangle', 0.18); setTimeout(() => tono(880, 0.14, 'triangle', 0.16), 80);
+  avisa('¡Empujón de colada!', 800); vibra(30);
+}
+// Un paso: su nota según cuándo llega respecto al compás.
 function pisaUnPie(lado) {
+  const T = compas(j.v), dt0 = pasos.t - pasos.tPaso;
   const alterna = lado !== pasos.ultimo;
-  pasos.pulsos.push({ t: pasos.t, peso: alterna ? 1 : 0.8 });
+  let q, nota;
+  if (dt0 > T * 2.2) { q = 0.7; nota = 'arranca'; }           // el primero, o tras parar
+  else if (dt0 < T * 0.5) { q = 0.45; nota = 'apurado'; }     // a lo loco: se tropieza
+  else if (dt0 < T * VENTANA[0]) { q = 0.75; nota = 'pronto'; }
+  else if (dt0 <= T * VENTANA[1]) { q = 1; nota = 'justo'; }
+  else { q = 0.75; nota = 'tarde'; }
+  if (!alterna) q *= 0.7;
+  pasos.tPaso = pasos.t; pasos.q = q; pasos.nota = nota;
+  pasos.apurados = nota === 'apurado' ? pasos.apurados + 1 : 0;
   if (alterna) {
     pasos.unPie = 0;
-    pasos.combo++;
+    if (nota === 'justo') { pasos.combo++; pasos.burst = 0.35; }
+    else if (nota !== 'arranca') pasos.combo = 0;
     pasos.mejor = Math.max(pasos.mejor, pasos.combo);
-    pasos.burst = 0.35;
-    tono(440 + Math.min(pasos.combo, 12) * 30, 0.05, 'square', 0.07); vibra(8);
+    if (pasos.combo === RACHA) { avisa('¡En racha!', 700); tono(990, 0.08, 'square', 0.1); }
+    tono(nota === 'apurado' ? 200 : 440 + Math.min(pasos.combo, 12) * 30, 0.05, nota === 'apurado' ? 'triangle' : 'square', 0.07);
+    if (nota === 'justo') vibra(8);
   } else {
     // El mismo pie otra vez: el otro sube a la tabla y empuja de un lado,
     // así que el coche se va hacia el lado contrario.
@@ -2601,9 +3200,10 @@ function pisaUnPie(lado) {
   r.lleva = 0.3;
 }
 
-// Las primeras veces, el juego dice qué hacer cuando toca: pisar al salir,
-// girar al subirse, el botón morado con la primera colada y bajarse cuando
-// va lento. Cada aviso sale dos veces en la vida del jugador y ya.
+// Las primeras veces, el juego dice qué hacer cuando toca: pisar al compás
+// al salir, no apurarse, subirse a tiempo, girar a bordo, frenar antes de la
+// curva, la colada y el aliento. Cada aviso sale dos veces en la vida del
+// jugador y ya.
 function enseña() {
   if ((estado !== 'carrera' && estado !== 'cuenta') || modo === 'demo') return;
   const v = ajustes.vistos || (ajustes.vistos = {});
@@ -2612,21 +3212,45 @@ function enseña() {
     v[clave] = (v[clave] || 0) + 1; enseña.t = reloj; guardaAjustes();
     avisa(texto, 2600);
   };
-  if (estado === 'cuenta' && cuenta < 2.6 && e.estado === 'empujando') di('pisa', esTactil ? 'Toca ◀ ▶ alternando ya: a buen ritmo, arranque extra' : 'Pisa ← → alternando ya: a buen ritmo, arranque extra');
+  const pies = esTactil ? 'Toca izquierda y derecha' : 'Pisa ← →';
+  if (estado === 'cuenta' && cuenta < 2.6 && e.estado === 'empujando') di('compas', `${pies} al compás: cuando la aguja entra en lo verde`);
+  else if (e.estado === 'empujando' && pasos.apurados >= 3) di('apurado', 'Más despacio: el paso a tiempo empuja más que el apurado');
   else if (e.estado === 'empujando' && pasos.unPie && !enseña.unPieAntes) di('unpie', 'Dos veces el mismo pie: el coche se va al otro lado');
+  else if (e.estado === 'empujando' && j.v >= SUBE_PERFECTA && muestra(j.s).pend < 0.02 && !(j.coladas > 0)) di('subete', esTactil ? '¡Ya corre! «Sube» ahora: subida perfecta' : '¡Ya corre! ↑ ahora para subirte: subida perfecta');
+  else if (curvaQueViene().frena) di('curva', esTactil ? '¡Curva cerrada! Frena con el botón rojo' : '¡Curva cerrada! Frena con ↓');
   else if (Math.abs(j.x) > muestra(j.s).hw && !j.aire && j.volcado <= 0 && j.v > 2) di('vereda', 'En la vereda se frena: vuelve a la calle');
   else if (reloj > 4 && e.estado === 'a_bordo' && j.v > 6) di('gira', esTactil ? 'Ya a bordo: toca los lados para girar' : 'Ya a bordo: ← → giran, ↓ frena');
-  else if (e.estado === 'empujando' && (j.coladas || 0) > 0) di('colada', esTactil ? '¡Tienes colada! El botón morado da el empujón fuerte' : '¡Tienes colada! ← + → a la vez: el empujón fuerte');
+  else if (e.estado === 'empujando' && (j.coladas || 0) > 0) di('colada', esTactil ? '¡Tienes colada! El botón morado da el empujón fuerte' : '¡Tienes colada! ↑ (o ← + → a la vez): el empujón fuerte');
+  else if (e.estado === 'empujando' && e.aliento < 0.3) di('aliento', 'Sin aliento: súbete en la bajada y descansa');
   else if (e.estado === 'a_bordo' && j.v < BAJA_MANUAL && j.v > BAJA_EMPUJE && reloj > 8) di('bajate', esTactil ? 'Vas lento: «Bájate» y empuja a pie' : 'Vas lento: ↑ para bajarse a empujar');
   enseña.unPieAntes = !!pasos.unPie;
 }
 
+// La curva que viene: la más cerrada en lo que se recorre en 1,6 s (y al
+// menos 14 m), a qué velocidad se puede tomar y si hay que frenar ya.
+const _curva = { k: 0, lado: 0, vmax: Infinity, frena: false, cerca: false, d: 0 };
+function curvaQueViene() {
+  const mira = Math.max(14, j.v * 1.6 + 8);
+  let peor = 0, lado = 0, d0 = 0;
+  for (let d = 0; d < mira; d += 2) {
+    const k = P.k[limita(Math.floor(j.s + d), 0, N - 1)];
+    if (Math.abs(k) > peor) { peor = Math.abs(k); lado = Math.sign(k); d0 = d; }
+  }
+  const vmax = peor > 1e-4 ? (GIRO * ST.giro) / (CENTRIFUGA * peor) : Infinity;
+  Object.assign(_curva, { k: peor, lado, vmax, d: d0, frena: e.estado === 'a_bordo' && j.v > vmax * 1.08 + 1, cerca: vmax < 13 && d0 < 40 });
+  return _curva;
+}
+
 function actualizaEmpujador(dt) {
+  // El aliento: se gasta empujando (más cuanto más fuerte) y vuelve a bordo.
+  if (e.estado === 'empujando' && estado === 'carrera') e.aliento = Math.max(0, e.aliento - GASTO(ritmo()) * dt);
+  else if (e.estado !== 'empujando') e.aliento = Math.min(1, e.aliento + RESPIRO * dt);
   switch (e.estado) {
     case 'a_bordo':
       // Va lento: se baja a empujar. Un momento tras subirse no, para que el impulso no lo baje.
       if (!j.aire && j.volcado <= 0 && j.v < BAJA_EMPUJE && reloj - (e.tSube ?? -9) > 1.2) {
         e.estado = 'empujando'; cocheJ.empujador.pon('correr');
+        Object.assign(pasos, { ultimo: 0, combo: 0, q: 0, tPaso: -9, tBaja: pasos.t });
         tono(320, 0.08, 'triangle', 0.15);
       }
       break;
@@ -2644,10 +3268,26 @@ function actualizaEmpujador(dt) {
       e.s += e.v * dt;
       if (e.t <= 0) {
         Object.assign(e, { estado: 'empujando', s: j.s - 1.3, x: j.x });
+        Object.assign(pasos, { ultimo: 0, combo: 0, q: 0, tPaso: -9, tBaja: pasos.t });
         cocheJ.empujador.pon('correr');
       }
       break;
   }
+}
+
+// El rebufo: detrás de otro coche, cerca y en su carril, el aire empuja
+// menos. Sirve para el jugador y para los rivales por igual.
+function rebufoDe(q, dt, otros) {
+  let tras = false;
+  if (q.v > 12 && !q.aire) {
+    for (const o of otros) {
+      if (o === q) continue;
+      const ds = o.s - q.s;
+      if (ds > 2.2 && ds < 10 && Math.abs(o.x - q.x) < 1.2) { tras = true; break; }
+    }
+  }
+  q.rebufo = limita((q.rebufo || 0) + (tras ? dt * 1.4 : -dt * 2), 0, 1);
+  return q.rebufo;
 }
 
 function actualiza(dt) {
@@ -2673,7 +3313,7 @@ function actualiza(dt) {
       estado = 'carrera';
       const r = ritmo();
       j.v = r * 6 * ST.empuje;
-      if (r >= 0.85) { pasos.burst = 0.5; sacudida = 0.4; avisa('¡Arranque perfecto!', 1200); tono(880, 0.1, 'square', 0.12); setTimeout(() => tono(1320, 0.14, 'square', 0.12), 90); }
+      if (r >= 0.85 && pasos.combo >= 3) { pasos.burst = 0.5; sacudida = 0.4; avisa('¡Arranque perfecto!', 1200); tono(880, 0.1, 'square', 0.12); setTimeout(() => tono(1320, 0.14, 'square', 0.12), 90); }
       else if (r >= 0.35) { pasos.burst = 0.35; avisa('¡Buen arranque!', 1000); tono(700, 0.1, 'square', 0.1); }
       // Los rivales también arrancan pisando, cada uno según su ficha de
       // empuje, y de vez en cuando a uno le sale perfecto.
@@ -2734,15 +3374,18 @@ function actualiza(dt) {
     if (!j.aire) {
       a += -G * CUESTA * pend - (piedra ? ROCE_PIEDRA : ROCE);
       // Empuja lo que pisa: cuantos pasos por segundo, tanto empuje.
-      if (e.estado === 'empujando') a += EMPUJE * ST.empuje * ritmo() * Math.max(0, 1 - j.v / CORRE);
+      if (e.estado === 'empujando') a += EMPUJE * ST.empuje * ritmo() * (pasos.combo >= RACHA ? 1.12 : 1) * alientoF(e.aliento) * Math.max(0, 1 - j.v / CORRE);
+      // A bordo, el rebufo de quien va delante.
+      else if (rebufoDe(j, dt, rivales) > 0) a += 1.1 * j.rebufo + AIRE * j.v * j.v * 0.5 * j.rebufo;
       if (teclas.freno || estado === 'llegada') a -= j.v > 0.2 ? FRENO * (estado === 'llegada' ? 0.4 : 1) : 0;
       // En la vereda se frena; si se queda casi parado ahí, el de atrás lo
       // arrastra de vuelta a la calle.
-      if (Math.abs(j.x) > hw) { a -= FUERA * Math.min(1, 0.3 + j.v / 8); sacudida = Math.max(sacudida, 0.4); if (j.v < 4) j.x -= Math.sign(j.x) * dt * 1.6; }
+      // A pie, el de atrás lo devuelve a la calle a cualquier velocidad.
+      if (Math.abs(j.x) > hw) { a -= FUERA * Math.min(1, 0.3 + j.v / 8); sacudida = Math.max(sacudida, 0.4); if (j.v < 4 || e.estado === 'empujando') j.x -= Math.sign(j.x) * dt * 1.6; }
       // El volante responde desde parado, sube con la velocidad y no se va de
       // las manos en la bajada grande; la curva saca a v² · curvatura.
       const vg = Math.min(j.v, 30);
-      j.vx = j.giro * GIRO * ST.giro * limita(j.v, 4.5, 24) - CENTRIFUGA * vg * vg * k;
+      j.vx = j.giro * GIRO * ST.giro * limita(j.v, 4.5, 22) - CENTRIFUGA * vg * vg * k;
     }
     if (j.turbo > 0) { j.turbo -= dt; a += 4.5; }
     j.v = limita(j.v + a * dt, 0, (j.turbo > 0 ? TOPE_TURBO : TOPE) * ST.tope);
@@ -2773,12 +3416,20 @@ function actualiza(dt) {
       }
     }
 
-    // Contra las paredes de las casas o los muros del Panecillo.
+    // Contra las paredes de las casas o los muros del Panecillo: de frente y
+    // rápido, se vuelca; rozando, se raspa y frena, y la pared lo devuelve a
+    // la calle (no se queda pegado).
     const pared = hw + ACERA - 0.35;
     if (Math.abs(j.x) > pared) {
-      if (j.v > 8) volcar('¡Contra la pared!');
-      else { j.x = Math.sign(j.x) * pared; j.v *= 0.6; sacudida = 0.8; golpe(0.6, 400); }
-    }
+      const lado = Math.sign(j.x), contra = Math.max(0, j.vx * lado);
+      j.x = lado * pared;
+      if (!j.enPared) {
+        j.enPared = true;
+        if (contra > 4.5 && j.v > 13) volcar('¡Contra la pared!');
+        else { j.v *= contra > 2 ? 0.75 : 0.9; sacudida = Math.max(sacudida, 0.5 + contra * 0.1); golpe(0.5, 400); stats.choques++; }
+      } else { j.v = Math.max(0, j.v - 5 * dt); sacudida = Math.max(sacudida, 0.3); }
+      j.x -= lado * dt * 0.9;
+    } else if (Math.abs(j.x) < pared - 0.3) j.enPared = false;
 
     // Lo que hay en la calle.
     for (const o of obstaculos) {
@@ -2802,7 +3453,7 @@ function actualiza(dt) {
         tono(660, 0.12, 'triangle', 0.2); setTimeout(() => tono(990, 0.18, 'triangle', 0.2), 90);
         avisa(j.coladas > 1 ? `¡Colada morada! ×${j.coladas}` : '¡Colada morada!', 900);
       } else if (o.tipo === 'rampa' && dx < o.r && !j.aire && j.v > 3) {
-        j.aire = true; j.h = 0.45; j.vh = Math.min(6, j.v * 0.32);
+        j.aire = true; j.h = 0.45; j.vh = Math.min(6, j.v * 0.32) + muestra(j.s).pend * j.v;
         o.golpe = reloj; tono(200, 0.2, 'sine', 0.2, 400); stats.saltos++;
       } else if ((o.tipo === 'farol' || o.tipo === 'puesto' || o.tipo === 'cajon') && dx < o.r + 0.35 && j.h < 0.5 && reloj - o.golpe > 1) {
         o.golpe = reloj;
@@ -2881,14 +3532,22 @@ function actualizaRival(rv, dt) {
   const m = muestra(rv.s);
   const hab = rv.cruce.eq.hab * 0.97, st = rv.st || ST_BASE;
   let a = -G * CUESTA * m.pend - (ZONAS[m.zona].calle === 'adoquin' ? ROCE_PIEDRA : ROCE) - AIRE * rv.v * rv.v / hab;
-  // Su empujador se baja en las subidas y cuando hay que arrancar.
-  const debe = rv.v < CORRE - 1.2 && (m.pend > 0.01 || rv.v < 3);
+  // Su empujador juega con las mismas reglas: se baja en las subidas, al
+  // arrancar y al salir lento de una curva en llano; sin aliento, descansa
+  // a bordo si no es cuesta arriba; y se sube a tiempo (los mejores, con
+  // subida perfecta).
+  const cuesta = m.pend > 0.01;
+  rv.aliento = rv.aliento ?? 1;
+  const debe = rv.v < CORRE - 1.2 && (cuesta || rv.v < 3 || (rv.v < 6 && m.pend > -0.02 && rv.aliento > 0.4)) && (cuesta || rv.v < 2 || rv.aliento > 0.15);
   if (debe !== rv.empuja) {
     rv.empuja = debe;
     rv.cruce.empujador.pon(debe ? 'correr' : 'montado');
+    if (!debe && rv.v >= SUBE_PERFECTA - 0.3 && estado === 'carrera' && Math.random() < (hab - 0.88) * 9) { rv.v += 2.4 * st.empuje; rv.aliento = Math.min(1, rv.aliento + 0.1); }
   }
-  // Cuesta arriba empujan con todo: si no, en la subida no hay carrera.
-  if (rv.empuja) a += EMPUJE * st.empuje * (m.pend > 0.01 ? 0.9 : 0.85) * hab * Math.max(0, 1 - rv.v / CORRE) + (rv.v < 1 ? 1 : 0);
+  rv.aliento = limita(rv.aliento + dt * (rv.empuja && estado === 'carrera' ? -GASTO(0.9) : RESPIRO), 0, 1);
+  // Empujan al compás, con su ficha y su aliento; detrás de otro, el rebufo.
+  if (rv.empuja) a += EMPUJE * st.empuje * (cuesta ? 0.9 : 0.85) * hab * alientoF(rv.aliento) * Math.max(0, 1 - rv.v / CORRE) + (rv.v < 1 ? 1 : 0);
+  else if (rebufoDe(rv, dt, [j, ...rivales]) > 0) a += 1.1 * rv.rebufo + AIRE * rv.v * rv.v * 0.5 * rv.rebufo / hab;
   // Sus coladas: las toman al pasar y las gastan al arrancar o en la subida.
   for (const o of listaColadas) {
     if (Math.abs(o.s - rv.s) < 0.7 && Math.abs(o.x - rv.x) < 0.8 && o.obj.visible && (rv.coladas || 0) < COLADAS_MAX) { tomaColada(o); rv.coladas = (rv.coladas || 0) + 1; }
@@ -3152,6 +3811,7 @@ const hud = {
   tiempo: $('#h-tiempo'), vel: $('#h-vel'), vuelta: $('#h-vuelta'), vueltaEt: $('#h-vuelta-et'), parciales: $('#h-parciales'), accionTxt: $('#b-empuja-txt'),
   empujador: $('#h-empujador'), ruta: $('#h-ruta'), turbo: $('#h-turbo'), velo: $('#velo'),
   pasos: $('#h-pasos'), coladas: $('#h-coladas'), accion: $('#b-empuja'), pieIzq: $('#h-pie-izq'), pieDer: $('#h-pie-der'), racha: $('#h-racha'),
+  compas: $('#h-compas'), aliento: $('#h-aliento'), rebufo: $('#h-rebufo'), curva: $('#h-curva'), curvaFlecha: $('#h-curva-flecha'), curvaTxt: $('#h-curva-txt'),
   puntos: [], filas: [],
 };
 // Un punto por coche en la línea de la carrera, con su color y su número.
@@ -3224,10 +3884,12 @@ function pintaHud() {
   // El botón de acción dice qué hace ahora: bajarse, subirse o, a pie y con
   // colada, el empujón fuerte.
   const nc = j.coladas || 0;
-  const accion = estado !== 'carrera' || j.aire ? '' : e.estado === 'empujando' ? (nc > 0 ? '¡Colada!' : '¡Sube!') : e.estado === 'a_bordo' && j.v < BAJA_MANUAL ? 'Bájate' : '';
+  // En plena cuesta arriba no se sugiere subirse: el carro se pararía.
+  const subeYa = j.v >= SUBE_PERFECTA && muestra(j.s).pend < 0.02;
+  const accion = estado !== 'carrera' || j.aire ? '' : e.estado === 'empujando' ? (nc > 0 ? '¡Colada!' : subeYa ? '¡Sube ya!' : j.v >= SUBE_MIN ? 'Sube' : '') : e.estado === 'a_bordo' && j.v < BAJA_MANUAL ? 'Bájate' : '';
   if (accion !== ultimoHud.accion) {
     hud.accion.hidden = !accion; hud.accionTxt.textContent = accion;
-    hud.accion.classList.toggle('es-sube', accion === '¡Sube!');
+    hud.accion.classList.toggle('es-sube', accion === '¡Sube ya!');
     hud.accion.classList.toggle('es-colada', accion === '¡Colada!');
   }
   datos.accion = accion;
@@ -3245,12 +3907,42 @@ function pintaHud() {
   if (pisa) {
     const toca = -pasos.ultimo;
     if (toca !== ultimoHud.toca) { hud.pieIzq.classList.toggle('is-toca', toca <= 0); hud.pieDer.classList.toggle('is-toca', toca >= 0); ultimoHud.toca = toca; }
-    const racha = pasos.unPie ? (pasos.unPie < 0 ? 'Un pie ▶' : '◀ Un pie') : pasos.combo > 1 ? `×${pasos.combo}` : '¡Pisa!';
+    const reciente = pasos.t - pasos.tPaso < 0.5;
+    const racha = pasos.unPie ? (pasos.unPie < 0 ? 'Un pie ▶' : '◀ Un pie')
+      : reciente && pasos.nota === 'apurado' ? '¡Despacio!'
+        : pasos.combo >= RACHA ? `¡Racha! ×${pasos.combo}` : pasos.combo > 1 ? `×${pasos.combo}`
+          : reciente && pasos.nota === 'tarde' ? 'Más seguido' : '¡Pisa!';
     if (racha !== ultimoHud.racha) { hud.racha.textContent = racha; ultimoHud.racha = racha; }
     const bien = pasos.burst > 0;
     if (bien !== ultimoHud.bien) { hud.pasos.classList.toggle('is-bien', bien); ultimoHud.bien = bien; }
+    const apurado = reciente && pasos.nota === 'apurado';
+    if (apurado !== ultimoHud.apurado) { hud.pasos.classList.toggle('is-apurado', apurado); ultimoHud.apurado = apurado; }
+    // La aguja del compás: de 0 a 2 compases desde el último paso.
+    const aguja = pasos.tPaso < 0 ? 0 : limita((pasos.t - pasos.tPaso) / (2 * compas(j.v)), 0, 1);
+    hud.compas.style.left = `${(aguja * 100).toFixed(1)}%`;
     const unPie = !!pasos.unPie;
     if (unPie !== ultimoHud.unPie) { hud.pasos.classList.toggle('is-un-pie', unPie); ultimoHud.unPie = unPie; }
+  }
+  // El aliento, el rebufo y la curva que viene.
+  const al = Math.round(e.aliento * 100) / 100;
+  if (al !== ultimoHud.aliento) {
+    hud.aliento.style.setProperty('--a', al); hud.aliento.setAttribute('aria-valuenow', Math.round(al * 100));
+    hud.aliento.classList.toggle('is-poco', al < 0.4 && al >= 0.15); hud.aliento.classList.toggle('is-nada', al < 0.15);
+    ultimoHud.aliento = al;
+  }
+  const rebufo = e.estado === 'a_bordo' && (j.rebufo || 0) > 0.5;
+  if (rebufo !== ultimoHud.rebufo) { hud.rebufo.hidden = !rebufo; ultimoHud.rebufo = rebufo; }
+  const cv = curvaQueViene();
+  const curva = estado !== 'carrera' || e.estado !== 'a_bordo' || j.aire ? '' : cv.frena ? 'frena' : cv.cerca ? 'curva' : '';
+  const curvaTxt = curva ? `${curva}|${cv.lado}` : '';
+  if (curvaTxt !== ultimoHud.curva) {
+    hud.curva.hidden = !curva;
+    if (curva) {
+      hud.curva.classList.toggle('is-frena', curva === 'frena');
+      hud.curvaTxt.textContent = curva === 'frena' ? '¡Frena!' : 'Curva';
+      hud.curvaFlecha.textContent = cv.lado > 0 ? '›››' : '‹‹‹';
+    }
+    ultimoHud.curva = curvaTxt;
   }
   // Las rayas de velocidad, cuando de verdad va rápido.
   const velo = quieto.matches ? 0 : limita((j.v - 22) / 16, 0, 0.75) + (j.turbo > 0 ? 0.2 : 0);
@@ -3318,7 +4010,7 @@ function logrosDelProgreso() {
   if (CROMOS.every((c) => prog.album.includes(c.id))) perfil.desbloquear('coches-album');
 }
 const copaAbierta = (id) => id === 'fiestas' || prog.copa === 1;
-const PUNTOS = [10, 7, 5, 3, 1];
+const PUNTOS = [10, 7, 5, 3, 2, 1];
 const listaDe = (tipo) => (tipo === 'pareja' ? prog.parejas : tipo === 'pista' ? prog.pistas : prog.pinturas);
 const abierta = (tipo, id) => listaDe(tipo).includes(id) || (tipo === 'pista' && PISTAS.some((p) => p.id === id && p.libre));
 const comoSeGana = (tipo, id) => {
@@ -3495,9 +4187,10 @@ function muestraPodio(tabla, nombreCopa) {
   $('#podio-kicker').textContent = nombreCopa || 'Copa de las Fiestas';
   estado = 'podio';
   podioS = META - 7;
-  const sitio = [[0, 0], [-1.9, -2.6], [1.9, -3.4], [-1.2, -14], [1.4, -16]];
+  // Los tres del podio adelante; los otros tres, detrás (son seis coches).
+  const sitio = [[0, 0], [-1.9, -2.6], [1.9, -3.4], [-1.2, -14], [1.4, -16], [-0.2, -18.5]];
   tabla.forEach((f, k) => {
-    const [x, ds] = sitio[k];
+    const [x, ds] = sitio[k] || [0, -20 - k * 2.5];
     if (f.id === eqJ.id) { Object.assign(j, { s: podioS + ds, x, v: 0, volcado: 0, aire: false, h: 0, giro: 0 }); Object.assign(e, { estado: 'a_bordo' }); Object.assign(c, { suelto: false }); }
     else { const rv = rivales.find((r) => r.cruce.eq.id === f.id); Object.assign(rv, { s: podioS + ds, x, v: 0, empuja: false }); }
   });
@@ -3665,7 +4358,8 @@ function pilotoDemo() {
   const hw = muestra(j.s).hw; objetivo = limita(objetivo, -(hw - 0.9), hw - 0.9);
   teclas.izq = j.x > objetivo + 0.15 && !j.aire; teclas.der = j.x < objetivo - 0.15 && !j.aire;
   teclas.freno = j.v > GIRO / (CENTRIFUGA * Math.max(peor, 1e-4)) * 0.95;
-  if (e.estado === 'empujando' && !teclas.freno && pasos.t >= demoPaso) { demoPaso = pasos.t + 0.3; pasos.pulsos.push({ t: pasos.t, peso: 1 }); }
+  if (e.estado === 'empujando' && !teclas.freno && pasos.t >= demoPaso) { demoPaso = pasos.t + compas(j.v); pisaUnPie(pasos.ultimo < 0 ? 1 : -1); }
+  if (e.estado === 'empujando' && estado === 'carrera' && (j.coladas > 0 || (j.v >= SUBE_PERFECTA && muestra(j.s).pend < 0.02)) && !j.aire) { if (j.coladas > 0) empujonColada(); else subirse(); }
 }
 function desdeTitulo() {
   if (estado !== 'titulo' || $('#b-copa').disabled) return;
@@ -4240,8 +4934,32 @@ window.coches = {
   volcar: () => volcar(),
   pista: (id) => cargaPista(id), noche: () => noche, copas: COPAS, empiezaCopa,
   renderiza: () => render.render(escena, camara),
+  // Lo que hay en la pista, para las pruebas (sprites, mallas, posiciones).
+  mundo: () => mundo, three: THREE,
+  // Agujeros: desde la calle, cada `paso` metros y a `h` de altura, rayos
+  // hacia abajo (de `pitches` grados) en todas las direcciones; cuenta los
+  // que no tocan nada antes de la niebla (ahí se vería el fondo).
+  huecos: (o = {}) => {
+    const paso = o.paso || 25, yaws = o.yaws || [0, 45, 90, 135, 180, 225, 270, 315], pitches = o.pitches || [-10, -20], h = o.h || 2.8;
+    const ray = new THREE.Raycaster(); ray.far = o.lejos || escena.fog.far;
+    const objetos = [];
+    mundo.traverse((q) => { if ((q.isMesh || q.isInstancedMesh) && q.visible) objetos.push(q); });
+    const fin = LARGO_VUELTA ? DECO_FIN : META;
+    const fallos = [];
+    let total = 0;
+    for (let s = LARGO_VUELTA ? DECO_INI : SALIDA; s < fin; s += paso) {
+      const pos = punto(s, 0, h), th = muestra(s).th;
+      for (const yaw of yaws) for (const pit of pitches) {
+        const a = th + (yaw * Math.PI) / 180, b = (pit * Math.PI) / 180;
+        ray.set(pos, new THREE.Vector3(Math.sin(a) * Math.cos(b), Math.sin(b), Math.cos(a) * Math.cos(b)));
+        total++;
+        if (!ray.intersectObjects(objetos, false).length) fallos.push([Math.round(s), yaw, pit]);
+      }
+    }
+    return { total, fallos: fallos.length, fraccion: +(fallos.length / Math.max(1, total)).toFixed(4), ejemplos: fallos.slice(0, 12) };
+  },
   limpia: () => { limpiaMundo(); obstaculos.length = 0; return { ...render.info.memory }; },
-  memoria: () => ({ geometrias: render.info.memory.geometries, texturas: render.info.memory.textures, programas: render.info.programs.length, hijos: mundo.children.length, obstaculos: obstaculos.length }),
+  memoria: () => ({ geometrias: render.info.memory.geometries, texturas: render.info.memory.textures, programas: render.info.programs.length, hijos: mundo.children.length, obstaculos: obstaculos.length, llamadas: render.info.render.calls, triangulos: render.info.render.triangles }),
   cohete: (s) => lanzaCohete(s),
   fuegos: () => ({ visible: fuegos.points && fuegos.points.visible, vivos: fuegos.datos.filter((d) => d.vivo).map((d) => [Math.round(d.x), Math.round(d.y), Math.round(d.z), +d.t.toFixed(1)]), cam: camara.position.toArray().map(Math.round) }),
   // Mete una calle de verdad y su pista sin pasar por la red, para probar.
@@ -4253,7 +4971,11 @@ window.coches = {
   ritmo: () => ritmo(),
   coladas: (n) => { if (n != null) j.coladas = n; return j.coladas || 0; },
   unPie: () => pasos.unPie,
-  pisa: () => pasos.pulsos.push({ t: pasos.t, peso: 1 }),
+  pisa: (lado) => pisaUnPie(lado || (pasos.ultimo < 0 ? 1 : -1)),
+  compas: () => compas(j.v), nota: () => pasos.nota,
+  aliento: (n) => { if (n != null) e.aliento = n; return e.aliento; },
+  rebufo: () => j.rebufo || 0,
+  curvaQueViene: () => ({ ...curvaQueViene() }),
   paso: (lado, espera) => { const k = lado < 0 ? 'izq' : 'der'; teclas[k] = true; window.coches.simula(0.03); teclas[k] = false; window.coches.simula(espera || 0); },
   combo: () => pasos.combo,
   rivales: () => rivales.map((rv) => ({ s: rv.s, x: rv.x, v: rv.v, coladas: rv.coladas || 0, id: rv.cruce.eq.id })),
