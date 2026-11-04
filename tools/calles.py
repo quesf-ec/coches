@@ -75,30 +75,57 @@ PASO_TERRENO = 30      # metros entre alturas de la rejilla (lo que da el SRTM)
 # es la salida y el último la meta. Si `cerrada`, el último vuelve al primero.
 RECETAS = {
     'panecillo': {
-        'calles': r'Melchor de Benavides|Bah[ií]a de Car[aá]quez|Ambato|24 de Mayo|Morales|Garc[ií]a Moreno',
-        'pasos': [[-0.22920, -78.51880], [-0.22520, -78.51640], [-0.22250, -78.51280], [-0.22030, -78.51200]],
+        # Del lomo oriental del cerro, con la Virgen arriba a la izquierda, por
+        # las curvas de la Melchor de Aymerich; abajo, la vuelta grande por la
+        # General Necochea y la Mariscal Sucre; la Rafael Barahona y la Ambato
+        # cuesta abajo, y la García Moreno, que cruza la quebrada de La Ronda y
+        # sube hasta la Plaza Grande.
+        'calles': r'^(Melchor de Aymerich|General Necochea|Avenida Mariscal Sucre|Chimborazo|Rafael Barahona|Ambato|García Moreno)$',
+        'pasos': [[-0.22882, -78.51688], [-0.22450, -78.52142], [-0.22370, -78.51900], [-0.22400, -78.51720], [-0.21945, -78.51215]],
+    },
+    'subida': {
+        # La Melchor de Aymerich al revés: del lomo oriental, por el sur del
+        # cerro y la horquilla del suroeste, hasta la Virgen.
+        'calles': r'^Melchor de Aymerich$',
+        'pasos': [[-0.22815, -78.51682], [-0.23170, -78.52050], [-0.22885, -78.51910]],
     },
     'panecillo-vuelta': {
-        # La vuelta al cerro por la Benavides, que da la vuelta entera.
-        'calles': r'Melchor de Benavides',
-        'pasos': [[-0.22920, -78.51880], [-0.23050, -78.51650], [-0.22760, -78.51550]],
+        # La única vuelta que hay arriba del cerro: la Melchor de Aymerich
+        # alrededor de la Virgen, con la horquilla en V del cruce del oeste.
+        'calles': r'^Melchor de Aymerich$',
+        'pasos': [[-0.22862, -78.51811], [-0.22862, -78.51921], [-0.22904, -78.51894], [-0.22856, -78.51883]],
         'cerrada': True,
     },
     'guapulo': {
-        'calles': r'Camino de Orellana|Conquistadores|Leonidas Plaza|Francisco Compte|Gonz[aá]lez Su[aá]rez',
-        'pasos': [[-0.19920, -78.47980], [-0.19980, -78.47700], [-0.20070, -78.47560]],
+        # Del Pasaje Stubel (el lomo tras el Hotel Quito, con el Mirador de
+        # Guápulo en la esquina) por la Rafael León Larrea al Camino de Orellana,
+        # cortando su horquilla de arriba por el atajo de 15 m sin nombre (de ahí
+        # el «|)» de la regex, que admite vías sin nombre); las dos horquillas del
+        # Camino, la de la Leonidas Plaza Lasso y su picada hasta la plaza del
+        # santuario.
+        'calles': r'^(Pasaje Stubel|Rafael León Larrea|Camino de Orellana|Leonidas Plaza Lasso|)$',
+        'pasos': [[-0.20061, -78.47916], [-0.20357, -78.47924], [-0.20361, -78.47912], [-0.20259, -78.47871], [-0.20215, -78.47830],
+                  [-0.20020, -78.47754], [-0.19958, -78.47732], [-0.20027, -78.47723], [-0.20074, -78.47562]],
     },
     'centro-vuelta': {
-        # La vuelta a la manzana de la Plaza Grande (García Moreno, Chile,
-        # Venezuela, Espejo): un circuito. Los pasos son las cuatro esquinas,
-        # a ojo; el programa dice por qué calles pasó, para comprobarlo.
-        'calles': r'Garc[ií]a Moreno|Chile|Venezuela|Espejo',
-        'pasos': [[-0.21970, -78.51340], [-0.21970, -78.51220], [-0.22090, -78.51220], [-0.22090, -78.51340]],
+        # Dos manzanas con la Plaza Grande dentro: la Venezuela abajo, la
+        # Espejo, la García Moreno arriba y la Mejía. Cuatro esquinas rectas.
+        'calles': r'^(Venezuela|Espejo|García Moreno|José Mejía)$',
+        'pasos': [[-0.21950, -78.51103], [-0.22068, -78.51200], [-0.22014, -78.51273], [-0.21889, -78.51167], [-0.21938, -78.51093]],
         'cerrada': True,
     },
     'sanjuan': {
-        'calles': r'Venezuela|Carchi|Imbabura|Rocafuerte|Cuenca|Bol[ií]var',
-        'pasos': [[-0.21420, -78.50720], [-0.21800, -78.51080], [-0.22050, -78.51440], [-0.22090, -78.51420]],
+        # De la Basílica por la Venezuela en picada hasta Santo Domingo, y por
+        # la Rocafuerte a la Plaza de San Francisco.
+        'calles': r'^(Venezuela|Vicente Rocafuerte)$',
+        'pasos': [[-0.21359, -78.50626], [-0.21809, -78.50992], [-0.22255, -78.51355], [-0.22323, -78.51411], [-0.22208, -78.51560]],
+    },
+    'tobogan': {
+        # La bajada grande: la Olmedo recta hasta La Marín, la Guayaquil en el
+        # valle, la Manabí de vuelta arriba y la Cuenca. Un circuito.
+        'calles': r'^(Olmedo|Guayaquil|Manabí|Cuenca)$',
+        'pasos': [[-0.21720, -78.51249], [-0.21925, -78.50973], [-0.21883, -78.50899], [-0.21651, -78.51190]],
+        'cerrada': True,
     },
 }
 
