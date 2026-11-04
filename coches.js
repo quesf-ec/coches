@@ -3402,7 +3402,7 @@ function reinicia() {
   Object.assign(c, { suelto: false, s: 0, x: 0, v: 0 });
   for (const pe of peatones) pe.estado = 'libre';
   reloj = 0; zonaActual = ''; lugarSig = 0; tiemposVuelta.length = 0; sacudida = 0; tPeaton = 1; vueltaActual = 1;
-  Object.assign(pasos, { ultimo: 0, combo: 0, mejor: 0, burst: 0, tIzq: -9, tDer: -9, tPaso: -9, tEmpujon: -9, q: 0, nota: '', apurados: 0, prevEmp: false, unPie: 0, sesgo: 0, t: 0, tBaja: -9, tNo: -9 });
+  Object.assign(pasos, { ultimo: 0, combo: 0, mejor: 0, burst: 0, tIzq: -9, tDer: -9, tPaso: -9, q: 0, nota: '', apurados: 0, prevEmp: false, unPie: 0, sesgo: 0, t: 0, tBaja: -9, tNo: -9 });
   enseña.t = -9; enseña.unPieAntes = false;
   pulsos.izq = pulsos.der = pulsos.empuja = 0;
   demoPaso = 0;
@@ -3597,25 +3597,24 @@ function endereza() {
 }
 
 // ─── el que empuja: a pie, pisando ──────────────────────────────
-// Cuando el coche va lento, el de atrás se baja y empuja a pie. Cada flecha
-// es un pie: alternando, empuja recto. Los dos lados a la vez son un empujón
-// (y, a bordo y lento, bajarse). No gana quien más aprieta sino quien
-// lleva el compás: cada paso tiene su momento, que se acorta cuando el coche
-// ya corre (hay que correr detrás). El paso a tiempo empuja entero; el
-// apurado se tropieza y empuja poco; el que tarda deja caer el empujón.
-// Seis pasos a tiempo seguidos son la racha: empuja un poco más. Dos veces
-// el mismo lado inclina el coche hacia ese lado, sin invertir el volante.
+// Cuando el coche va lento, el de atrás se baja y empuja a pie. Empuja
+// cuando se aprietan los dos lados a la vez: cada vez, un paso. Un solo lado
+// no empuja: gira, a pie igual que a bordo. No gana quien más aprieta sino
+// quien lleva el compás: cada paso tiene su momento, que se acorta cuando el
+// coche ya corre (hay que correr detrás). El paso a tiempo empuja entero; el
+// apurado se tropieza y empuja poco; el que tarda deja caer el empujón. Seis
+// pasos a tiempo seguidos son la racha: empuja un poco más.
 // Empujar cansa: el aliento baja a pie y se recupera a bordo (y con la
 // colada). Subirse a tiempo, corriendo ya casi a lo que da, es la subida
-// perfecta: un empujón de más. Con colada guardada, la tecla de arriba (o
-// los dos pies a la vez) es el empujón fuerte. Bajarse y subirse sin
-// empujar no da nada: el que salta al carro solo lleva el impulso que traía.
+// perfecta: un empujón de más. Con colada guardada, la tecla de arriba es el
+// empujón fuerte. A bordo y lento, los dos lados a la vez (o arriba) son
+// bajarse a empujar.
 // `t` es el reloj de los pasos: corre también en la cuenta atrás, donde el
 // reloj de la carrera está parado.
 const pasos = { ultimo: 0, combo: 0, mejor: 0, prevIzq: false, prevDer: false, prevEmp: false,
-  tIzq: -9, tDer: -9, tPaso: -9, tEmpujon: -9, q: 0, nota: '', apurados: 0, burst: 0, unPie: 0, sesgo: 0, t: 0, tBaja: -9, tNo: -9 };
+  tIzq: -9, tDer: -9, tPaso: -9, q: 0, nota: '', apurados: 0, burst: 0, unPie: 0, sesgo: 0, t: 0, tBaja: -9, tNo: -9 };
 const COLADAS_MAX = 3;       // coladas que se pueden guardar para el empujón
-const DOBLE_VENTANA = 0.1;   // los dos lados en una décima son a la vez
+const DOBLE_VENTANA = 0.15;  // los dos lados en menos de esto son a la vez (con dos pulgares)
 const BAJA_EMPUJE = 4;       // por debajo de esta velocidad se baja solo a empujar (m/s)
 const BAJA_MANUAL = 8.5;     // y por debajo de esta, se puede bajar con la tecla de empujar
 const SUBE_MIN = 5;          // por debajo, el de atrás todavía no alcanza a saltar al carro
@@ -3665,15 +3664,13 @@ function pasaPasos(dt) {
     || (subeDer && teclas.izq && pasos.t - pasos.tIzq < DOBLE_VENTANA);
   if (doble) {
     pasos.tIzq = pasos.tDer = -9;
-    // Los dos lados a la vez: a pie, un empujón; a bordo, lento, es bajarse a
-    // empujar (lo mismo que ↑).
-    if (e.estado === 'a_bordo' && j.v < BAJA_MANUAL && reloj - (e.tSube ?? -9) > 0.8) { bajarse(); return; }
-    if (e.estado !== 'empujando') { tono(140, 0.08, 'triangle', 0.08); return; }
-    empujon();
+    // Los dos lados a la vez: a pie, un paso de empuje (al compás, entero);
+    // a bordo y lento, bajarse a empujar con ese mismo paso.
+    if (e.estado === 'a_bordo' && j.v < BAJA_MANUAL && reloj - (e.tSube ?? -9) > 0.8) { bajarse(); pisaUnPie(1); return; }
+    if (e.estado === 'empujando') pisaUnPie(pasos.ultimo < 0 ? 1 : -1);
     return;
   }
-  if (e.estado !== 'empujando') return;   // a bordo, los pies no cuentan
-  pisaUnPie(subeIzq ? -1 : 1);
+  // Un solo lado no empuja: gira el coche (eso lo lee el volante).
 }
 // Se baja a empujar: el salto le quita un poco al coche, y los pies empiezan de cero.
 function bajarse() {
@@ -3701,19 +3698,6 @@ function subirse() {
   Object.assign(pasos, { burst: extra ? 0.4 : 0, unPie: 0, sesgo: 0, combo: 0 });
   e.estado = 'a_bordo'; e.tSube = reloj; cocheJ.empujador.pon('montado');
   if (!extra) tono(520, 0.1, 'triangle', 0.15);
-}
-// Los dos lados a la vez, a pie: con colada, el empujón fuerte; sin ella, uno
-// más suave, con un respiro de casi un segundo entre uno y otro.
-function empujon() {
-  if (j.coladas > 0) { empujonColada(); return; }
-  if (pasos.t - pasos.tEmpujon < 0.9) { tono(140, 0.08, 'triangle', 0.08); return; }
-  pasos.tEmpujon = pasos.t;
-  j.v = Math.min(j.v + 3.2 * ST.empuje * alientoF(e.aliento), TOPE_TURBO * ST.tope);
-  e.aliento = Math.max(0, e.aliento - 0.06);
-  Object.assign(pasos, { burst: 0.35, unPie: 0, sesgo: 0 });
-  sacudida = Math.max(sacudida, 0.4);
-  tono(480, 0.1, 'triangle', 0.16); setTimeout(() => tono(620, 0.12, 'triangle', 0.14), 70);
-  avisa('¡Empujón!', 600); vibra(20);
 }
 // El empujón fuerte: gasta una colada, da aliento, sale disparado y se sube al carro.
 function empujonColada() {
@@ -3779,11 +3763,10 @@ function enseña() {
     v[clave] = (v[clave] || 0) + 1; enseña.t = reloj; guardaAjustes();
     avisa(texto, 2600);
   };
-  const pies = esTactil ? 'Toca izquierda y derecha' : 'Pisa ← →';
-  if (estado === 'cuenta' && cuenta < 2.6 && e.estado === 'empujando') di('compas', `${pies} al compás: cuando la aguja entra en lo verde`);
+  const pies = esTactil ? 'Toca los dos lados a la vez' : 'Aprieta ← y → a la vez';
+  if (estado === 'cuenta' && cuenta < 2.6 && e.estado === 'empujando') di('dosLados', `${pies} para empujar, al compás: cuando la aguja entra en lo verde`);
   else if (e.estado === 'empujando' && pasos.apurados >= 3) di('apurado', 'Más despacio: el paso a tiempo empuja más que el apurado');
-  else if (e.estado === 'empujando' && pasos.unPie && !enseña.unPieAntes) di('unpie', 'Dos veces el mismo lado: el coche se inclina hacia ese lado');
-  else if (e.estado === 'empujando' && muestra(j.s).pend > 0.03 && j.v < 7) di('dos', esTactil ? 'Cuesta arriba: toca los dos lados a la vez para empujar' : 'Cuesta arriba: ← + → a la vez para empujar');
+  else if (e.estado === 'empujando' && reloj > 6 && j.v > 3) di('giraapie', esTactil ? 'A pie, un solo lado gira; los dos a la vez empujan' : 'A pie, un solo lado gira; ← y → a la vez empujan');
   else if (e.estado === 'empujando' && j.v >= SUBE_PERFECTA && muestra(j.s).pend < 0.02 && !(j.coladas > 0)) di('subete', esTactil ? '¡Ya corre! «Sube» ahora: subida perfecta' : '¡Ya corre! ↑ ahora para subirte: subida perfecta');
   else if (curvaQueViene().frena) di('curva', esTactil ? '¡Curva cerrada! Frena con el botón rojo' : '¡Curva cerrada! Frena con ↓');
   else if (Math.abs(j.x) > muestra(j.s).hw && !j.aire && j.volcado <= 0 && j.v > 2) di('vereda', 'En la vereda se frena: vuelve a la calle');
@@ -3934,7 +3917,9 @@ function actualiza(dt) {
   } else {
     // Mientras se empuja, un toque es un paso y no gira: el volante entra
     // solo cuando el lado se sostiene más de una décima, y sube en un cuarto.
-    const sost = (k, t0) => !teclas[k] ? 0 : e.estado === 'empujando' ? limita((pasos.t - t0 - 0.12) / 0.25, 0, 1) : 1;
+    // A pie, un lado gira tras un instante: así, al apretar los dos para
+    // empujar, el que llega primero no da un tirón.
+    const sost = (k, t0) => !teclas[k] ? 0 : e.estado === 'empujando' ? limita((pasos.t - t0 - 0.05) / 0.15, 0, 1) : 1;
     const mando = estado === 'llegada' ? 0 : limita(sost('der', pasos.tDer) - sost('izq', pasos.tIzq) + pasos.sesgo * 0.8, -1, 1);
     j.giro = mezcla(j.giro, mando, Math.min(1, dt * 10));
     const piedra = ZONAS[zona].calle === 'adoquin';
@@ -3953,7 +3938,8 @@ function actualiza(dt) {
       // El volante responde desde parado, sube con la velocidad y no se va de
       // las manos en la bajada grande; la curva saca a v² · curvatura.
       const vg = Math.min(j.v, 30);
-      j.vx = j.giro * GIRO * ST.giro * limita(j.v, 4.5, 22) - CENTRIFUGA * vg * vg * k;
+      // Casi parado, gira poco: un coche quieto no se va de costado.
+      j.vx = j.giro * GIRO * ST.giro * limita(j.v, 4.5, 22) * Math.min(1, 0.2 + j.v / 2) - CENTRIFUGA * vg * vg * k;
     }
     if (j.turbo > 0) { j.turbo -= dt; a += 4.5; }
     j.v = limita(j.v + a * dt, 0, (j.turbo > 0 ? TOPE_TURBO : TOPE) * ST.tope);
@@ -4504,8 +4490,8 @@ function pintaHud() {
   const pisa = e.estado === 'empujando' && (estado === 'carrera' || estado === 'cuenta');
   if (pisa !== ultimoHud.pisa) { hud.pasos.hidden = !pisa; ultimoHud.pisa = pisa; }
   if (pisa) {
-    const toca = -pasos.ultimo;
-    if (toca !== ultimoHud.toca) { hud.pieIzq.classList.toggle('is-toca', toca <= 0); hud.pieDer.classList.toggle('is-toca', toca >= 0); ultimoHud.toca = toca; }
+    // Se empuja con los dos lados a la vez: las dos flechas laten juntas.
+    if (!ultimoHud.toca) { hud.pieIzq.classList.add('is-toca'); hud.pieDer.classList.add('is-toca'); ultimoHud.toca = 1; }
     const reciente = pasos.t - pasos.tPaso < 0.5;
     const racha = pasos.unPie ? (pasos.unPie < 0 ? 'Un pie ▶' : '◀ Un pie')
       : reciente && pasos.nota === 'apurado' ? '¡Despacio!'
