@@ -23,9 +23,9 @@
 <!-- El sello ?v= se sube a mano en cada cambio del juego (CSS, JS y, con el
      JS, los modelos, que heredan su sello): así el navegador no se queda con
      la versión anterior. -->
-<link rel="stylesheet" href="coches.css?v=f9308db773">
+<link rel="stylesheet" href="coches.css?v=48df25f630">
 <!-- La piel del juego: variante del tema juegos (ver tema/LEEME.md). Va al final para mandar. -->
-<link rel="stylesheet" href="tema/tema.css?v=f9308db773">
+<link rel="stylesheet" href="tema/tema.css?v=48df25f630">
 <link rel="modulepreload" href="vendor/three.module.min.js">
 <script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js", "three/addons/": "./vendor/addons/" } }</script>
 <script type="application/ld+json">
@@ -184,6 +184,8 @@
         <svg class="icono" aria-hidden="true"><use href="#i-play"/></svg> Carrera suelta</button>
       <button class="coches-baldosa" id="b-tiempo" type="button" disabled>
         <svg class="icono" aria-hidden="true"><use href="#i-reloj"/></svg> Contrarreloj</button>
+      <button class="coches-baldosa" id="b-taller" type="button" disabled>
+        <svg class="icono" aria-hidden="true"><use href="#i-ajustes"/></svg> El taller</button>
       <button class="coches-baldosa coches-baldosa--ancha" id="b-practica" type="button" disabled>
         <svg class="icono" aria-hidden="true"><use href="#i-mando"/></svg> Probar los mandos: calle sin fin</button>
       <button class="coches-baldosa" id="b-medallas" type="button" disabled>
@@ -194,7 +196,7 @@
         <svg class="icono" aria-hidden="true"><use href="#i-mando"/></svg> Cómo se juega</button>
       <button class="coches-baldosa" id="b-opciones" type="button">
         <svg class="icono" aria-hidden="true"><use href="#i-ajustes"/></svg> Opciones</button>
-      <button class="coches-baldosa" id="b-creditos" type="button">
+      <button class="coches-baldosa coches-baldosa--ancha" id="b-creditos" type="button">
         <svg class="icono" aria-hidden="true"><use href="#i-usuario"/></svg> Créditos</button>
     </nav>
     <p class="micro coches-progreso" id="progreso"></p>
@@ -219,6 +221,17 @@
 </div>
 
 <!-- Cómo se juega -->
+<!-- El taller: mejoras para el coche, con los sucres del perfil. -->
+<div class="coches-capa" id="taller" hidden>
+  <div class="coches-panel coches-menu coches-taller">
+    <p class="coches-banner">El taller</p>
+    <p class="caption">Con los sucres que ganas corriendo (los mismos de los otros juegos) se arregla tu coche, como los de la carrera de verdad. Lo que pones se queda. <b>Tienes S/. <span id="taller-sucres">0</span></b></p>
+    <ul class="coches-piezas" id="taller-piezas"></ul>
+    <button class="btn btn-ghost btn-block" id="b-volver-taller" type="button">
+      <svg class="icono" aria-hidden="true"><use href="#i-flecha-izq"/></svg> Volver</button>
+  </div>
+</div>
+
 <!-- Probar los mandos: una calle sin fin, sin rivales, a elegir. -->
 <div class="coches-capa" id="practica" hidden>
   <div class="coches-panel coches-menu">
@@ -261,7 +274,7 @@
       <div><dt>Botón redondo</dt><dd>«Bájate» (lento) · «¡Sube ya!» (a pie y corriendo: subida perfecta) · «¡Colada!» (empujón fuerte)</dd></div>
       <div><dt>3, 2, 1…</dt><dd>tocar alternando al compás en la cuenta: arranque extra</dd></div>
     </dl>
-    <p class="caption">Las calles son las de verdad: cuando sale «¡Frena!», la esquina viene cerrada. Las bocacalles están cerradas con heno o llantas, como en las carreras de verdad, y los rompevelocidades frenan (rápido, dan un saltito). Detrás de otro coche, en su carril, vas con rebufo. En las rampas no se gira en el aire. Las coladas moradas se guardan (hasta tres) para el empujón fuerte, que solo sirve a pie y devuelve el aliento. En un choque, el que embiste le quita una colada al otro.
+    <p class="caption">Las calles son las de verdad: cuando sale «¡Frena!», la esquina viene cerrada. Las bocacalles están cerradas con heno o llantas, como en las carreras de verdad, y los rompevelocidades frenan (rápido, dan un saltito). Detrás de otro coche, en su carril, vas con rebufo. En las rampas no se gira en el aire. En el taller del menú, con tus sucres, se ponen ruedas de caucho, rulimanes nuevos, carrocería, volante, freno y barra de empujar. Las coladas moradas se guardan (hasta tres) para el empujón fuerte, que solo sirve a pie y devuelve el aliento. En un choque, el que embiste le quita una colada al otro.
     Las medallas abren parejas nuevas y ganar la Copa abre la subida del Panecillo.</p>
     <button class="btn btn-ghost btn-block" id="b-volver-ayuda" type="button">
       <svg class="icono" aria-hidden="true"><use href="#i-flecha-izq"/></svg> Volver</button>
@@ -432,6 +445,6 @@
 </div>
 
 <script src="https://franciscombp.github.io/ds/mal/mal.js?v=1.0.22" defer></script>
-<script type="module" src="coches.js?v=f9308db773"></script>
+<script type="module" src="coches.js?v=48df25f630"></script>
 </body>
 </html>
