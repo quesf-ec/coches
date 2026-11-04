@@ -32,14 +32,19 @@ pintada de negro.
 
 ## Las pistas
 
-Las pistas (`PISTAS` en `coches.js`) se arman con el mismo material: las
-casas y puestos de `quito.glb` y las fachadas que se pintan en código
-(`FACHADAS`: la Compañía, la Catedral, el Palacio, la Basílica y el
-santuario de Guápulo). Ninguna trae modelo propio. La vuelta al Panecillo
-es un anillo generado en código (`GENERADAS`), con el cerro y la Virgen en
-medio; las de noche heredan las calles de las de día y cambian el cielo,
-las luces y los cohetes. Las estampitas del álbum (`CROMOS`) son canvas:
-las fachadas de arriba o los iconos de `ICONOS`.
+Todas las pistas (`PISTAS` en `coches.js`) corren ahora por calles de verdad
+de Quito, sacadas de OpenStreetMap (ver `pistas/LEEME.md`): el Panecillo, la
+subida, la vuelta a la Virgen, Guápulo, San Juan, la Plaza Grande y la bajada
+grande (la Olmedo y la Manabí). Se arman con el mismo material de siempre: los
+edificios de verdad levantados en código, las casas y puestos de `quito.glb`
+para tapar los huecos del frente de la calle, y las fachadas pintadas en código
+(`FACHADAS`: la Compañía, la Catedral, el Palacio, la Basílica, San Francisco y
+el santuario de Guápulo), que ahora van sobre el edificio que lleva ese nombre.
+Ninguna pista trae modelo propio. Los trazados generados en código
+(`GENERADAS`) quedan solo de repuesto si no carga el JSON. Las de noche heredan
+las calles de las de día y cambian el cielo, las luces y los cohetes. Las
+estampitas del álbum (`CROMOS`) son canvas: las fachadas o los iconos de
+`ICONOS`.
 
 Si uno de los dos juegos retoca un modelo, aquí no cambia solo: hay que volver
 a copiarlo.
