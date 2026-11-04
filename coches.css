@@ -577,3 +577,6 @@ body.pixel #pista{image-rendering:pixelated;image-rendering:crisp-edges}
 @keyframes coches-alerta{to{box-shadow:0 0 0 6px rgba(232,54,43,.45)}}
 .coches-curva__flecha{letter-spacing:-.12em}
 @media (prefers-reduced-motion: reduce){.coches-curva.is-frena,.coches-aliento.is-nada i{animation:none}}
+
+/* La baldosa que ocupa la fila entera (probar los mandos, todo junto). */
+.coches-baldosa--ancha{grid-column:1 / -1;justify-content:center}
