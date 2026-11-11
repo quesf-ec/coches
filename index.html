@@ -23,9 +23,9 @@
 <!-- El sello ?v= se sube a mano en cada cambio del juego (CSS, JS y, con el
      JS, los modelos, que heredan su sello): así el navegador no se queda con
      la versión anterior. -->
-<link rel="stylesheet" href="coches.css?v=adedac4e54">
+<link rel="stylesheet" href="coches.css?v=13e25b99ee">
 <!-- La piel del juego: variante del tema juegos (ver tema/LEEME.md). Va al final para mandar. -->
-<link rel="stylesheet" href="tema/tema.css?v=adedac4e54">
+<link rel="stylesheet" href="tema/tema.css?v=13e25b99ee">
 <link rel="modulepreload" href="vendor/three.module.min.js">
 <script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js", "three/addons/": "./vendor/addons/" } }</script>
 <script type="application/ld+json">
@@ -99,6 +99,8 @@
   </div>
   <!-- Las posiciones, en columna a la izquierda: tu fila resalta. -->
   <ol class="coches-posiciones" id="h-ruta" aria-label="Posiciones"></ol>
+  <!-- En el teléfono, en vez de la lista: tu puesto, en grande. -->
+  <p class="coches-puesto-grande" id="h-puesto" aria-label="Tu puesto"></p>
   <!-- El tiempo abajo a la izquierda, con lo que tardó cada vuelta. -->
   <div class="coches-crono">
     <p class="coches-tiempo" id="h-tiempo">0:00.0</p>
@@ -441,6 +443,6 @@
 </div>
 
 <script src="https://franciscombp.github.io/ds/mal/mal.js?v=1.0.22" defer></script>
-<script type="module" src="coches.js?v=adedac4e54"></script>
+<script type="module" src="coches.js?v=13e25b99ee"></script>
 </body>
 </html>

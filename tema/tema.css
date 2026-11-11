@@ -310,3 +310,48 @@
 [data-variante="coches"] .coches-rebufo{transform:skewX(-8deg);background:var(--arc-cian);color:var(--arc-tinta)}
 [data-variante="coches"] .coches-curva{background:var(--arc-amarillo);color:var(--arc-tinta)}
 [data-variante="coches"] .coches-curva.is-frena{background:var(--arc-rojo);color:var(--arc-blanco)}
+
+/* ─── el HUD y los mandos en el teléfono ─────────────────────────
+   Cada cosa en su esquina, sin encimarse: arriba a la izquierda la pausa,
+   tu puesto en grande y el reloj; arriba al centro, solo los avisos; arriba
+   a la derecha, la vuelta, la velocidad y el aliento; abajo, un disco en
+   cada esquina para girar (los dos a la vez, a pie, empujan), el freno
+   sobre el izquierdo y la acción sobre el derecho; al centro, el compás. */
+.coches-puesto-grande{display:none}
+.coches.con-mandos .coches-posiciones,
+.coches.con-mandos .coches-banda,
+.coches.con-mandos .coches-parciales,
+.coches.con-mandos .coches-empujador,
+.coches.con-mandos #h-turbo{display:none}
+.coches.con-mandos .coches-puesto-grande{display:flex;align-items:baseline;position:absolute;margin:0;pointer-events:none;
+  left:calc(env(safe-area-inset-left, 0px) + var(--mal-e5));top:calc(env(safe-area-inset-top, 0px) + 60px);
+  font-family:"Bangers",var(--mal-display);line-height:1;color:var(--arc-amarillo);
+  -webkit-text-stroke:2px var(--arc-tinta);paint-order:stroke fill;text-shadow:0 3px 0 var(--arc-tinta)}
+.coches.con-mandos .coches-puesto-grande b{font-size:2.6rem;font-weight:400}
+.coches.con-mandos .coches-puesto-grande sup{font-size:1.2rem}
+.coches.con-mandos .coches-puesto-grande small{font-size:1rem;color:var(--arc-blanco);margin-left:.2em}
+.coches.con-mandos .sin-rivales .coches-puesto-grande{display:none}
+.coches.con-mandos .coches-crono{left:calc(env(safe-area-inset-left, 0px) + var(--mal-e5));bottom:auto;top:calc(env(safe-area-inset-top, 0px) + 108px)}
+.coches.con-mandos .sin-rivales .coches-crono{top:calc(env(safe-area-inset-top, 0px) + 62px)}
+/* Los avisos, arriba al centro, donde estaba el título: en dos líneas si hace falta. */
+.coches.con-mandos .coches-aviso{top:calc(env(safe-area-inset-top, 0px) + 8px);max-width:54vw;white-space:normal;font-size:1.05rem;line-height:1.15;padding:4px 26px 5px}
+.coches.con-mandos .coches-curva{top:calc(env(safe-area-inset-top, 0px) + 64px)}
+/* Girar: un disco visible en cada esquina de abajo (todo el costado responde). */
+.coches.con-mandos .coches-zona .icono{width:62px;height:62px;padding:12px;box-sizing:border-box;border-radius:50%;opacity:1;filter:none;
+  background:var(--azul);border:3px solid var(--arc-tinta);box-shadow:inset 0 3px 0 rgba(255,255,255,.4), 0 5px 0 var(--arc-tinta)}
+.coches.con-mandos .coches-zona.is-on .icono{transform:translateY(4px);box-shadow:inset 0 3px 0 rgba(255,255,255,.4), 0 1px 0 var(--arc-tinta);filter:brightness(1.15)}
+/* A pie: los dos discos, amarillos y latiendo a la vez (los dos juntos empujan); sin freno. */
+.coches.con-mandos.a-pie .coches-zona .icono{background:var(--arc-amarillo);color:var(--arc-tinta);animation:coches-juntos .5s ease-in-out infinite alternate}
+@keyframes coches-juntos{to{transform:scale(1.12)}}
+.coches.con-mandos.a-pie .coches-mando--freno{visibility:hidden}
+/* El freno y la acción, del mismo tamaño, cada uno sobre su disco. */
+.coches.con-mandos .coches-mando--freno,.coches.con-mandos .coches-mando--empuja{width:68px;height:68px;font-size:.85rem;line-height:1.05;
+  bottom:calc(env(safe-area-inset-bottom, 0px) + 96px);animation:none}
+.coches.con-mandos .coches-mando--freno{left:calc(env(safe-area-inset-left, 0px) + var(--mal-e5) - 3px)}
+.coches.con-mandos .coches-mando--empuja{right:calc(env(safe-area-inset-right, 0px) + var(--mal-e5) - 3px);top:auto;white-space:normal;text-align:center;padding:2px}
+.coches.con-mandos .coches-mando--empuja.es-colada .coches-jarrito{display:none}
+.coches.con-mandos .coches-mando--empuja.es-colada{box-shadow:0 0 0 3px #B45CC8, 0 5px 0 var(--arc-tinta)}
+/* El compás, abajo al centro, a la altura de los discos. */
+.coches.con-mandos .coches-pasos{bottom:calc(env(safe-area-inset-bottom, 0px) + 14px)}
+.coches.con-mandos .hud-juego__abajo{padding-bottom:0}
+@media (prefers-reduced-motion:reduce){.coches.con-mandos.a-pie .coches-zona .icono{animation:none}}
