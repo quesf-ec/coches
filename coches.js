@@ -4395,7 +4395,7 @@ const hud = {
   tiempo: $('#h-tiempo'), vel: $('#h-vel'), vuelta: $('#h-vuelta'), vueltaEt: $('#h-vuelta-et'), parciales: $('#h-parciales'), accionTxt: $('#b-empuja-txt'),
   empujador: $('#h-empujador'), ruta: $('#h-ruta'), turbo: $('#h-turbo'), velo: $('#velo'),
   pasos: $('#h-pasos'), coladas: $('#h-coladas'), accion: $('#b-empuja'), pieIzq: $('#h-pie-izq'), pieDer: $('#h-pie-der'), racha: $('#h-racha'),
-  compas: $('#h-compas'), aliento: $('#h-aliento'), rebufo: $('#h-rebufo'), curva: $('#h-curva'), curvaFlecha: $('#h-curva-flecha'), curvaTxt: $('#h-curva-txt'),
+  puesto: $('#h-puesto'), compas: $('#h-compas'), aliento: $('#h-aliento'), rebufo: $('#h-rebufo'), curva: $('#h-curva'), curvaFlecha: $('#h-curva-flecha'), curvaTxt: $('#h-curva-txt'),
   puntos: [], filas: [],
 };
 // Un punto por coche en la línea de la carrera, con su color y su número.
@@ -4461,6 +4461,8 @@ function pintaHud() {
   }
   datos.parciales = tiemposVuelta.length;
   if (datos.tiempo !== ultimoHud.tiempo) hud.tiempo.textContent = datos.tiempo;
+  // En el teléfono, en vez de la lista, tu puesto en grande.
+  if (datos.puesto !== ultimoHud.puesto) hud.puesto.innerHTML = `<b>${datos.puesto}</b><sup>º</sup><small>/${hud.puntos.length}</small>`;
   if (datos.vel !== ultimoHud.vel) hud.vel.textContent = datos.vel;
   if (datos.empujador !== ultimoHud.empujador) {
     hud.empujador.textContent = datos.empujador;
@@ -4471,11 +4473,11 @@ function pintaHud() {
   const nc = j.coladas || 0;
   // En plena cuesta arriba no se sugiere subirse: el carro se pararía.
   const subeYa = j.v >= SUBE_PERFECTA && muestra(j.s).pend < 0.02;
-  const accion = estado !== 'carrera' || j.aire ? '' : e.estado === 'empujando' ? (nc > 0 ? '¡Colada!' : subeYa ? '¡Sube ya!' : j.v >= SUBE_MIN ? 'Sube' : '') : e.estado === 'a_bordo' && j.v < BAJA_MANUAL ? 'Bájate' : '';
+  const accion = estado !== 'carrera' || j.aire ? '' : e.estado === 'empujando' ? (nc > 0 ? `¡Colada! ×${nc}` : subeYa ? '¡Sube ya!' : j.v >= SUBE_MIN ? 'Sube' : '') : e.estado === 'a_bordo' && j.v < BAJA_MANUAL ? 'Bájate' : '';
   if (accion !== ultimoHud.accion) {
     hud.accion.hidden = !accion; hud.accionTxt.textContent = accion;
     hud.accion.classList.toggle('es-sube', accion === '¡Sube ya!');
-    hud.accion.classList.toggle('es-colada', accion === '¡Colada!');
+    hud.accion.classList.toggle('es-colada', accion.startsWith('¡Colada!'));
   }
   datos.accion = accion;
   const coladas = `${nc}|${e.estado === 'empujando' && nc > 0}|${j.turbo > 0}`;
@@ -4488,7 +4490,9 @@ function pintaHud() {
   // Los pies: se enciende el que toca (los dos, antes del primer paso), la
   // racha en medio, y la píldora se ilumina con cada buen paso.
   const pisa = e.estado === 'empujando' && (estado === 'carrera' || estado === 'cuenta');
-  if (pisa !== ultimoHud.pisa) { hud.pasos.hidden = !pisa; ultimoHud.pisa = pisa; }
+  // A pie cambia lo que hacen los lados: la pantalla lo marca (flechas
+  // amarillas que laten juntas, sin freno).
+  if (pisa !== ultimoHud.pisa) { hud.pasos.hidden = !pisa; document.body.classList.toggle('a-pie', pisa); ultimoHud.pisa = pisa; }
   if (pisa) {
     // Se empuja con los dos lados a la vez: las dos flechas laten juntas.
     if (!ultimoHud.toca) { hud.pieIzq.classList.add('is-toca'); hud.pieDer.classList.add('is-toca'); ultimoHud.toca = 1; }
@@ -4496,7 +4500,7 @@ function pintaHud() {
     const racha = pasos.unPie ? (pasos.unPie < 0 ? 'Un pie ▶' : '◀ Un pie')
       : reciente && pasos.nota === 'apurado' ? '¡Despacio!'
         : pasos.combo >= RACHA ? `¡Racha! ×${pasos.combo}` : pasos.combo > 1 ? `×${pasos.combo}`
-          : reciente && pasos.nota === 'tarde' ? 'Más seguido' : '¡Pisa!';
+          : reciente && pasos.nota === 'tarde' ? 'Más seguido' : esTactil ? '¡Los dos lados!' : '← + → juntos';
     if (racha !== ultimoHud.racha) { hud.racha.textContent = racha; ultimoHud.racha = racha; }
     const bien = pasos.burst > 0;
     if (bien !== ultimoHud.bien) { hud.pasos.classList.toggle('is-bien', bien); ultimoHud.bien = bien; }
